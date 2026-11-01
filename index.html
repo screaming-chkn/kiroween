@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="HAUNT//HOUND — haunted mech squad tactics in your browser." />
+  <title>HAUNT//HOUND</title>
+  <style>
+    /* ── Reset & base ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* Design tokens — never hard-code values elsewhere */
+      --color-void:        #0A0D0B;
+      --color-panel:       #121A15;
+      --color-phosphor:    #39FF88;
+      --color-phosphor-dim:#1F9E57;
+      --color-bone:        #E8E2D0;
+      --color-ash:         #8F9A92;
+      --color-ember:       #FF8A3D;
+      --color-blood:       #FF4D5E;
+      --color-ghost:       #9FD8FF;
+
+      --font-display: 'VT323', monospace;
+      --font-hud:     'Share Tech Mono', monospace;
+      --font-body:    'IBM Plex Mono', monospace;
+
+      --focus-outline: 2px solid var(--color-ember);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--color-void);
+      color: var(--color-bone);
+      font-family: var(--font-body);
+      font-size: 14px;
+      overflow: hidden;
+    }
+
+    /* ── Canvas fills the viewport ─────────────────────────── */
+    #game-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      /* Canvas internal resolution set by JS to match devicePixelRatio */
+    }
+
+    /* ── Accessibility: visible keyboard focus ─────────────── */
+    :focus-visible {
+      outline: var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    /* ── Loading state ─────────────────────────────────────── */
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-void);
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: var(--color-phosphor);
+      letter-spacing: 0.1em;
+      /* Hidden once JS runs */
+    }
+    #loading[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <!--
+    Single canvas: layers (world / fog+static / HUD) are drawn in order by the renderer.
+    tabindex="0" lets keyboard users focus the canvas for input events.
+    role="application" + aria-label give screen readers context.
+  -->
+  <canvas
+    id="game-canvas"
+    tabindex="0"
+    role="application"
+    aria-label="HAUNT//HOUND game canvas"
+  ></canvas>
+
+  <!-- Shown until the JS module initialises the game -->
+  <div id="loading" aria-live="polite" aria-label="Loading HAUNT//HOUND">
+    HAUNT//HOUND &mdash; LOADING&hellip;
+  </div>
+
+  <!-- ES module entry; defer is implicit for type="module" -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
