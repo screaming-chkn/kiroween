@@ -1,0 +1,11 @@
+# 02-mech-builder — Tasks (draft)
+
+- [ ] 1. Parts data (~12 parts, 6 slots) + preset mech (R2, R6)
+- [x] 2. Weight curve functions + unit tests at breakpoints (R3)
+- [x] 3. Loadout totals + power balance (R3, R4)
+- [ ] 4. Role tag derivation with tie rule (R5)
+- [ ] 5. PBT: legal loadouts deploy, penalty monotonic/bounded, balance identity (R3, R4)
+- [ ] 6. Garage list picker UI, keyboard + screen reader (R1)
+- [ ] 7. Stat bars, role tag, Overdraw and "Too heavy to walk." states (R3–R5)
+- [ ] 8. localStorage save/restore (R6)
+- [ ] 9. Hex part display (R7)

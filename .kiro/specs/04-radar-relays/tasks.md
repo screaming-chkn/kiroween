@@ -1,0 +1,10 @@
+# 04-radar-relays — Tasks (draft)
+
+- [ ] 1. Visibility grid from relays + player (R1)
+- [ ] 2. Relay capture step with Scout ×2 and contest reset (R2)
+- [ ] 3. Static layer + damage spike/decay + No-static fallback (R1)
+- [ ] 4. Ping generation with seeded fakes for Liar's Eye (R3)
+- [ ] 5. Radar draw with colorblind shapes; Space pulse reveal (R3)
+- [ ] 6. Footstep/whisper cues + visual equivalents; Loud Bones (R4)
+- [ ] 7. Static Surge at 5:00 (R5)
+- [ ] 8. PBT: fake ratio, visibility monotonic (R3, R1)
