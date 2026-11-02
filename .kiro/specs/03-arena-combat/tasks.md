@@ -1,0 +1,16 @@
+# 03-arena-combat — Tasks
+
+- [ ] 1. Combat config constants and arena data (R1, R5)
+- [ ] 2. `applyDamage` + unit tests: clamp to 0, PBT any sequence (R3, R5)
+- [ ] 3. `createProjectile` / `stepProjectile` / wall destroy + tests (R3)
+- [ ] 4. `createMech` / `moveMech` / `aimMech` with speed-penalty integration (R2)
+- [ ] 5. Player fire: LMB spawn projectile, 300 ms cooldown (R3)
+- [ ] 6. Enemy CHASE/SHOOT state machine + enemy fire cooldown (R4)
+- [ ] 7. Projectile–mech hit test, damage routing, phase transitions win/lose (R5, R6)
+- [ ] 8. Arena wall collision for mechs and projectiles (R1)
+- [ ] 9. Renderer: world layer (floor grid + walls), entity layer (mechs + projectiles) (R1, R4, R7)
+- [ ] 10. HUD: player HP bar ≥ 7:1 contrast, enemy HP bar above sprite (R5, R7)
+- [ ] 11. Win/lose overlay: keyboard (Enter/Space) + click restart, ember focus ring (R6, R7)
+- [ ] 12. `createArena` / `updateArena` wired into engine loop hooks (R1–R6)
+- [ ] 13. Reduced-motion shake cap honored in camera during combat (R7)
+- [ ] 14. Integration smoke test: arena ticks without errors, win/lose fire correctly (R6)
