@@ -38,16 +38,23 @@ export const PLAYER_PROJECTILE_DAMAGE = 20;
 /** Damage dealt by a single enemy projectile. */
 export const ENEMY_PROJECTILE_DAMAGE  = 15;
 
-/** Minimum time between shots in milliseconds (R3). */
+/** Minimum time between player shots in milliseconds (R3). */
 export const FIRE_COOLDOWN_MS = 300;
+
+/**
+ * Minimum time between enemy shots in milliseconds (R4 — BALANCE).
+ * Deliberately slower than the player's cooldown so the enemy is a threat
+ * without overwhelming the player in a 30-60 s round.
+ */
+export const ENEMY_FIRE_COOLDOWN_MS = 1500;
 
 // ── HP ────────────────────────────────────────────────────────────────────────
 
 /** Starting hit-points for the player mech (R5). */
-export const PLAYER_MAX_HP = 200;
+export const PLAYER_MAX_HP = 300;
 
 /** Starting hit-points for the enemy bot (R5). */
-export const ENEMY_MAX_HP  = 150;
+export const ENEMY_MAX_HP  = 900;
 
 // ── Enemy AI ──────────────────────────────────────────────────────────────────
 
@@ -66,6 +73,13 @@ export const ENEMY_HYSTERESIS = 40;
 
 /** Base movement speed for the enemy bot (world units / second). */
 export const ENEMY_BASE_SPEED = 160;
+
+/**
+ * Perpendicular strafe speed while in SHOOT state (world units / second).
+ * The enemy sidesteps horizontally relative to the player→enemy axis so that
+ * some player shots miss, stretching the round toward the 30-60 s target.
+ */
+export const ENEMY_STRAFE_SPEED = 90;
 
 // ── Spawn positions ───────────────────────────────────────────────────────────
 

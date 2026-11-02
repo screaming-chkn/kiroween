@@ -36,6 +36,7 @@ import { drawWorld,
   drawOverlay,
 }                              from './combat/combatRenderer.js';
 import { speedPenalty }        from './mech/weight.js';
+import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
 
 // ── Canvas / loading ─────────────────────────────────────────────────────────
 
@@ -159,18 +160,34 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
-    drawOverlay(ctx, st, camera, vpW, vpH);
+    const restartReady = canRestart(phaseEndedAtMs, performance.now(), null);
+    drawOverlay(ctx, st, camera, vpW, vpH, restartReady);
   });
 
   // ── Restart handler (Enter / Space / click while overlay showing) ──────────
   let restartRequested = false;
 
+  // Timestamps for the R6 BUG-1 stale-click guard.
+  let phaseEndedAtMs  = 0;   // set when phase first leaves 'playing'
+  let lastMouseDownAt = 0;   // updated by every mousedown on the canvas
+
+  function onCanvasMouseDown() {
+    lastMouseDownAt = performance.now();
+  }
+  canvas.addEventListener('mousedown', onCanvasMouseDown);
+
   function requestRestart(e) {
     if (arenaState.phase === 'playing') return;
-    // Click: only accept left button
+    // Click: only accept left button.
     if (e instanceof MouseEvent && e.button !== 0) return;
-    // Keyboard: only Enter or Space
+    // Keyboard: only Enter or Space.
     if (e instanceof KeyboardEvent && e.key !== 'Enter' && e.key !== ' ') return;
+
+    // For keyboard events there is no stale mousedown risk → pass null.
+    const mouseDownTs = (e instanceof MouseEvent) ? lastMouseDownAt : null;
+
+    if (!canRestart(phaseEndedAtMs, performance.now(), mouseDownTs)) return;
+
     restartRequested = true;
   }
 
@@ -208,6 +225,11 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       // Step the arena.
       arenaState = updateArena(arenaState, actions, dt);
 
+      // Record when the phase first left 'playing' (for restart grace guard).
+      if (arenaState.phase !== 'playing' && phaseEndedAtMs === 0) {
+        phaseEndedAtMs = performance.now();
+      }
+
       // Camera trauma on player hit.
       if (arenaState.player.hp < prevPlayerHp) {
         camera = addTrauma(camera, 0.35);
@@ -230,6 +252,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   function cleanup() {
     canvas.removeEventListener('keydown',   requestRestart);
     canvas.removeEventListener('click',     requestRestart);
+    canvas.removeEventListener('mousedown', onCanvasMouseDown);
     // Input listeners are re-added on the next startArena; remove the old ones
     // by a simple pattern: we defined them as inline arrows, so we need to
     // stash references.  For simplicity we rely on the fact that showGarage

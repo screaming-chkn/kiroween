@@ -17,10 +17,11 @@ import {
   ENEMY_HYSTERESIS,
   ENEMY_PROJECTILE_DAMAGE,
   ENEMY_MAX_HP,
+  ENEMY_STRAFE_SPEED,
   ENEMY_START_X,
   ENEMY_START_Y,
   MECH_RADIUS,
-  FIRE_COOLDOWN_MS,
+  ENEMY_FIRE_COOLDOWN_MS,
   ARENA_WIDTH,
   ARENA_HEIGHT,
 } from './config.js';
@@ -57,6 +58,7 @@ export function createEnemy(cfg = {}) {
     speedPenalty: cfg.speedPenalty ?? 0,
     fireCooldown: 0,               // ms — starts ready to shoot
     aiState:      STATE_CHASE,
+    strafeDir:    1,               // +1 or -1 — flips on arena wall bounce
     owner:        'enemy',
   };
 }
@@ -100,6 +102,7 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
   // ── CHASE: move toward player ─────────────────────────────────────────────
   let ex = enemy.x;
   let ey = enemy.y;
+  let strafeDir = enemy.strafeDir;
 
   if (aiState === STATE_CHASE && dist > 0) {
     const effectiveSpeed = ENEMY_BASE_SPEED * (1 - enemy.speedPenalty);
@@ -116,6 +119,37 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
     }
   }
 
+  // ── SHOOT: strafe perpendicular to player while firing ───────────────────
+  // The enemy side-steps along the axis perpendicular to the player→enemy
+  // vector.  This causes some player shots to miss, stretching the round
+  // toward the 30–60 s balance target.  The direction flips on arena walls.
+  if (aiState === STATE_SHOOT) {
+    // Perpendicular unit vector (rotate angle by 90°).
+    const px = -Math.sin(angle);  // perpendicular x
+    const py =  Math.cos(angle);  // perpendicular y
+
+    const strafeStep = ENEMY_STRAFE_SPEED * dt;
+    const nx = enemy.x + px * strafeStep * strafeDir;
+    const ny = enemy.y + py * strafeStep * strafeDir;
+
+    // Clamp and flip direction on wall contact.
+    if (arena) {
+      const clampedX = Math.max(MECH_RADIUS, Math.min(arena.width  - MECH_RADIUS, nx));
+      const clampedY = Math.max(MECH_RADIUS, Math.min(arena.height - MECH_RADIUS, ny));
+
+      // Flip strafe direction if we hit a horizontal or vertical wall.
+      if (clampedX !== nx || clampedY !== ny) {
+        strafeDir = -strafeDir;
+      }
+
+      ex = clampedX;
+      ey = clampedY;
+    } else {
+      ex = nx;
+      ey = ny;
+    }
+  }
+
   // ── SHOOT: fire on cooldown ───────────────────────────────────────────────
   let projectile = null;
   let nextCooldown = cooldown;
@@ -129,7 +163,7 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
       damage: ENEMY_PROJECTILE_DAMAGE,
       owner:  'enemy',
     });
-    nextCooldown = FIRE_COOLDOWN_MS;
+    nextCooldown = ENEMY_FIRE_COOLDOWN_MS;
   }
 
   const updatedEnemy = {
@@ -138,6 +172,7 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
     y:            ey,
     angle,
     aiState,
+    strafeDir,
     fireCooldown: nextCooldown,
   };
 

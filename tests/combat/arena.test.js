@@ -206,12 +206,17 @@ test('stepEnemy moves toward player in CHASE state', () => {
   assert.ok(enemy.x > e.x, `enemy should have moved right: ${enemy.x} vs ${e.x}`);
 });
 
-test('stepEnemy does not move in SHOOT state', () => {
-  const e = { ...createEnemy({ x: 500, y: 450 }), aiState: STATE_SHOOT };
+test('stepEnemy strafes perpendicular to player in SHOOT state', () => {
+  // Enemy at (500, 450), player directly to the right at (510, 450).
+  // angle = 0, so perpendicular = (0, 1): enemy strafes along Y axis.
+  const e = { ...createEnemy({ x: 500, y: 450 }), aiState: STATE_SHOOT, strafeDir: 1 };
   const player = { x: 510, y: 450, hp: PLAYER_MAX_HP };
   const arena = { width: ARENA_WIDTH, height: ARENA_HEIGHT };
   const { enemy } = stepEnemy(e, player, 1 / 60, arena);
-  assert.equal(enemy.x, 500, 'should not move in SHOOT state');
+  // Enemy should NOT have moved along X (no forward/backward chase in SHOOT).
+  assert.equal(enemy.x, 500, 'should not move along forward axis in SHOOT state');
+  // Enemy SHOULD have moved along Y (perpendicular strafe).
+  assert.ok(enemy.y !== e.y, `enemy should strafe along Y axis: was ${e.y}, now ${enemy.y}`);
 });
 
 test('stepEnemy clamps to arena wall in CHASE state', () => {

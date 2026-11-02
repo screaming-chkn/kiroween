@@ -337,8 +337,9 @@ export function drawHUD(ctx, state) {
  * @param {CameraState} _camera  (unused — overlay is in screen space)
  * @param {number} vpW           Viewport width in canvas pixels.
  * @param {number} vpH           Viewport height in canvas pixels.
+ * @param {boolean} [restartReady]  True once the grace period has elapsed.
  */
-export function drawOverlay(ctx, state, _camera, vpW, vpH) {
+export function drawOverlay(ctx, state, _camera, vpW, vpH, restartReady = false) {
   if (state.phase !== 'win' && state.phase !== 'lose') return;
 
   const isWin = state.phase === 'win';
@@ -372,25 +373,37 @@ export function drawOverlay(ctx, state, _camera, vpW, vpH) {
   ctx.fillText(subtitleText, cx, cy + 10);
 
   // ── Restart button box ─────────────────────────────────────────────────────
-  // Drawn purely visually; keyboard/click events wired in main.js.
+  // Only shown after the grace period has elapsed (BUG-1 fix).
+  // During the grace period a dimmed "…" placeholder keeps the layout stable.
   const btnW  = 220;
   const btnH  = 52;
   const btnX  = cx - btnW / 2;
   const btnY  = cy + 44;
 
-  // Button background
-  ctx.fillStyle   = isWin ? C.phosphorDim : '#3a0a0f';
-  ctx.fillRect(btnX, btnY, btnW, btnH);
+  if (restartReady) {
+    // Button background
+    ctx.fillStyle   = isWin ? C.phosphorDim : '#3a0a0f';
+    ctx.fillRect(btnX, btnY, btnW, btnH);
 
-  // Ember focus/hover ring (always visible as the only focusable element)
-  ctx.strokeStyle = C.ember;
-  ctx.lineWidth   = 2;
-  ctx.strokeRect(btnX, btnY, btnW, btnH);
+    // Ember focus/hover ring (always visible as the only focusable element)
+    ctx.strokeStyle = C.ember;
+    ctx.lineWidth   = 2;
+    ctx.strokeRect(btnX, btnY, btnW, btnH);
 
-  // Button label
-  ctx.fillStyle    = C.bone;
-  ctx.font         = `22px "VT323", monospace`;
-  ctx.textBaseline = 'middle';
-  ctx.textAlign    = 'center';
-  ctx.fillText('RESTART  [Enter / Space]', cx, btnY + btnH / 2);
+    // Button label
+    ctx.fillStyle    = C.bone;
+    ctx.font         = `22px "VT323", monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign    = 'center';
+    ctx.fillText('Press Enter or click to restart', cx, btnY + btnH / 2);
+  } else {
+    // Grace period — show a muted placeholder (no interactive affordance yet).
+    ctx.fillStyle    = C.ash;
+    ctx.globalAlpha  = 0.45;
+    ctx.font         = `22px "VT323", monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign    = 'center';
+    ctx.fillText('…', cx, btnY + btnH / 2);
+    ctx.globalAlpha  = 1;
+  }
 }
