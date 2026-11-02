@@ -7,7 +7,7 @@
   "scripts": {
     "test:engine":  "node tests/engine/loop.test.js && node tests/engine/camera.test.js && node tests/engine/input.test.js",
     "test:mech":    "node tests/mech/weight.test.js && node tests/mech/parts.test.js && node tests/mech/role.test.js",
-    "test:combat":  "node tests/combat/arena.test.js",
+    "test:combat":  "node tests/combat/arena.test.js && node tests/combat/integration.test.js",
     "test":         "npm run test:engine && npm run test:mech && npm run test:combat"
   },
   "license": "MIT"
