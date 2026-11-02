@@ -9,3 +9,9 @@
 - [x] 7. Stat bars, role tag, Overdraw and "Too heavy to walk." states (R3–R5)
 - [x] 8. localStorage save/restore (R6)
 - [ ] 9. Hex part display (R7)
+
+## Preview feedback 11/2 (SHOULDs, one UI concern per task)
+- [ ] 10. Stat chips ARM/SPD/DMG/SEN, "vs equipped", 14px non-italic text (R8)
+- [ ] 11. Overdraw line + stutter confirm on Deploy (R8)
+- [ ] 12. "cap from LEGS" + role tooltip (R9)
+- [ ] 13. Three-column layout, taller stat bars, reserved warning line, part hover border (R10)

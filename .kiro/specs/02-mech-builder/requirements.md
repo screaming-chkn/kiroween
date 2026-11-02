@@ -41,3 +41,19 @@ User story: As a player, I want to see how heavy my build is so I know how it wi
 ### R7 Hex parts
 - WHEN a cursed part is equipped THEN the system SHALL show its hex name, upside, downside and visual mark (candle, cracked glass, chain).
 - No hex SHALL remove or alter player input (steering rule).
+
+## Preview feedback 11/2 (SHOULDs)
+
+### R8 Readable stats
+- Stat chips SHALL use full words or unique codes (ARM SPD DMG SEN); deltas SHALL be labelled "vs equipped".
+- Part descriptions and tonnage/draw text SHALL be ≥ 14px, non-italic, ≥ 4.5:1 on panel.
+- WHEN the build is overdrawn THEN the garage SHALL show "Overdrawn: fire rate -X%"; WHEN Deploy is pressed with negative power THEN a confirm line "Weapons will stutter. Deploy anyway?" SHALL show (Deploy still allowed).
+
+### R9 Explain the numbers
+- The load readout SHALL say "cap from LEGS" next to used/cap, so a cap change (e.g. 80→110 when legs change) is explained.
+- The role tag SHALL have a one-line tooltip naming the parts that set it (e.g. "Role from: Back + Legs").
+
+### R10 Garage layout
+- At ≥ 1280 px wide the garage SHALL use three columns: slots | part list | mech preview + stats; stat bars ≥ 12px tall with 12px labels.
+- The warning line's height SHALL be reserved so the footer does not jump when a warning appears.
+- Parts SHALL show a bone border on hover.

@@ -57,3 +57,30 @@ User story: As a player, I want a clear end state so I know when the match is ov
 - HUD numbers (HP values) SHALL meet ≥ 7:1 contrast ratio against their background at all times.
 - All interactive elements on win/lose screens SHALL have a visible 2 px ember-outline focus indicator and be reachable by Tab.
 - Enemy and player projectiles SHALL differ by both color and shape so they are distinguishable without color alone.
+
+## Preview feedback 11/2 (UI review, musts first)
+
+### R8 End card (MUST)
+User story: As a player, I want a clear end card so I know how the round went and can choose what to do next.
+- WHEN the phase becomes win or lose THEN the system SHALL show a card on a solid panel (no static over it) titled VICTORY or DESTROYED (optional subtitle MISSION COMPLETE / MISSION FAILED), with one cause line and the time survived.
+- The card SHALL offer two buttons, RETRY and GARAGE; RETRY SHALL have default focus and Enter SHALL activate it.
+- WHEN RETRY is activated THEN a new match SHALL start with the same loadout; WHEN GARAGE is activated THEN the garage SHALL open.
+- The existing restart guard (1 s grace, stale-click ignore) SHALL apply to both buttons.
+- All card text SHALL fit inside its panel at 1280x800 and above (fixes the hint text overflowing its box).
+
+### R9 Fixed combat HUD (MUST)
+- The system SHALL draw a fixed HUD bottom-left in screen space with tabular numerals ≥ 20px at ≥ 7:1 contrast showing HP, EN (energy), a weapon cooldown ring and POWER state (OK, or STUTTER in ember).
+- The over-unit bars SHALL stay as secondary indicators; the enemy bar label SHALL not read "EN" (use "HP").
+
+### R10 Hit feedback (MUST)
+- WHEN a mech is hit THEN it SHALL flash white/ember for 80 ms and a small floating damage number SHALL rise and fade.
+- WHEN the player is hit THEN the screen SHALL kick 2–4 px; WHEN prefers-reduced-motion is set THEN the kick SHALL be off.
+- Enemy projectiles SHALL be larger than the player's and blood-red with a short trail.
+
+### R11 Bounds and camera (MUST)
+- The system SHALL clamp the player's whole body (centre ± radius) inside the arena wall.
+- The wall SHALL be a 2 px phosphor-dim line and the floor a faint grid, so outside reads as void.
+- WHEN a match starts THEN the camera SHALL frame the arena so both mechs are on screen at 1280x800, then follow the player.
+
+### R12 Stutter visible in arena (SHOULD)
+- WHEN the build is overdrawn THEN the HUD POWER tag SHALL pulse ember at ≤ 2 Hz and the cooldown ring SHALL visibly skip on stuttered shots.
