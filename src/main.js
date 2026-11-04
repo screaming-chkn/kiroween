@@ -241,8 +241,16 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       }
       prevPlayerHp = arenaState.player.hp;
 
-      // Follow camera — track player position.
-      const cameraResult = updateCamera(camera, arenaState.player, dt);
+      // Camera: pin to arena centre when arena fits the viewport; follow +
+      // clamp when the arena is larger than the viewport (R11).
+      const cameraResult = updateCamera(
+        camera,
+        arenaState.player,
+        dt,
+        arenaState.arena,
+        vpW,
+        vpH,
+      );
       camera = cameraResult.camera;
       shakeX = cameraResult.shakeX;
       shakeY = cameraResult.shakeY;

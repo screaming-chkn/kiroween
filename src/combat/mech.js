@@ -16,7 +16,7 @@
  *   clampMechToArena(mech, arena)              → Mech
  */
 
-import { BASE_SPEED, MECH_RADIUS } from './config.js';
+import { BASE_SPEED, MECH_RADIUS, MECH_CORNER_MARGIN } from './config.js';
 
 // ── createMech ────────────────────────────────────────────────────────────────
 
@@ -83,9 +83,11 @@ export function moveMech(mech, dir, dt, arena) {
   const nx = mech.x + ndx * effectiveSpeed * dt;
   const ny = mech.y + ndy * effectiveSpeed * dt;
 
-  // Clamp to arena, keeping the mech radius inside the wall (R1).
-  const cx = Math.max(MECH_RADIUS, Math.min(arena.width  - MECH_RADIUS, nx));
-  const cy = Math.max(MECH_RADIUS, Math.min(arena.height - MECH_RADIUS, ny));
+  // Clamp to arena using MECH_CORNER_MARGIN (R11): the HP bar (±80 wu) and
+  // aim barrel (50 wu) must not protrude past the wall at corners.
+  // MECH_CORNER_MARGIN ≥ MECH_RADIUS so the collision circle is also inside.
+  const cx = Math.max(MECH_CORNER_MARGIN, Math.min(arena.width  - MECH_CORNER_MARGIN, nx));
+  const cy = Math.max(MECH_CORNER_MARGIN, Math.min(arena.height - MECH_CORNER_MARGIN, ny));
 
   return { ...mech, x: cx, y: cy };
 }
@@ -110,12 +112,16 @@ export function aimMech(mech, worldTarget) {
  * Clamp a mech's position to stay within the arena walls.
  * Useful after any direct position assignment (e.g. spawn).
  *
+ * Uses MECH_CORNER_MARGIN (R11) so the HP bar and aim barrel never protrude
+ * past the wall, even at corners.  This is larger than MECH_RADIUS so the
+ * collision body is always inside the bounds too.
+ *
  * @param {Mech} mech
  * @param {{ width: number, height: number }} arena
  * @returns {Mech}
  */
 export function clampMechToArena(mech, arena) {
-  const x = Math.max(MECH_RADIUS, Math.min(arena.width  - MECH_RADIUS, mech.x));
-  const y = Math.max(MECH_RADIUS, Math.min(arena.height - MECH_RADIUS, mech.y));
+  const x = Math.max(MECH_CORNER_MARGIN, Math.min(arena.width  - MECH_CORNER_MARGIN, mech.x));
+  const y = Math.max(MECH_CORNER_MARGIN, Math.min(arena.height - MECH_CORNER_MARGIN, mech.y));
   return { ...mech, x, y };
 }

@@ -18,6 +18,8 @@ import {
   worldToScreen,
   screenToWorld,
   updateCamera,
+  pinArenaCentre,
+  clampToArena,
   lerp,
   clamp,
   seededRandom,
@@ -374,6 +376,127 @@ test('updateCamera with reducedMotion shake bounded at 2px', () => {
     assert.ok(Math.abs(shakeY) <= SHAKE_MAX_REDUCED,
       `shakeY=${shakeY} exceeds SHAKE_MAX_REDUCED=${SHAKE_MAX_REDUCED}`);
   }
+});
+
+// ── pinArenaCentre ────────────────────────────────────────────────────────────
+
+console.log('\nsrc/engine/camera.js — pinArenaCentre\n');
+
+test('pinArenaCentre sets camera to arena centre', () => {
+  const cam    = createCamera({ x: 0, y: 0 });
+  const arena  = { width: 1200, height: 900 };
+  const result = pinArenaCentre(cam, arena);
+  assert.ok(approxEq(result.x, 600), `x=${result.x}`);
+  assert.ok(approxEq(result.y, 450), `y=${result.y}`);
+});
+
+test('pinArenaCentre preserves other camera fields', () => {
+  const cam    = createCamera({ x: 0, y: 0, zoom: 0.75, trauma: 0.2 });
+  const result = pinArenaCentre(cam, { width: 800, height: 600 });
+  assert.ok(approxEq(result.zoom, 0.75));
+  assert.ok(approxEq(result.trauma, 0.2));
+});
+
+test('pinArenaCentre does not mutate input', () => {
+  const cam = createCamera({ x: 0, y: 0 });
+  pinArenaCentre(cam, { width: 400, height: 300 });
+  assert.ok(approxEq(cam.x, 0));
+  assert.ok(approxEq(cam.y, 0));
+});
+
+// ── clampToArena ──────────────────────────────────────────────────────────────
+
+console.log('\nsrc/engine/camera.js — clampToArena\n');
+
+test('clampToArena keeps camera inside arena when close to edge', () => {
+  // Arena 1200×900, zoom 1, viewport 800×600
+  // halfWorldW = 400, halfWorldH = 300 → clamp x in [400, 800], y in [300, 600]
+  const arena  = { width: 1200, height: 900 };
+  const cam    = createCamera({ x: 50, y: 50, zoom: 1 });
+  const result = clampToArena(cam, arena, 800, 600);
+  assert.ok(approxEq(result.x, 400), `x=${result.x}`);  // min x
+  assert.ok(approxEq(result.y, 300), `y=${result.y}`);  // min y
+});
+
+test('clampToArena clamps camera past far edge', () => {
+  const arena  = { width: 1200, height: 900 };
+  const cam    = createCamera({ x: 1200, y: 900, zoom: 1 });
+  const result = clampToArena(cam, arena, 800, 600);
+  assert.ok(approxEq(result.x, 800), `x=${result.x}`);  // max x = 1200-400
+  assert.ok(approxEq(result.y, 600), `y=${result.y}`);  // max y = 900-300
+});
+
+test('clampToArena allows camera to stay in mid-arena', () => {
+  const arena  = { width: 1200, height: 900 };
+  const cam    = createCamera({ x: 600, y: 450, zoom: 1 });
+  const result = clampToArena(cam, arena, 800, 600);
+  assert.ok(approxEq(result.x, 600), `x=${result.x}`);
+  assert.ok(approxEq(result.y, 450), `y=${result.y}`);
+});
+
+test('clampToArena pins to centre when arena narrower than viewport on an axis', () => {
+  // zoom 0.1 → viewport in world units = 8000 × 6000, arena 1200×900
+  // halfWorldW = 4000, halfWorldH = 3000 → minX > maxX → pin to centre
+  const arena  = { width: 1200, height: 900 };
+  const cam    = createCamera({ x: 0, y: 0, zoom: 0.1 });
+  const result = clampToArena(cam, arena, 800, 600);
+  assert.ok(approxEq(result.x, 600), `x=${result.x}`);
+  assert.ok(approxEq(result.y, 450), `y=${result.y}`);
+});
+
+test('clampToArena accounts for zoom (zoom 2 — viewport covers less world)', () => {
+  // zoom 2, viewport 800×600 → halfWorldW = 200, halfWorldH = 150
+  // clamp x in [200, 1000], y in [150, 750]
+  const arena  = { width: 1200, height: 900 };
+  const cam    = createCamera({ x: 0, y: 0, zoom: 2 });
+  const result = clampToArena(cam, arena, 800, 600);
+  assert.ok(approxEq(result.x, 200), `x=${result.x}`);
+  assert.ok(approxEq(result.y, 150), `y=${result.y}`);
+});
+
+test('clampToArena does not mutate input camera', () => {
+  const cam = createCamera({ x: 0, y: 0, zoom: 1 });
+  clampToArena(cam, { width: 1200, height: 900 }, 800, 600);
+  assert.ok(approxEq(cam.x, 0));
+  assert.ok(approxEq(cam.y, 0));
+});
+
+// ── updateCamera with arena bounds ────────────────────────────────────────────
+
+console.log('\nsrc/engine/camera.js — updateCamera (arena framing)\n');
+
+test('updateCamera pins to arena centre when arena fits viewport', () => {
+  // fitZoom = min(1280/1200, 800/900) * 0.95 ≈ 0.844 (arena fits at that zoom)
+  // At zoom 0.844: arenaScreenW = 1200*0.844 ≈ 1013 < 1280, fits.
+  const arena = { width: 1200, height: 900 };
+  const vpW   = 1280;
+  const vpH   = 800;
+  const zoom  = Math.min(vpW / arena.width, vpH / arena.height) * 0.95;
+  const cam   = createCamera({ x: 0, y: 0, zoom });
+  const { camera: next } = updateCamera(cam, { x: 200, y: 450 }, 1 / 60, arena, vpW, vpH);
+  // Should be pinned to arena centre, not following the target at (200, 450).
+  assert.ok(approxEq(next.x, 600, 0.01), `x=${next.x} expected 600`);
+  assert.ok(approxEq(next.y, 450, 0.01), `y=${next.y} expected 450`);
+});
+
+test('updateCamera follows + clamps when arena larger than viewport', () => {
+  // zoom 1 → arenaScreenW = 1200 > 800 → large-arena path.
+  const arena  = { width: 1200, height: 900 };
+  const vpW    = 800;
+  const vpH    = 600;
+  const cam    = createCamera({ x: 600, y: 450, zoom: 1 });
+  // Player way off at top-left corner — camera should clamp, not go to (0,0).
+  const { camera: next } = updateCamera(cam, { x: 10, y: 10 }, 10, arena, vpW, vpH);
+  // halfWorldW=400, halfWorldH=300 → min x=400, min y=300
+  assert.ok(next.x >= 400, `x=${next.x} should be ≥ 400`);
+  assert.ok(next.y >= 300, `y=${next.y} should be ≥ 300`);
+});
+
+test('updateCamera without arena falls back to plain follow', () => {
+  const cam = createCamera({ x: 0, y: 0 });
+  const { camera: next } = updateCamera(cam, { x: 100, y: 0 }, 1);
+  // dt=1 → t=1 → snaps to target
+  assert.ok(approxEq(next.x, 100), `x=${next.x}`);
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────

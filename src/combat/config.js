@@ -24,6 +24,16 @@ export const BASE_SPEED = 240;
 /** Collision / hit-test radius for mechs (world units). */
 export const MECH_RADIUS = 20;
 
+/**
+ * Extra margin added to the wall clamp so the HP bar (±80 wu) and aim barrel
+ * (MECH_RADIUS + 30 = 50 wu) stay fully inside the arena at corners (R11).
+ *
+ * Set to 80 world units = half the HP bar width, which is the largest
+ * protruding element.  The barrel tip is only 50 wu from the mech centre so
+ * it is always covered.
+ */
+export const MECH_CORNER_MARGIN = 80;
+
 // ── Projectiles ───────────────────────────────────────────────────────────────
 
 /** Speed of all projectiles in world units per second (R3). */

@@ -206,16 +206,92 @@ export function screenToWorld(sx, sy, cam, vpW, vpH, shakeX = 0, shakeY = 0) {
   };
 }
 
+// ── Arena framing helpers ─────────────────────────────────────────────────────
+
 /**
- * Apply one full camera tick: follow the target, then tick shake.
+ * Pin the camera to the arena centre when the whole arena fits the viewport
+ * at the current zoom level (i.e. the arena is not larger than the view).
+ *
+ * Returns a camera state whose (x, y) is the arena centre.
+ * This is a pure function — it does not check viewport size; the caller
+ * decides whether to call pin or clamp based on whether the arena fits.
+ *
+ * @param {CameraState} cam
+ * @param {{ width: number, height: number }} arena  Arena dimensions in world units.
+ * @returns {CameraState}
+ */
+export function pinArenaCentre(cam, arena) {
+  return { ...cam, x: arena.width / 2, y: arena.height / 2 };
+}
+
+/**
+ * Clamp the camera position so the viewport never shows area outside the
+ * arena walls — used when the arena is larger than the viewport at the
+ * current zoom.
+ *
+ * Half-viewport in world units = (vpSize / 2) / zoom.
+ * Camera centre must stay in [ halfVpW, arenaW − halfVpW ] × [ halfVpH, arenaH − halfVpH ].
+ * If the arena is narrower than the viewport (should not happen here but safe
+ * to handle), the camera is pinned to the arena centre on that axis.
+ *
+ * @param {CameraState} cam
+ * @param {{ width: number, height: number }} arena
+ * @param {number} vpW  Viewport width in pixels.
+ * @param {number} vpH  Viewport height in pixels.
+ * @returns {CameraState}
+ */
+export function clampToArena(cam, arena, vpW, vpH) {
+  const halfWorldW = vpW / 2 / cam.zoom;
+  const halfWorldH = vpH / 2 / cam.zoom;
+
+  const minX = halfWorldW;
+  const maxX = arena.width  - halfWorldW;
+  const minY = halfWorldH;
+  const maxY = arena.height - halfWorldH;
+
+  // If arena smaller than viewport on an axis, pin to centre on that axis.
+  const cx = minX >= maxX ? arena.width  / 2 : clamp(cam.x, minX, maxX);
+  const cy = minY >= maxY ? arena.height / 2 : clamp(cam.y, minY, maxY);
+
+  return { ...cam, x: cx, y: cy };
+}
+
+/**
+ * Apply one full camera tick: follow the target (or pin/clamp to arena when
+ * arena bounds are provided), then tick shake.
  * Convenience wrapper used by the game loop.
+ *
+ * When `arena` and `vpW`/`vpH` are supplied the function decides:
+ *   • arena fits viewport → pin to arena centre (no follow)
+ *   • arena larger than viewport → follow target, then clamp to arena bounds
  *
  * @param {CameraState} cam
  * @param {{ x: number, y: number }} target
  * @param {number} dt
+ * @param {{ width: number, height: number } | null} [arena]  Optional arena bounds.
+ * @param {number} [vpW]  Viewport width in pixels (required when arena supplied).
+ * @param {number} [vpH]  Viewport height in pixels (required when arena supplied).
  * @returns {{ camera: CameraState, shakeX: number, shakeY: number }}
  */
-export function updateCamera(cam, target, dt) {
-  const followed = followTarget(cam, target, dt);
+export function updateCamera(cam, target, dt, arena = null, vpW = 0, vpH = 0) {
+  let followed;
+
+  if (arena && vpW > 0 && vpH > 0) {
+    const arenaScreenW = arena.width  * cam.zoom;
+    const arenaScreenH = arena.height * cam.zoom;
+
+    if (arenaScreenW <= vpW && arenaScreenH <= vpH) {
+      // Arena fits — keep camera pinned on the arena centre.
+      followed = pinArenaCentre(cam, arena);
+    } else {
+      // Arena larger than viewport — follow player, then clamp.
+      const f = followTarget(cam, target, dt);
+      followed = clampToArena(f, arena, vpW, vpH);
+    }
+  } else {
+    // No arena bounds — plain follow (legacy path).
+    followed = followTarget(cam, target, dt);
+  }
+
   return tickShake(followed, dt);
 }
