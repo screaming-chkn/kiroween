@@ -56,11 +56,11 @@ export function drawWorld(ctx, state) {
   ctx.fillStyle = C.panel;
   ctx.fillRect(0, 0, width, height);
 
-  // ── Grid lines (subtle, every 80 world units) ───────────────────────────────
+  // ── Grid lines (faint, every 80 world units) ────────────────────────────────
   const GRID = 80;
-  ctx.strokeStyle = C.void;
+  ctx.strokeStyle = C.phosphorDim;
   ctx.lineWidth   = 1;
-  ctx.globalAlpha = 0.6;
+  ctx.globalAlpha = 0.12;
 
   for (let x = GRID; x < width; x += GRID) {
     ctx.beginPath();
@@ -77,22 +77,11 @@ export function drawWorld(ctx, state) {
 
   ctx.globalAlpha = 1;
 
-  // ── Border walls (solid thick rectangle) ────────────────────────────────────
-  const WALL = 6;
-  ctx.fillStyle = C.phosphorDim;
-  // Top
-  ctx.fillRect(0, 0, width, WALL);
-  // Bottom
-  ctx.fillRect(0, height - WALL, width, WALL);
-  // Left
-  ctx.fillRect(0, 0, WALL, height);
-  // Right
-  ctx.fillRect(width - WALL, 0, WALL, height);
-
-  // Bright inner edge highlight
-  ctx.strokeStyle = C.phosphor;
-  ctx.lineWidth   = 1.5;
-  ctx.strokeRect(WALL, WALL, width - WALL * 2, height - WALL * 2);
+  // ── Border wall — 2 px phosphor-dim stroke rectangle (R11) ──────────────────
+  ctx.strokeStyle = C.phosphorDim;
+  ctx.lineWidth   = 2;
+  // Inset by 1 px so the stroke sits wholly inside the arena rect.
+  ctx.strokeRect(1, 1, width - 2, height - 2);
 }
 
 // ── ENTITY layer ───────────────────────────────────────────────────────────────

@@ -20,5 +20,5 @@
 - [ ] 16. MUST Fixed bottom-left HUD: HP, EN, cooldown ring, POWER OK/STUTTER, ≥20px tabular, ≥7:1; enemy bar label "HP" (R9)
 - [ ] 17. MUST Hit feedback: 80 ms flash, floating damage numbers, 2–4 px player kick off under reduced motion (R10, closes task 13)
 - [ ] 18. MUST Enemy shots bigger, blood-red, short trail (R10)
-- [ ] 19. MUST Body clamp to wall (radius-aware) + 2 px dim wall + faint grid + start camera framing arena, with a clamp unit test (R11)
+- [x] 19. MUST Body clamp to wall (radius-aware) + 2 px dim wall + faint grid + start camera framing arena, with a clamp unit test (R11)
 - [ ] 20. SHOULD Overdraw stutter: pulsing POWER tag + skipping ring (R12)

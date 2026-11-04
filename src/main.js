@@ -129,12 +129,17 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   canvas.focus();
 
   // ── Camera ─────────────────────────────────────────────────────────────────
-  // Place camera on the arena centre initially; zoom so most of the arena fits.
+  // Zoom to fit the whole arena into the viewport (1280×800 reference).
+  // Uses the *actual* canvas size so it's correct on any display.
   const { width: aw, height: ah } = arenaState.arena;
+  const vpW0 = renderer.canvas.width  || 1280;
+  const vpH0 = renderer.canvas.height || 800;
+  // Leave a small margin (factor 0.95) so the wall stroke is never cropped.
+  const fitZoom = Math.min(vpW0 / aw, vpH0 / ah) * 0.95;
   let camera = createCamera({
     x:            aw / 2,
     y:            ah / 2,
-    zoom:         1,
+    zoom:         fitZoom,
     reducedMotion,
   });
   let shakeX = 0;

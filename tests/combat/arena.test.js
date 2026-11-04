@@ -23,6 +23,7 @@ import { applyDamage }                               from '../../src/combat/dama
 import { createProjectile, stepProjectile, hitTestCircle } from '../../src/combat/projectile.js';
 import { createEnemy, stepEnemy, STATE_CHASE, STATE_SHOOT } from '../../src/combat/enemy.js';
 import { createArena, updateArena }                  from '../../src/combat/arena.js';
+import { clampMechToArena, createMech }              from '../../src/combat/mech.js';
 import {
   MECH_RADIUS,
   PLAYER_MAX_HP,
@@ -484,6 +485,79 @@ test('updateArena player projectile wall-destroy is culled from list', () => {
   }
   const livePlayer = state.projectiles.filter(p => p.owner === 'player');
   assert.equal(livePlayer.length, 0, 'player projectile should be gone after crossing wall');
+});
+
+// ── Section I — clampMechToArena (R11) ────────────────────────────────────────
+
+console.log('\n── I. clampMechToArena — body clamp (R11) ──\n');
+
+const ARENA = { width: ARENA_WIDTH, height: ARENA_HEIGHT };
+
+function mech(x, y) {
+  return createMech({ id: 'test', x, y, hp: 100, maxHp: 100,
+                      speedPenalty: 0, owner: 'player' });
+}
+
+test('clampMechToArena: centre of arena is unchanged', () => {
+  const m = mech(ARENA_WIDTH / 2, ARENA_HEIGHT / 2);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.x, m.x);
+  assert.equal(c.y, m.y);
+});
+
+test('clampMechToArena: x < MECH_RADIUS is pulled to MECH_RADIUS', () => {
+  const m = mech(0, ARENA_HEIGHT / 2);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.x, MECH_RADIUS);
+});
+
+test('clampMechToArena: x > width − MECH_RADIUS is pulled to width − MECH_RADIUS', () => {
+  const m = mech(ARENA_WIDTH, ARENA_HEIGHT / 2);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.x, ARENA_WIDTH - MECH_RADIUS);
+});
+
+test('clampMechToArena: y < MECH_RADIUS is pulled to MECH_RADIUS', () => {
+  const m = mech(ARENA_WIDTH / 2, 0);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.y, MECH_RADIUS);
+});
+
+test('clampMechToArena: y > height − MECH_RADIUS is pulled to height − MECH_RADIUS', () => {
+  const m = mech(ARENA_WIDTH / 2, ARENA_HEIGHT);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.y, ARENA_HEIGHT - MECH_RADIUS);
+});
+
+test('clampMechToArena: far outside top-left corner is clamped to (MECH_RADIUS, MECH_RADIUS)', () => {
+  const m = mech(-999, -999);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.x, MECH_RADIUS);
+  assert.equal(c.y, MECH_RADIUS);
+});
+
+test('clampMechToArena: far outside bottom-right is clamped to (w−r, h−r)', () => {
+  const m = mech(99999, 99999);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.x, ARENA_WIDTH  - MECH_RADIUS);
+  assert.equal(c.y, ARENA_HEIGHT - MECH_RADIUS);
+});
+
+test('clampMechToArena: exactly on boundary is accepted unchanged', () => {
+  const m = mech(MECH_RADIUS, ARENA_HEIGHT - MECH_RADIUS);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.x, MECH_RADIUS);
+  assert.equal(c.y, ARENA_HEIGHT - MECH_RADIUS);
+});
+
+test('clampMechToArena: does not mutate other mech fields', () => {
+  const m = mech(-5, ARENA_HEIGHT / 2);
+  const c = clampMechToArena(m, ARENA);
+  assert.equal(c.hp,           m.hp);
+  assert.equal(c.maxHp,        m.maxHp);
+  assert.equal(c.speedPenalty, m.speedPenalty);
+  assert.equal(c.owner,        m.owner);
+  assert.equal(c.id,           m.id);
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────
