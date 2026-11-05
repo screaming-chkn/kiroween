@@ -65,9 +65,10 @@ export function createMech(cfg) {
  *                         - Direction vector; may be un-normalised or zero.
  * @param {number} dt      - Delta time in seconds.
  * @param {{ width: number, height: number }} arena
+ * @param {number} [speedMult=1] - Extra multiplier (e.g. dash burst at 3×).
  * @returns {Mech}         - New mech at updated position.
  */
-export function moveMech(mech, dir, dt, arena) {
+export function moveMech(mech, dir, dt, arena, speedMult = 1) {
   const { dx, dy } = dir;
   const len = Math.hypot(dx, dy);
 
@@ -79,7 +80,7 @@ export function moveMech(mech, dir, dt, arena) {
   const ndx = dx / len;
   const ndy = dy / len;
 
-  const effectiveSpeed = BASE_SPEED * (1 - mech.speedPenalty);
+  const effectiveSpeed = BASE_SPEED * (1 - mech.speedPenalty) * speedMult;
   const nx = mech.x + ndx * effectiveSpeed * dt;
   const ny = mech.y + ndy * effectiveSpeed * dt;
 

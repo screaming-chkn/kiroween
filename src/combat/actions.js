@@ -17,6 +17,7 @@
  *   move:  { dx: number, dy: number } | null,
  *   aim:   { x: number, y: number },
  *   fire:  boolean,
+ *   dash:  boolean,
  * }}
  *
  * The `move` vector is un-normalised here; moveMech() normalises internally
@@ -69,5 +70,10 @@ export function buildPlayerActions(inputState, camera, vpW, vpH, shakeX = 0, sha
   // ── Fire (LMB held) ─────────────────────────────────────────────────────────
   const fire = inputState.isPressed(ACTIONS.FIRE_PRIMARY);
 
-  return { move, aim, fire };
+  // ── Dash (Shift) ────────────────────────────────────────────────────────────
+  // True while Shift is held; arena.js applies a 100 ms input buffer so a
+  // slightly-early press still fires the dash the instant the cooldown clears.
+  const dash = inputState.isPressed(ACTIONS.DASH);
+
+  return { move, aim, fire, dash };
 }

@@ -28,3 +28,9 @@
 - [x] 22. Overhead HP-bar label readable on any fill: ≥12px bold, drawn above the bar with a 2px void stroke under the fill (task 10 polish, a11y rules 1 & 8)
 - [x] 23. STUTTER POWER tag pulse floor raised to 0.7 (0.7 + 0.3·pulse) so the word never dims below readable (task 20 polish, a11y rule 1)
 - [x] 24. Favicon: real favicon.svg in repo root + `<link rel="icon">` in index.html (removes 404)
+
+## feel 11/5 — combat feel (target: a winnable 60–120 s duel; keep tests green)
+- [x] 25. Enemy HP 900 → 400 (`ENEMY_MAX_HP`) so a clean build lands the kill inside the duel window (R5). Tests read `ENEMY_MAX_HP` symbolically, so they track the new value.
+- [x] 26. Enemy shot windup ~0.45 s: `ENEMY_SHOT_WINDUP_MS=450`; enemy enters a windup (telegraph flag `enemy.windupRemainingMs > 0`) before firing, projectile only spawns when the windup completes; red glow telegraph in `combatRenderer` (R4, a11y rules 4 & 6). Unit test: windup delays the shot by ~450 ms.
+- [x] 27. Real dash on Shift: 0.18 s burst at 3× move speed with a 100 ms input buffer; cooldown by weight class — light 2.5 s (loadPct ≤ 80) / mid 3.5 s (≤ 100) / heavy 4.5 s (> 100), mirroring the weight.js 80/100 bands; `dashRemainingMs`/`dashCooldownMs` on the player (R2). Expect-style test asserts measured dash duration ≈ 0.18 s and the cooldown bands.
+- [x] 28. Overdraw actually slows fire rate: when the build is overdrawn, the player fire cooldown is multiplied by `1 + overdrawPenaltyPct/100` (fire rate scaled by output/draw) through the arena fire path (R4). Test: shots-per-second is strictly slower under overdraw than a balanced build.

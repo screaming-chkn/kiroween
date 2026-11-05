@@ -37,7 +37,7 @@ import {
   powerPulseAlpha,
   stutterRingFraction,
 } from './hud.js';
-import { FIRE_COOLDOWN_MS } from './config.js';
+import { FIRE_COOLDOWN_MS, ENEMY_SHOT_WINDUP_MS } from './config.js';
 import { projectileDrawRadius, projectileTrail } from './projectile.js';
 import {
   flashActive,
@@ -193,6 +193,11 @@ function drawPlayerMech(ctx, mech) {
 function drawEnemyMech(ctx, mech) {
   const { x, y, angle } = mech;
 
+  // feel 11/5: red shot telegraph. While the enemy is winding up its shot
+  // (windupRemainingMs > 0) draw a blood-red halo that grows + brightens as
+  // the windup completes, giving the player a readable tell to dash/break LOS.
+  drawWindupTelegraph(ctx, x, y, mech.windupRemainingMs);
+
   // Body — equilateral triangle pointing in aim direction
   drawPolygon(ctx, x, y, MECH_R, 3, angle - Math.PI / 2);
   ctx.fillStyle   = C.blood;
@@ -214,6 +219,46 @@ function drawEnemyMech(ctx, mech) {
 
   // R10 hit flash — brief white overlay on the body (ramps out over 80 ms).
   drawHitFlash(ctx, x, y, angle, 3, -Math.PI / 2, mech.flash);
+}
+
+/**
+ * Draw the enemy shot telegraph (feel 11/5 feel pass).
+ *
+ * While the enemy winds up a shot, `windupRemainingMs` counts down from
+ * ENEMY_SHOT_WINDUP_MS to 0. We draw a soft blood-red ring whose radius and
+ * alpha grow as the windup completes (progress 0 → 1), so the glow is faint
+ * at the start and strongest just before the projectile spawns.
+ *
+ * This is a single monotonic ramp per shot — it does not blink — so it stays
+ * within the flicker cap (accessibility rule 4) and the threat is signalled by
+ * shape/size + sound as well as colour (accessibility rule 6).
+ *
+ * No-op when the enemy is not winding up (windupRemainingMs ≤ 0).
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} windupRemainingMs
+ */
+function drawWindupTelegraph(ctx, cx, cy, windupRemainingMs) {
+  const remaining = windupRemainingMs ?? 0;
+  if (remaining <= 0) return;
+
+  // progress: 0 at the start of the windup, →1 as it finishes.
+  const progress = Math.min(1, Math.max(0, 1 - remaining / ENEMY_SHOT_WINDUP_MS));
+
+  // Ring grows from ~1.1× to ~1.9× the mech radius; alpha ramps 0.15 → 0.5.
+  const radius = MECH_R * (1.1 + 0.8 * progress);
+  const alpha  = 0.15 + 0.35 * progress;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = C.blood;
+  ctx.lineWidth   = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 /**

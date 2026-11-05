@@ -22,6 +22,7 @@ import {
   ENEMY_START_Y,
   MECH_RADIUS,
   ENEMY_FIRE_COOLDOWN_MS,
+  ENEMY_SHOT_WINDUP_MS,
   ARENA_WIDTH,
   ARENA_HEIGHT,
 } from './config.js';
@@ -57,6 +58,7 @@ export function createEnemy(cfg = {}) {
     maxHp:        cfg.maxHp        ?? ENEMY_MAX_HP,
     speedPenalty: cfg.speedPenalty ?? 0,
     fireCooldown: 0,               // ms — starts ready to shoot
+    windupRemainingMs: 0,          // ms — shot telegraph; >0 means winding up
     aiState:      STATE_CHASE,
     strafeDir:    1,               // +1 or -1 — flips on arena wall bounce
     owner:        'enemy',
@@ -150,30 +152,49 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
     }
   }
 
-  // ── SHOOT: fire on cooldown ───────────────────────────────────────────────
+  // ── SHOOT: windup → fire on cooldown (feel 11/5 feel pass) ──────────────
+  // When in SHOOT with the fire cooldown ready, the enemy first spends
+  // ENEMY_SHOT_WINDUP_MS "winding up": windupRemainingMs counts down and the
+  // renderer reads it as a red telegraph glow. The projectile only spawns the
+  // tick the windup completes, giving the player a readable tell. Leaving
+  // SHOOT (or not yet ready) cancels any windup.
   let projectile = null;
   let nextCooldown = cooldown;
+  let windup = enemy.windupRemainingMs ?? 0;
 
-  if (aiState === STATE_SHOOT && cooldown === 0) {
-    projectile = createProjectile({
-      id:     `eproj-${projIdSeed}`,
-      x:      ex,
-      y:      ey,
-      angle,
-      damage: ENEMY_PROJECTILE_DAMAGE,
-      owner:  'enemy',
-    });
-    nextCooldown = ENEMY_FIRE_COOLDOWN_MS;
+  if (aiState === STATE_SHOOT) {
+    if (windup > 0) {
+      // Mid-windup: tick it down. Fire the instant it reaches 0.
+      windup = Math.max(0, windup - dt * 1000);
+      if (windup === 0) {
+        projectile = createProjectile({
+          id:     `eproj-${projIdSeed}`,
+          x:      ex,
+          y:      ey,
+          angle,
+          damage: ENEMY_PROJECTILE_DAMAGE,
+          owner:  'enemy',
+        });
+        nextCooldown = ENEMY_FIRE_COOLDOWN_MS;
+      }
+    } else if (cooldown === 0) {
+      // Cooldown ready and not yet winding up → begin the telegraph.
+      windup = ENEMY_SHOT_WINDUP_MS;
+    }
+  } else {
+    // Not in SHOOT — abort any pending windup.
+    windup = 0;
   }
 
   const updatedEnemy = {
     ...enemy,
-    x:            ex,
-    y:            ey,
+    x:                 ex,
+    y:                 ey,
     angle,
     aiState,
     strafeDir,
-    fireCooldown: nextCooldown,
+    fireCooldown:      nextCooldown,
+    windupRemainingMs: windup,
   };
 
   return { enemy: updatedEnemy, projectile };

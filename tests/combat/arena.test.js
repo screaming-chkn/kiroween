@@ -184,10 +184,24 @@ test('stepEnemy SHOOT→CHASE when player exceeds range + hysteresis', () => {
 });
 
 test('stepEnemy fires projectile when in SHOOT state with cooldown 0', () => {
+  // feel 11/5: firing now runs through a ~450 ms windup telegraph. The first
+  // SHOOT tick with cooldown 0 only STARTS the windup (no projectile yet); the
+  // shot spawns the tick the windup completes.
   const e = { ...createEnemy({ x: 500, y: 450 }), aiState: STATE_SHOOT, fireCooldown: 0 };
   const player = { x: 500 + 10, y: 450, hp: PLAYER_MAX_HP };
-  const { projectile } = stepEnemy(e, player, 1 / 60);
-  assert.ok(projectile !== null, 'should produce a projectile');
+
+  // Tick 1: starts the windup, no projectile.
+  let r = stepEnemy(e, player, 1 / 60);
+  assert.equal(r.projectile, null, 'first SHOOT tick starts windup, does not fire');
+  assert.ok(r.enemy.windupRemainingMs > 0, 'windup telegraph should be active');
+
+  // Advance past the windup, verifying a projectile eventually spawns.
+  let projectile = null;
+  for (let i = 0; i < 60 && projectile === null; i++) {
+    r = stepEnemy(r.enemy, player, 1 / 60);
+    if (r.projectile) projectile = r.projectile;
+  }
+  assert.ok(projectile !== null, 'should produce a projectile after windup');
   assert.equal(projectile.owner, 'enemy');
   assert.ok(projectile.damage > 0);
 });

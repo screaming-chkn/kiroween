@@ -76,8 +76,13 @@ export const ENEMY_FIRE_COOLDOWN_MS = 1500;
 /** Starting hit-points for the player mech (R5). */
 export const PLAYER_MAX_HP = 300;
 
-/** Starting hit-points for the enemy bot (R5). */
-export const ENEMY_MAX_HP  = 900;
+/**
+ * Starting hit-points for the enemy bot (R5).
+ *
+ * feel 11/5 feel pass: lowered 900 → 400 so a clean player build lands the
+ * kill inside the 60–120 s "winnable duel" target instead of grinding.
+ */
+export const ENEMY_MAX_HP  = 400;
 
 // ── Enemy AI ──────────────────────────────────────────────────────────────────
 
@@ -103,6 +108,73 @@ export const ENEMY_BASE_SPEED = 160;
  * some player shots miss, stretching the round toward the 30-60 s target.
  */
 export const ENEMY_STRAFE_SPEED = 90;
+
+/**
+ * Enemy shot windup in milliseconds (feel 11/5 feel pass, R4).
+ *
+ * When the enemy is in SHOOT state and its fire cooldown is ready it first
+ * enters a ~0.45 s WINDUP: `enemy.windupRemainingMs` counts down and the
+ * renderer reads `windupRemainingMs > 0` to draw a red telegraph glow. The
+ * projectile only spawns the tick the windup completes, giving the player a
+ * readable "tell" to dash or break line-of-sight before incoming fire.
+ */
+export const ENEMY_SHOT_WINDUP_MS = 450;
+
+// ── Dash (feel 11/5 feel pass, R2) ───────────────────────────────────────────
+
+/**
+ * Dash burst duration in milliseconds. While `player.dashRemainingMs > 0` the
+ * player moves at DASH_SPEED_MULT × their normal (penalty-adjusted) speed.
+ */
+export const DASH_DURATION_MS = 180;
+
+/** Speed multiplier applied to movement during a dash burst. */
+export const DASH_SPEED_MULT = 3;
+
+/**
+ * Input-buffer window in milliseconds for the DASH action. A DASH press is
+ * honoured if it lands within this window before the cooldown becomes ready,
+ * so a slightly-early tap still fires the dash the instant it is available.
+ */
+export const DASH_BUFFER_MS = 100;
+
+/**
+ * Dash cooldown in milliseconds by build weight class (light / mid / heavy).
+ *
+ * Weight class is derived from the loadout `loadPct` (02-mech-builder weight
+ * curve):
+ *   • light : loadPct ≤ 80          → penalty-free band          → 2500 ms
+ *   • mid   : 80 < loadPct ≤ 100    → first speed-penalty band    → 3500 ms
+ *   • heavy : loadPct > 100         → heavy / overweight band      → 4500 ms
+ *
+ * The thresholds mirror weight.js (SOFT_LOW = 80, SOFT_HIGH = 100) so the dash
+ * feel tracks the same "the heavier you build, the sluggisher you move" curve.
+ */
+export const DASH_COOLDOWN_MS = Object.freeze({
+  light: 2500,
+  mid:   3500,
+  heavy: 4500,
+});
+
+/**
+ * Map a loadout `loadPct` to its dash weight class.
+ * @param {number} loadPct
+ * @returns {'light' | 'mid' | 'heavy'}
+ */
+export function dashWeightClass(loadPct = 0) {
+  if (loadPct <= 80)  return 'light';
+  if (loadPct <= 100) return 'mid';
+  return 'heavy';
+}
+
+/**
+ * Dash cooldown (ms) for a given loadout `loadPct`.
+ * @param {number} loadPct
+ * @returns {number}
+ */
+export function dashCooldownForLoad(loadPct = 0) {
+  return DASH_COOLDOWN_MS[dashWeightClass(loadPct)];
+}
 
 // ── Spawn positions ───────────────────────────────────────────────────────────
 

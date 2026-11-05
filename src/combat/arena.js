@@ -27,11 +27,16 @@ import {
   FIRE_COOLDOWN_MS,
   PLAYER_START_X,
   PLAYER_START_Y,
+  DASH_DURATION_MS,
+  DASH_SPEED_MULT,
+  DASH_BUFFER_MS,
+  dashCooldownForLoad,
 } from './config.js';
 import { createMech, moveMech, aimMech } from './mech.js';
 import { createEnemy, stepEnemy }        from './enemy.js';
 import { createProjectile, stepProjectile, hitTestCircle } from './projectile.js';
 import { applyDamage }                   from './damage.js';
+import { overdrawPenaltyPct }            from '../ui/garage.js';
 import {
   createFlash,
   stepFlash,
@@ -92,6 +97,26 @@ export function createArena(loadoutTotals = {}, stats = {}) {
   player.energy       = stats.playerEnergy ?? player.maxEnergy;
   player.powerBalance = loadoutTotals.balance ?? 0;
 
+  // ── Dash state (feel 11/5 feel pass, R2) ──────────────────────────────────
+  // dashRemainingMs > 0 → mid-burst (3× speed). dashCooldownMs > 0 → on
+  // cooldown. dashBufferMs holds a recent DASH press so a slightly-early tap
+  // still fires the instant the cooldown clears. dashCooldownBaseMs is the
+  // full cooldown for this build's weight class (light/mid/heavy by loadPct).
+  player.dashRemainingMs   = 0;
+  player.dashCooldownMs    = 0;
+  player.dashBufferMs      = 0;
+  player.dashCooldownBaseMs = dashCooldownForLoad(loadoutTotals.loadPct ?? 0);
+
+  // ── Overdraw fire-rate penalty (feel 11/5 feel pass, R4) ──────────────────
+  // When the build is overdrawn (powerDraw > powerOut) weapons stutter: the
+  // player fire cooldown is multiplied by (1 + penalty) where penalty matches
+  // the garage readout overdrawPenaltyPct / 100. Stored once at match start.
+  const _penaltyPct = overdrawPenaltyPct(
+    loadoutTotals.powerOut ?? 0,
+    loadoutTotals.powerDraw ?? 0,
+  );
+  player.fireCooldownMult = 1 + _penaltyPct / 100;
+
   const enemy = createEnemy({
     speedPenalty: loadoutTotals.enemySpeedPenalty ?? 0,
   });
@@ -138,10 +163,45 @@ export function updateArena(state, actions, dt) {
   const { arena } = state;
   const act = actions ?? {};
 
+  // ── 0. Dash timers (feel 11/5 feel pass, R2) ─────────────────────────────
+  // Tick dash burst + cooldown, maintain the input buffer, and start a dash
+  // the instant a buffered DASH press meets a ready cooldown. The burst then
+  // multiplies move speed by DASH_SPEED_MULT for its duration.
+  const prev = state.player;
+  const dtMs = dt * 1000;
+
+  let dashRemainingMs = Math.max(0, (prev.dashRemainingMs ?? 0) - dtMs);
+  let dashCooldownMs  = Math.max(0, (prev.dashCooldownMs  ?? 0) - dtMs);
+  const dashBaseMs    = prev.dashCooldownBaseMs ?? 0;
+
+  // Input buffer: a fresh press refills it; otherwise it decays.
+  let dashBufferMs = act.dash
+    ? DASH_BUFFER_MS
+    : Math.max(0, (prev.dashBufferMs ?? 0) - dtMs);
+
+  // Start a dash when buffered + off cooldown + not already mid-burst.
+  if (dashBufferMs > 0 && dashCooldownMs === 0 && dashRemainingMs === 0) {
+    dashRemainingMs = DASH_DURATION_MS;
+    dashCooldownMs  = dashBaseMs;
+    dashBufferMs    = 0;
+  }
+
+  const dashing   = dashRemainingMs > 0;
+  const speedMult = dashing ? DASH_SPEED_MULT : 1;
+
   // ── 1. Move player (R2) ───────────────────────────────────────────────────
   let player = act.move
-    ? moveMech(state.player, act.move, dt, arena)
+    ? moveMech(state.player, act.move, dt, arena, speedMult)
     : state.player;
+
+  // Carry the dash timers forward onto the (possibly moved) player object.
+  player = {
+    ...player,
+    dashRemainingMs,
+    dashCooldownMs,
+    dashBufferMs,
+    dashCooldownBaseMs: dashBaseMs,
+  };
 
   // ── 2. Aim player (R2) ───────────────────────────────────────────────────
   if (act.aim) {
@@ -158,6 +218,9 @@ export function updateArena(state, actions, dt) {
   };
 
   // ── 4. Player fire (R3): LMB + cooldown elapsed ───────────────────────────
+  // feel 11/5: an overdrawn build stutters — the fire cooldown is scaled by
+  // player.fireCooldownMult (1 + overdrawPenaltyPct/100), so overdraw fires
+  // strictly slower than a balanced build. Defaults to 1 when not overdrawn.
   let newProjectiles = [];
   if (act.fire && player.fireCooldown === 0) {
     newProjectiles.push(createProjectile({
@@ -168,7 +231,8 @@ export function updateArena(state, actions, dt) {
       damage: PLAYER_PROJECTILE_DAMAGE,
       owner:  'player',
     }));
-    player = { ...player, fireCooldown: FIRE_COOLDOWN_MS };
+    const fireMult = player.fireCooldownMult ?? 1;
+    player = { ...player, fireCooldown: FIRE_COOLDOWN_MS * fireMult };
   }
 
   // ── 5. Enemy AI tick (R4) ────────────────────────────────────────────────
