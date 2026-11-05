@@ -12,7 +12,7 @@
  * report to BOTH:
  *
  *   • tests/combat/BALANCE.md            (in-repo, committed artifact)
- *   • (team copy) BALANCE.md (boss hand-off path)
+ *   • process.env.BALANCE_BOSS_PATH       (optional second copy for hand-off)
  *
  * Report only — it never retunes combat numbers.
  */
@@ -58,9 +58,9 @@ const report = buildReport(agg, meta);
 
 // ── Write to both targets ──────────────────────────────────────────────────────
 const repoPath = resolve(__dirname, 'BALANCE.md');
-const bossPath = '(team copy) BALANCE.md';
+const bossPath = process.env.BALANCE_BOSS_PATH || '';
 
-const targets = [repoPath, bossPath];
+const targets = [repoPath, ...(bossPath ? [bossPath] : [])];
 for (const target of targets) {
   try {
     mkdirSync(dirname(target), { recursive: true });
