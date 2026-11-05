@@ -6,5 +6,5 @@
 - [x] 4. Follow camera with motion cap (R3)
 - [x] 5. Layered renderer stub (R3)
 - [x] 6. Audio buses with volume controls (R4)
-- [ ] 7. Tests for loop math and tap/hold (R1, R2)
+- [x] 7. Tests for loop math and tap/hold (R1, R2)
 - [ ] 8. Deploy-to-match under 30 s check (R5)

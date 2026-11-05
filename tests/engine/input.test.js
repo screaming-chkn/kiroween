@@ -275,6 +275,49 @@ test('F hold well above threshold → hold', () => {
   assert.equal(state.consume(ACTIONS.WINGMAN), 'hold');
 });
 
+test('F maps to the WINGMAN action', () => {
+  assert.equal(KEY_TO_ACTION['f'], ACTIONS.WINGMAN);
+});
+
+test('F tap is a Follow-class order (tap, strictly below threshold)', () => {
+  const state = createInputState();
+  state.onKeyDown(fakeKey('f', 0));
+  state.onKeyUp(fakeKey('f', DEFAULT_HOLD_MS - 1));   // 249ms → Follow
+  const order = state.consume(ACTIONS.WINGMAN);
+  assert.equal(order, 'tap', 'tap classifies as the Follow order');
+});
+
+test('F hold is a Hold/Capture order (hold, at/above threshold)', () => {
+  const state = createInputState();
+  state.onKeyDown(fakeKey('f', 0));
+  state.onKeyUp(fakeKey('f', DEFAULT_HOLD_MS));       // 250ms → Hold/Capture
+  const order = state.consume(ACTIONS.WINGMAN);
+  assert.equal(order, 'hold', 'hold classifies as the Hold/Capture order');
+});
+
+test('F consume clears the pending order (returned exactly once)', () => {
+  const state = createInputState();
+  state.onKeyDown(fakeKey('f', 0));
+  state.onKeyUp(fakeKey('f', 100));                   // Follow
+  assert.equal(state.consume(ACTIONS.WINGMAN), 'tap');
+  assert.equal(state.consume(ACTIONS.WINGMAN), null); // cleared
+});
+
+test('F case-insensitive: capital F still emits a wingman order', () => {
+  const state = createInputState();
+  state.onKeyDown(fakeKey('F', 0));
+  state.onKeyUp(fakeKey('F', 100));
+  assert.equal(state.consume(ACTIONS.WINGMAN), 'tap');
+});
+
+test('consume returns null before an F press completes (while still held)', () => {
+  const state = createInputState();
+  state.onKeyDown(fakeKey('f', 0));
+  // No keyup yet: nothing to consume, but the key reads as pressed.
+  assert.equal(state.isPressed(ACTIONS.WINGMAN), true);
+  assert.equal(state.consume(ACTIONS.WINGMAN), null);
+});
+
 // ── createInputState — mouse ──────────────────────────────────────────────────
 
 console.log('\nsrc/engine/input.js — createInputState (mouse)\n');
