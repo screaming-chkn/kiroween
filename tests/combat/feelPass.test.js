@@ -3,10 +3,16 @@
  *
  * Expect-style unit tests for the feel 11/5 combat feel pass:
  *
- *   1) Enemy HP (feel-pass 11/5): 2900 → 1400 so a real duel lands inside
- *      the 60–120 s winnable window (baseline perfect-lead TTK ~25 s =
- *      1400/17dmg/0.3s) instead of grinding, paired with ENEMY_PROJECTILE_DAMAGE
- *      35 → 20 so incoming fire reads as readable pressure, not a punish.
+ *   1) Enemy HP: owner GO LEVER 2 cut PLAYER_PROJECTILE_DAMAGE 17 → 14; the
+ *      LEVER 1 pass (11/5 continue) set ENEMY_MAX_HP back to 2920. At 2880 sim2
+ *      showed BOTH M2 strafe-no-dash AND M3 strafe+dash WIN — the fight ended
+ *      short enough that dash never split the outcome. At 2920 sim2 shows M2
+ *      LOSE at 68.5 s and M3 LOSE at 70.3 s, the no-dash-can-lose side of the
+ *      window, so a dash-on-windup player banks survivability to land the
+ *      finishing shots while a passive no-dash player still LOSES.
+ *      Baseline perfect-lead TTK is now ~63 s (2920/14dmg/0.3s).
+ *      ENEMY_PROJECTILE_DAMAGE stays 20 so incoming fire reads as readable
+ *      pressure, not a punish.
  *   2) Enemy shot windup (~0.45 s) delays the projectile.
  *   3) Real dash on Shift: ~0.18 s burst at 3× speed, cooldown by weight class.
  *   4) Overdraw slows fire rate: shots-per-second drops under overdraw.
@@ -21,6 +27,7 @@ import assert from 'node:assert/strict';
 
 import {
   ENEMY_MAX_HP,
+  PLAYER_PROJECTILE_DAMAGE,
   ENEMY_SHOT_WINDUP_MS,
   ENEMY_FIRE_RANGE,
   FIRE_COOLDOWN_MS,
@@ -61,10 +68,14 @@ const DT_MS = DT * 1000;  // ≈ 16.667 ms
 
 // ── 1. Enemy HP ──────────────────────────────────────────────────────────────
 
-console.log('\n── 1. Enemy HP (feel-pass: 2900 → 1400) ──\n');
+console.log('\n── 1. Enemy HP & player damage (owner GO LEVER 2) ──\n');
 
-test('ENEMY_MAX_HP is 1400 (feel-pass, was 2900)', () => {
-  assert.equal(ENEMY_MAX_HP, 1400);
+test('PLAYER_PROJECTILE_DAMAGE is 14 (owner GO LEVER 2, was 17)', () => {
+  assert.equal(PLAYER_PROJECTILE_DAMAGE, 14);
+});
+
+test('ENEMY_MAX_HP is 2920 (LEVER 1, was 2880)', () => {
+  assert.equal(ENEMY_MAX_HP, 2920);
 });
 
 test('createEnemy starts at ENEMY_MAX_HP', () => {

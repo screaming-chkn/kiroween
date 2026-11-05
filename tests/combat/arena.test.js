@@ -371,14 +371,14 @@ test('scripted sim: sustained fire → enemy dead → win', () => {
     },
   };
 
-  // feel-pass (11/5, owner GO): ENEMY_MAX_HP is 1400 and player damage
-  // is 17. At point-blank the player out-damages the enemy, but its DPS
-  // (17 / 0.3 s ≈ 57/s → ~25 s to grind 1400) can still trail the enemy
-  // draining the player's 300 HP, so the raw sustained-fire duel might LOSE. To
-  // keep this a "fire finishes the kill" assertion without reversing the HP
-  // lever, soften the enemy most of the way with applyDamage (symbolically, so
-  // it tracks any future HP/damage retune), then let sustained fire land the
-  // finishing blows well before the player can die.
+  // LEVER 1 (11/5 continue): ENEMY_MAX_HP is 2920 and player damage
+  // is 14. At point-blank the player out-damages the enemy, but its DPS
+  // (14 / 0.3 s ≈ 47/s → ~63 s to grind 2920) trails the enemy draining the
+  // player's 300 HP, so the raw sustained-fire duel would LOSE. To keep this a
+  // "fire finishes the kill" assertion without reversing the HP lever, soften
+  // the enemy most of the way with applyDamage (symbolically, so it tracks any
+  // future HP/damage retune), then let sustained fire land the finishing blows
+  // well before the player can die.
   state = {
     ...state,
     enemy: applyDamage(state.enemy, ENEMY_MAX_HP - PLAYER_PROJECTILE_DAMAGE * 3),

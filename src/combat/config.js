@@ -58,14 +58,19 @@ export const ENEMY_PROJECTILE_RADIUS = 9;
 /**
  * Damage dealt by a single player projectile.
  *
- * Balance retune LEVER 3 (light, 11/5c): 20 → 17. A small DPS cut (~15%) paired
- * with the lapse-movement-freeze (harness) and the ENEMY_MAX_HP 3600 → 3300
- * offset below. The freeze alone pushed win rates off 100%; this light damage
- * trim widens the loss share without blowing medians past 120 s, and the HP cut
- * keeps baseline perfect-lead TTK near ~58 s (3300 / 17 × 0.3 s) so medians stay
- * ~100–115 s. feel windup/dash/overdraw untouched.
+ * owner GO LEVER 2 (11/5 continue): 17 → 14. At 17 dmg with ENEMY_MAX_HP
+ * 3600, sim2 showed BOTH M2 strafe-no-dash AND M3 strafe+dash LOSE ~68–70 s in
+ * with <100 enemy HP left — dash never tipped a win because the fight ended a
+ * few shots short of the kill. Cutting per-shot damage ~18% stretches the
+ * fight so a dash-on-windup player accumulates survivability (break
+ * line-of-sight off the telegraph) long enough to land those last shots, while
+ * a passive strafe-no-dash player's extra misses still let the enemy's kill
+ * clock win. Paired with the ENEMY_MAX_HP 3600 → 3400 trim below so a dashing
+ * player can still finish inside ~60–100 s. feel windup (450 ms), fire CD
+ * (1500 enemy / 300 player), the dash table, and ENEMY_PROJECTILE_DAMAGE (20)
+ * are all untouched.
  */
-export const PLAYER_PROJECTILE_DAMAGE = 17;
+export const PLAYER_PROJECTILE_DAMAGE = 14;
 
 /**
  * Damage dealt by a single enemy projectile.
@@ -101,18 +106,19 @@ export const PLAYER_MAX_HP = 300;
 /**
  * Starting hit-points for the enemy bot (R5).
  *
- * feel-pass (11/5, owner GO): lowered 2900 → 1400. The 2900 value was
- * tuned against a perfect-lead harness player and made a real duel a grind —
- * baseline perfect-lead TTK sat near ~51 s (2900 / 17 × 0.3 s) and medians
- * drifted toward the 120 s ceiling. Halving HP to 1400 brings baseline
- * perfect-lead TTK to ~25 s (1400 / 17 × 0.3 s); with misses, strafing, and
- * projectile travel real duels land comfortably inside the 60–120 s winnable
- * window and read as a decisive kill rather than a slog. Paired with the
- * ENEMY_PROJECTILE_DAMAGE 35 → 20 cut above. Windup (450 ms),
- * ENEMY_FIRE_COOLDOWN_MS (1500), and the dash table are untouched (feel feel
- * preserved).
+ * LEVER 1 (11/5 continue): set back to 2920, keeping
+ * PLAYER_PROJECTILE_DAMAGE at 14. At 2880 sim2 showed BOTH M2 strafe-no-dash
+ * AND M3 strafe+dash WIN — the fight ended short enough that dash never split
+ * the outcome, so the dash table could never pay off. At 2920 sim2 shows M2
+ * LOSE at 68.5 s and M3 LOSE at 70.3 s: this is the no-dash-can-lose side of
+ * the window, so a passive no-dash player loses while a dash-on-windup player
+ * banks the survivability to land the finishing shots. Only LEVER 1 moved —
+ * PLAYER_PROJECTILE_DAMAGE (14), ENEMY_PROJECTILE_DAMAGE (20),
+ * ENEMY_SHOT_WINDUP_MS (450), FIRE_COOLDOWN_MS, the dash table, Scout, and
+ * possession are all untouched. Baseline perfect-lead TTK is now ~63 s
+ * (2920 / 14dmg × 0.3 s) before misses/travel.
  */
-export const ENEMY_MAX_HP  = 1400;
+export const ENEMY_MAX_HP  = 2920;
 
 // ── Enemy AI ──────────────────────────────────────────────────────────────────
 
