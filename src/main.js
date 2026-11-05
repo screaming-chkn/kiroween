@@ -28,6 +28,7 @@ import {
   LAYERS,
 }                              from './engine/render.js';
 import { mountGarage }         from './ui/garage.js';
+import { playMusicBed }        from './engine/audio.js';
 import { createArena, updateArena } from './combat/arena.js';
 import { buildPlayerActions }  from './combat/actions.js';
 import { drawWorld,
@@ -95,6 +96,9 @@ function showGarage(renderer, reducedMotion) {
 
   const garage = mountGarage(appRoot, {
     onDeploy(loadout, loadoutTotals) {
+      // First user gesture → start the looping music bed (no autoplay before
+      // this point; honors the music bus volume). Safe no-op if unavailable.
+      playMusicBed();
       garage.destroy();
       startArena(renderer, loadout, loadoutTotals, reducedMotion);
     },
