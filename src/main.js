@@ -162,15 +162,21 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.HUD,     (ctx, st) => drawHUD(ctx, st));
 
   // Overlay needs viewport dimensions (drawn in screen space).
+  // It returns the end-card button hit-rects so clicks can be mapped to a
+  // button. Default focus is RETRY (index 0).
+  let endCardButtons = null;   // Array<{id,x,y,w,h}> while the card is shown
+  let focusIndex     = 0;      // 0 = RETRY, 1 = GARAGE
   registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
     const restartReady = canRestart(phaseEndedAtMs, performance.now(), null);
-    drawOverlay(ctx, st, camera, vpW, vpH, restartReady);
+    const result = drawOverlay(ctx, st, camera, vpW, vpH, restartReady, focusIndex);
+    endCardButtons = result ? result.buttons : null;
   });
 
-  // ── Restart handler (Enter / Space / click while overlay showing) ──────────
-  let restartRequested = false;
+  // ── End-card handling (RETRY / GARAGE) ─────────────────────────────────────
+  // Both actions respect the existing restart guard (1 s grace + stale-click).
+  let pendingAction = null;   // 'retry' | 'garage' | null
 
   // Timestamps for the R6 BUG-1 stale-click guard.
   let phaseEndedAtMs  = 0;   // set when phase first leaves 'playing'
@@ -181,33 +187,82 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   }
   canvas.addEventListener('mousedown', onCanvasMouseDown);
 
-  function requestRestart(e) {
-    if (arenaState.phase === 'playing') return;
-    // Click: only accept left button.
-    if (e instanceof MouseEvent && e.button !== 0) return;
-    // Keyboard: only Enter or Space.
-    if (e instanceof KeyboardEvent && e.key !== 'Enter' && e.key !== ' ') return;
-
-    // For keyboard events there is no stale mousedown risk → pass null.
-    const mouseDownTs = (e instanceof MouseEvent) ? lastMouseDownAt : null;
-
-    if (!canRestart(phaseEndedAtMs, performance.now(), mouseDownTs)) return;
-
-    restartRequested = true;
+  /** True when the card is up and the grace guard allows interaction. */
+  function cardInteractive(mouseDownTs) {
+    if (arenaState.phase === 'playing') return false;
+    return canRestart(phaseEndedAtMs, performance.now(), mouseDownTs);
   }
 
-  canvas.addEventListener('keydown', requestRestart);
-  canvas.addEventListener('click',   requestRestart);
+  /** Map a canvas click to the button under the cursor, if any. */
+  function buttonAtPoint(px, py) {
+    if (!endCardButtons) return null;
+    for (const b of endCardButtons) {
+      if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) {
+        return b;
+      }
+    }
+    return null;
+  }
+
+  function onCardKeyDown(e) {
+    if (arenaState.phase === 'playing') return;
+
+    // Focus navigation is always allowed (no restart risk).
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+        e.key === 'Tab' || e.key === 'a' || e.key === 'd') {
+      e.preventDefault();
+      if (e.key === 'ArrowLeft'  || e.key === 'a') focusIndex = 0;
+      else if (e.key === 'ArrowRight' || e.key === 'd') focusIndex = 1;
+      else focusIndex = focusIndex === 0 ? 1 : 0;   // Tab toggles
+      return;
+    }
+
+    // Activation — Enter or Space activates the focused button.
+    if (e.key === 'Enter' || e.key === ' ') {
+      // Keyboard events carry no stale-click risk → pass null.
+      if (!cardInteractive(null)) return;
+      e.preventDefault();
+      pendingAction = focusIndex === 0 ? 'retry' : 'garage';
+    }
+  }
+
+  function onCardClick(e) {
+    if (arenaState.phase === 'playing') return;
+    if (e.button !== 0) return;
+    if (!cardInteractive(lastMouseDownAt)) return;
+
+    // Translate client coords → canvas pixel coords.
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const px = (e.clientX - rect.left) * scaleX;
+    const py = (e.clientY - rect.top)  * scaleY;
+
+    const hit = buttonAtPoint(px, py);
+    if (!hit) return;
+    focusIndex    = hit.id === 'retry' ? 0 : 1;
+    pendingAction = hit.id;
+  }
+
+  canvas.addEventListener('keydown', onCardKeyDown);
+  canvas.addEventListener('click',   onCardClick);
 
   // ── Loop ───────────────────────────────────────────────────────────────────
   const loop = startLoop({
     update(dt) {
-      // If player requested restart, tear down and go back to garage.
-      if (restartRequested) {
-        restartRequested = false;
+      // Handle an end-card action (RETRY / GARAGE); both tear down the loop.
+      if (pendingAction) {
+        const action = pendingAction;
+        pendingAction = null;
         loop.stop();
         cleanup();
-        showGarage(renderer, reducedMotion);
+        if (action === 'retry') {
+          // Restart a fresh match with the SAME loadout (R8).
+          startArena(renderer, loadout, loadoutTotals, reducedMotion);
+        } else {
+          // GARAGE — reopen the garage.
+          showGarage(renderer, reducedMotion);
+        }
         return;
       }
 
@@ -263,8 +318,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
   // ── Cleanup helper ─────────────────────────────────────────────────────────
   function cleanup() {
-    canvas.removeEventListener('keydown',   requestRestart);
-    canvas.removeEventListener('click',     requestRestart);
+    canvas.removeEventListener('keydown',   onCardKeyDown);
+    canvas.removeEventListener('click',     onCardClick);
     canvas.removeEventListener('mousedown', onCanvasMouseDown);
     // Input listeners are re-added on the next startArena; remove the old ones
     // by a simple pattern: we defined them as inline arrows, so we need to

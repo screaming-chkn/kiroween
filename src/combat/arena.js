@@ -84,6 +84,7 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     enemy,
     projectiles: [],
     phase: 'playing',   // 'playing' | 'win' | 'lose'
+    elapsedMs: 0,       // time survived so far (R8 end card)
   };
 }
 
@@ -200,5 +201,7 @@ export function updateArena(state, actions, dt) {
     enemy:       enemyAfterHits,
     projectiles: liveProjectiles,
     phase,
+    // Accumulate survived time (R8). dt is seconds → convert to ms.
+    elapsedMs:   (state.elapsedMs ?? 0) + dt * 1000,
   };
 }

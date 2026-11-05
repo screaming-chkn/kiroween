@@ -28,6 +28,8 @@
 
 // ── Design token colours ──────────────────────────────────────────────────────
 
+import { endCardText } from './endcard.js';
+
 const C = {
   void:         '#0A0D0B',
   panel:        '#121A15',
@@ -314,85 +316,124 @@ export function drawHUD(ctx, state) {
 // ── OVERLAY layer ──────────────────────────────────────────────────────────────
 
 /**
- * LAYERS.OVERLAY draw callback — win/lose end-screen.
+ * LAYERS.OVERLAY draw callback — win/lose end card (R8).
  *
- * Renders a semi-transparent full-screen panel with title text and a
- * RESTART prompt. Keyboard handling (Enter/Space/click) is wired by main.js
- * via the onRestart callback stored on the returned state; this function only
- * draws the visual layer.
+ * Renders a solid panel (no static over it) with VICTORY / DESTROYED title,
+ * a subtitle, one cause line, the time survived, and two buttons: RETRY
+ * (focus index 0, default) and GARAGE (index 1). All text is sized to fit
+ * inside the panel at the 1280x800 reference and larger. Activation (Enter /
+ * click / focus nav) is wired by main.js; this function only draws and reports
+ * the button hit-rects.
  *
  * @param {CanvasRenderingContext2D} ctx
- * @param {{ phase: string }} state
+ * @param {{ phase: string, elapsedMs?: number }} state
  * @param {CameraState} _camera  (unused — overlay is in screen space)
  * @param {number} vpW           Viewport width in canvas pixels.
  * @param {number} vpH           Viewport height in canvas pixels.
  * @param {boolean} [restartReady]  True once the grace period has elapsed.
+ * @param {number}  [focusIndex]    Index of the focused button (0=RETRY, 1=GARAGE).
+ * @returns {{ buttons: Array<{id:string,label:string,x:number,y:number,w:number,h:number}> } | null}
+ *          Button hit-rects while interactive, else null (not shown / grace).
  */
-export function drawOverlay(ctx, state, _camera, vpW, vpH, restartReady = false) {
-  if (state.phase !== 'win' && state.phase !== 'lose') return;
+export function drawOverlay(ctx, state, _camera, vpW, vpH, restartReady = false, focusIndex = 0) {
+  if (state.phase !== 'win' && state.phase !== 'lose') return null;
 
-  const isWin = state.phase === 'win';
+  const { isWin, title, subtitle, cause, timeLine } =
+    endCardText(state.phase, state.elapsedMs ?? 0);
+  const titleColor = isWin ? C.phosphor : C.blood;
 
-  // Dim the game view behind the overlay (semi-opaque void)
+  // ── Dim the game view behind the card (semi-opaque void) ────────────────────
   ctx.fillStyle   = C.void;
   ctx.globalAlpha = 0.82;
   ctx.fillRect(0, 0, vpW, vpH);
   ctx.globalAlpha = 1;
 
-  const cx = vpW / 2;
-  const cy = vpH / 2;
+  // ── Card panel ──────────────────────────────────────────────────────────────
+  // Fixed size tuned so all content fits at the 1280x800 reference and larger.
+  const cardW = 520;
+  const cardH = 360;
+  const cardX = Math.round(vpW / 2 - cardW / 2);
+  const cardY = Math.round(vpH / 2 - cardH / 2);
+  const cx    = cardX + cardW / 2;
+
+  // Solid panel fill (no static / fog over it — accessibility rule 2 & R8).
+  ctx.fillStyle = C.panel;
+  ctx.fillRect(cardX, cardY, cardW, cardH);
+
+  // Panel border — title colour, so win/lose reads before text.
+  ctx.strokeStyle = titleColor;
+  ctx.lineWidth   = 2;
+  ctx.strokeRect(cardX + 1, cardY + 1, cardW - 2, cardH - 2);
+
+  ctx.textAlign = 'center';
 
   // ── Title ──────────────────────────────────────────────────────────────────
-  const titleText  = isWin ? 'VICTORY' : 'DESTROYED';
-  const titleColor = isWin ? C.phosphor : C.blood;
-
   ctx.fillStyle    = titleColor;
-  ctx.font         = `72px "VT323", monospace`;
-  ctx.textBaseline = 'middle';
-  ctx.textAlign    = 'center';
-  ctx.fillText(titleText, cx, cy - 40);
+  ctx.font         = `56px "VT323", monospace`;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(title, cx, cardY + 78);
 
   // ── Subtitle ───────────────────────────────────────────────────────────────
-  const subtitleText = isWin
-    ? 'Enemy mech disabled.'
-    : 'Your mech has been destroyed.';
+  ctx.fillStyle = C.bone;
+  ctx.font      = `20px "VT323", monospace`;
+  ctx.fillText(subtitle, cx, cardY + 112);
 
-  ctx.fillStyle    = C.ash;
-  ctx.font         = `18px "Share Tech Mono", monospace`;
-  ctx.fillText(subtitleText, cx, cy + 10);
+  // ── Cause line ───────────────────────────────────────────────────────────────
+  ctx.fillStyle = C.ash;
+  ctx.font      = `15px "Share Tech Mono", monospace`;
+  ctx.fillText(cause, cx, cardY + 152);
 
-  // ── Restart button box ─────────────────────────────────────────────────────
-  // Only shown after the grace period has elapsed (BUG-1 fix).
-  // During the grace period a dimmed "…" placeholder keeps the layout stable.
-  const btnW  = 220;
-  const btnH  = 52;
-  const btnX  = cx - btnW / 2;
-  const btnY  = cy + 44;
+  // ── Time survived ────────────────────────────────────────────────────────────
+  ctx.fillStyle = C.bone;
+  ctx.font      = `16px "Share Tech Mono", monospace`;
+  ctx.fillText(timeLine, cx, cardY + 182);
+
+  // ── Buttons: RETRY (index 0, default focus) + GARAGE (index 1) ────────────────
+  const btnW  = 200;
+  const btnH  = 52;   // ≥ 32px target (accessibility rule 8)
+  const gap   = 24;
+  const btnY  = cardY + cardH - 52 - btnH;
+  const retryX  = Math.round(cx - gap / 2 - btnW);
+  const garageX = Math.round(cx + gap / 2);
+
+  const buttons = [
+    { id: 'retry',  label: 'RETRY',  x: retryX,  y: btnY, w: btnW, h: btnH },
+    { id: 'garage', label: 'GARAGE', x: garageX, y: btnY, w: btnW, h: btnH },
+  ];
 
   if (restartReady) {
-    // Button background
-    ctx.fillStyle   = isWin ? C.phosphorDim : '#3a0a0f';
-    ctx.fillRect(btnX, btnY, btnW, btnH);
+    buttons.forEach((b, i) => {
+      const focused = i === focusIndex;
 
-    // Ember focus/hover ring (always visible as the only focusable element)
-    ctx.strokeStyle = C.ember;
-    ctx.lineWidth   = 2;
-    ctx.strokeRect(btnX, btnY, btnW, btnH);
+      // Button background
+      ctx.fillStyle = focused ? C.phosphorDim : C.void;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
 
-    // Button label
-    ctx.fillStyle    = C.bone;
-    ctx.font         = `22px "VT323", monospace`;
-    ctx.textBaseline = 'middle';
-    ctx.textAlign    = 'center';
-    ctx.fillText('Press Enter or click to restart', cx, btnY + btnH / 2);
-  } else {
-    // Grace period — show a muted placeholder (no interactive affordance yet).
-    ctx.fillStyle    = C.ash;
-    ctx.globalAlpha  = 0.45;
-    ctx.font         = `22px "VT323", monospace`;
-    ctx.textBaseline = 'middle';
-    ctx.textAlign    = 'center';
-    ctx.fillText('…', cx, btnY + btnH / 2);
-    ctx.globalAlpha  = 1;
+      // Border: ember 2px focus ring when focused (accessibility rule 5),
+      // otherwise a dim ash outline so the affordance still reads.
+      ctx.strokeStyle = focused ? C.ember : C.ash;
+      ctx.lineWidth   = focused ? 2 : 1;
+      ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
+
+      // Label contrast: dark void text on the lit phosphor-dim background
+      // (~5.7:1), bone on the dark void background (~14:1). Both ≥4.5:1.
+      ctx.fillStyle    = focused ? C.void : C.bone;
+      ctx.font         = `24px "VT323", monospace`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign    = 'center';
+      ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 + 1);
+      ctx.textBaseline = 'alphabetic';
+    });
+    return { buttons };
   }
+
+  // Grace period — show a muted hint instead of live buttons (BUG-1 guard).
+  ctx.fillStyle    = C.ash;
+  ctx.globalAlpha  = 0.6;
+  ctx.font         = `16px "Share Tech Mono", monospace`;
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Stand by…', cx, btnY + btnH / 2);
+  ctx.globalAlpha  = 1;
+  ctx.textBaseline = 'alphabetic';
+  return null;
 }
