@@ -4,7 +4,7 @@
 - [x] 2. Weight curve functions + unit tests at breakpoints (R3)
 - [x] 3. Loadout totals + power balance (R3, R4)
 - [x] 4. Role tag derivation with tie rule (R5)
-- [ ] 5. PBT: legal loadouts deploy, penalty monotonic/bounded, balance identity (R3, R4)
+- [x] 5. PBT: legal loadouts deploy, penalty monotonic/bounded, balance identity (R3, R4)
 - [x] 6. Garage list picker UI, keyboard + screen reader (R1)
 - [x] 7. Stat bars, role tag, Overdraw and "Too heavy to walk." states (R3–R5)
 - [x] 8. localStorage save/restore (R6)
