@@ -17,7 +17,7 @@
 
 ## Preview feedback 11/2 (one UI concern per task, ~4–6 credit runs)
 - [x] 15. MUST End card: VICTORY/DESTROYED panel, cause + time survived, RETRY (default focus, Enter) + GARAGE buttons, keep restart guard, text fits at 1280x800 (R8)
-- [ ] 16. MUST Fixed bottom-left HUD: HP, EN, cooldown ring, POWER OK/STUTTER, ≥20px tabular, ≥7:1; enemy bar label "HP" (R9)
+- [x] 16. MUST Fixed bottom-left HUD: HP, EN, cooldown ring, POWER OK/STUTTER, ≥20px tabular, ≥7:1; enemy bar label "HP" (R9)
 - [ ] 17. MUST Hit feedback: 80 ms flash, floating damage numbers, 2–4 px player kick off under reduced motion (R10, closes task 13)
 - [ ] 18. MUST Enemy shots bigger, blood-red, short trail (R10)
 - [x] 19. MUST Body clamp to wall (radius-aware) + 2 px dim wall + faint grid + start camera framing arena, with a clamp unit test (R11)

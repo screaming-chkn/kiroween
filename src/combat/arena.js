@@ -74,6 +74,16 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     owner:        'player',
   });
 
+  // ── Energy / power readout for the fixed HUD (R9) ──────────────────────────
+  // EN tracks the core's energy output (powerOut) against the loadout's draw
+  // (powerDraw); POWER reads STUTTER when the balance is negative (Overdraw).
+  // These are display-only here — no combat mechanic consumes energy yet, so
+  // EN starts full. Fields default to 0 so callers without power totals (tests)
+  // simply show EN 0/0 / POWER OK.
+  player.maxEnergy    = loadoutTotals.powerOut ?? 0;
+  player.energy       = stats.playerEnergy ?? player.maxEnergy;
+  player.powerBalance = loadoutTotals.balance ?? 0;
+
   const enemy = createEnemy({
     speedPenalty: loadoutTotals.enemySpeedPenalty ?? 0,
   });

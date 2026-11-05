@@ -9,8 +9,8 @@
  * Layers covered:
  *   WORLD   — floor grid + arena border walls
  *   ENTITY  — player mech, enemy mech, projectiles
- *   HUD     — player HP bar (≥7:1 on void bg), enemy HP bar above sprite
- *   OVERLAY — VICTORY / DESTROYED end-screen with restart button
+ *   HUD     — over-unit bars: player HP bar + enemy HP bar (secondary, R9)
+ *   OVERLAY — fixed bottom-left combat HUD (R9) + VICTORY / DESTROYED end card
  *
  * Design tokens (design-tokens.md):
  *   void    #0A0D0B  · panel   #121A15  · phosphor #39FF88
@@ -29,6 +29,13 @@
 // ── Design token colours ──────────────────────────────────────────────────────
 
 import { endCardText } from './endcard.js';
+import {
+  formatHudStat,
+  powerStateLabel,
+  isPowerStutter,
+  cooldownReadyFraction,
+} from './hud.js';
+import { FIRE_COOLDOWN_MS } from './config.js';
 
 const C = {
   void:         '#0A0D0B',
@@ -301,7 +308,8 @@ export function drawHUD(ctx, state) {
     'HP',
   );
 
-  // Enemy bar — centred above enemy, ember fill
+  // Enemy bar — centred above enemy, ember fill.
+  // Label is "HP" (not "EN"): the bar tracks enemy hit-points (R9).
   drawHPBar(
     ctx,
     enemy.x - HP_BAR_W / 2,
@@ -309,8 +317,163 @@ export function drawHUD(ctx, state) {
     enemy.hp,
     enemy.maxHp,
     C.ember,
-    'EN',
+    'HP',
   );
+}
+
+// ── FIXED HUD (R9) — bottom-left, screen space ──────────────────────────────────
+
+/*
+ * The over-unit bars above (drawHUD) are world-space and secondary. The fixed
+ * HUD is drawn in SCREEN space (no camera transform) so it stays pinned to the
+ * bottom-left corner at any zoom and never jitters with shake.
+ *
+ * It shows, with tabular numerals ≥ 20px at ≥ 7:1 contrast (accessibility
+ * rules 1 & 8):
+ *   - HP     player hit-points      cur/max
+ *   - EN     player energy          cur/max
+ *   - a weapon cooldown ring        (fills as the weapon recharges)
+ *   - POWER  OK (bone) or STUTTER (ember)   — never colour alone (rule 6)
+ *
+ * Because the fixed HUD must live in screen space it is registered on the
+ * OVERLAY layer (render.js draws OVERLAY without the world transform), ahead
+ * of the end-card so the end card dims over it.
+ */
+
+// Fixed-HUD layout constants (screen-space pixels).
+const FHUD_MARGIN      = 20;   // gap from the bottom-left corner
+const FHUD_PAD         = 14;   // inner padding
+const FHUD_LINE_H      = 30;   // line height for stat rows
+const FHUD_STAT_PX     = 22;   // stat numeral size (≥ 20px, R9)
+const FHUD_LABEL_PX    = 16;   // small row label size (≥ 14px, rule 8)
+const FHUD_RING_R      = 26;   // cooldown ring radius
+const FHUD_RING_W      = 6;    // cooldown ring stroke width
+const FHUD_PANEL_W     = 240;  // panel width
+const FHUD_PANEL_H     = 128;  // panel height
+
+/**
+ * LAYERS.OVERLAY draw callback (registered before the end card) — fixed HUD.
+ *
+ * Contrast note: the stat numerals are bone (#E8E2D0) on the near-void panel
+ * (#121A15). bone-on-void measures > 7:1; bone-on-panel is only marginally
+ * lighter, so to guarantee the ≥ 7:1 critical-number rule the panel behind the
+ * numerals is filled with the void colour, not the lighter panel colour.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {{ player: object }} state
+ * @param {number} vpW  Viewport width in canvas pixels.
+ * @param {number} vpH  Viewport height in canvas pixels.
+ */
+export function drawFixedHUD(ctx, state, vpW, vpH) {
+  const player = state.player;
+  if (!player) return;
+
+  const panelX = FHUD_MARGIN;
+  const panelY = vpH - FHUD_MARGIN - FHUD_PANEL_H;
+
+  // ── Panel background — void (#0A0D0B) so bone numerals read at ≥ 7:1 ────────
+  ctx.fillStyle = C.void;
+  ctx.globalAlpha = 0.9;
+  ctx.fillRect(panelX, panelY, FHUD_PANEL_W, FHUD_PANEL_H);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = C.phosphorDim;
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(panelX + 0.5, panelY + 0.5, FHUD_PANEL_W - 1, FHUD_PANEL_H - 1);
+
+  const textX = panelX + FHUD_PAD;
+  let   rowY  = panelY + FHUD_PAD + FHUD_STAT_PX;
+
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  // ── HP row ──────────────────────────────────────────────────────────────────
+  drawStatRow(ctx, textX, rowY, 'HP', formatHudStat(player.hp, player.maxHp), C.phosphor);
+  rowY += FHUD_LINE_H;
+
+  // ── EN (energy) row — falls back to 0 when energy is not modelled ───────────
+  const energy    = player.energy    ?? 0;
+  const maxEnergy = player.maxEnergy ?? 0;
+  drawStatRow(ctx, textX, rowY, 'EN', formatHudStat(energy, maxEnergy), C.ghost);
+  rowY += FHUD_LINE_H;
+
+  // ── POWER state ──────────────────────────────────────────────────────────────
+  const balance   = player.powerBalance ?? 0;
+  const powerLabel = powerStateLabel(balance);
+  const stutter    = isPowerStutter(balance);
+
+  ctx.font      = `${FHUD_LABEL_PX}px "Share Tech Mono", monospace`;
+  ctx.fillStyle = C.ash;
+  ctx.fillText('POWER', textX, rowY);
+  const powerValX = textX + 72;
+  ctx.font      = `bold ${FHUD_STAT_PX}px "Share Tech Mono", monospace`;
+  // STUTTER draws in ember; OK draws in bone. The word itself carries the
+  // meaning, so this is a redundant cue, not colour-only (accessibility rule 6).
+  ctx.fillStyle = stutter ? C.ember : C.bone;
+  ctx.fillText(powerLabel, powerValX, rowY);
+
+  // ── Weapon cooldown ring (top-right of the panel) ────────────────────────────
+  const ready = cooldownReadyFraction(player.fireCooldown ?? 0, FIRE_COOLDOWN_MS);
+  const ringCx = panelX + FHUD_PANEL_W - FHUD_RING_R - FHUD_PAD;
+  const ringCy = panelY + FHUD_RING_R + FHUD_PAD;
+  drawCooldownRing(ctx, ringCx, ringCy, ready);
+}
+
+/**
+ * Draw a single HUD stat row: a small ash label plus a large tabular value.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} x
+ * @param {number} y          Text baseline y.
+ * @param {string} label      Short label (e.g. "HP").
+ * @param {string} value      Pre-formatted tabular value (e.g. "300/300").
+ * @param {string} valueColor
+ */
+function drawStatRow(ctx, x, y, label, value, valueColor) {
+  ctx.font      = `${FHUD_LABEL_PX}px "Share Tech Mono", monospace`;
+  ctx.fillStyle = C.ash;
+  ctx.fillText(label, x, y);
+
+  ctx.font      = `bold ${FHUD_STAT_PX}px "Share Tech Mono", monospace`;
+  ctx.fillStyle = valueColor;
+  // Fixed label gutter so the tabular numbers all start at the same x.
+  ctx.fillText(value, x + 48, y);
+}
+
+/**
+ * Draw the weapon cooldown ring. A faint full track is always drawn; the
+ * ready arc fills clockwise from the top as the weapon recharges.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} ready  0–1 ready fraction (1 = fully ready).
+ */
+function drawCooldownRing(ctx, cx, cy, ready) {
+  const start = -Math.PI / 2;                 // 12 o'clock
+  const end   = start + Math.PI * 2 * ready;
+
+  // Track
+  ctx.strokeStyle = C.phosphorDim;
+  ctx.globalAlpha = 0.4;
+  ctx.lineWidth   = FHUD_RING_W;
+  ctx.beginPath();
+  ctx.arc(cx, cy, FHUD_RING_R, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Ready arc — phosphor when fully ready, ember while recharging.
+  ctx.strokeStyle = ready >= 1 ? C.phosphor : C.ember;
+  ctx.lineWidth   = FHUD_RING_W;
+  ctx.lineCap     = 'round';
+  ctx.beginPath();
+  ctx.arc(cx, cy, FHUD_RING_R, start, end);
+  ctx.stroke();
+  ctx.lineCap     = 'butt';
+
+  // Centre glyph: a small dot that is bright when ready.
+  ctx.fillStyle = ready >= 1 ? C.phosphor : C.ash;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 // ── OVERLAY layer ──────────────────────────────────────────────────────────────

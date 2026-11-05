@@ -33,6 +33,7 @@ import { buildPlayerActions }  from './combat/actions.js';
 import { drawWorld,
   drawEntities,
   drawHUD,
+  drawFixedHUD,
   drawOverlay,
 }                              from './combat/combatRenderer.js';
 import { speedPenalty }        from './mech/weight.js';
@@ -111,8 +112,11 @@ function showGarage(renderer, reducedMotion) {
  */
 function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   // ── Derive arena loadout stats from garage totals ──────────────────────────
-  // speedPenalty comes from the weight curve (mech/weight.js).
+  // speedPenalty comes from the weight curve (mech/weight.js); powerOut /
+  // powerDraw / balance flow straight through for the fixed HUD EN + POWER
+  // readout (R9).
   const arenaStats = {
+    ...loadoutTotals,
     speedPenalty: speedPenalty(loadoutTotals.loadPct ?? 0),
   };
 
@@ -160,6 +164,14 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.WORLD,   (ctx, st) => drawWorld(ctx, st));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
   registerLayer(renderer, LAYERS.HUD,     (ctx, st) => drawHUD(ctx, st));
+
+  // Fixed bottom-left combat HUD (R9) — screen space, so it lives on the
+  // OVERLAY layer (drawn without the world transform) ahead of the end card.
+  registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
+    // Hide the live HUD once the match ends so the end card panel is clean.
+    if (st.phase !== 'playing') return;
+    drawFixedHUD(ctx, st, renderer.canvas.width, renderer.canvas.height);
+  });
 
   // Overlay needs viewport dimensions (drawn in screen space).
   // It returns the end-card button hit-rects so clicks can be mapped to a
