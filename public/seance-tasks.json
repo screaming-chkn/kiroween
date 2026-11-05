@@ -1,0 +1,433 @@
+[
+  {
+    "spec": "01-core-engine",
+    "id": 1,
+    "title": "Page shell: `index.html` + canvas + module entry (R1)",
+    "done": true
+  },
+  {
+    "spec": "01-core-engine",
+    "id": 2,
+    "title": "Fixed-timestep loop with pause on hidden tab (R1)",
+    "done": true
+  },
+  {
+    "spec": "01-core-engine",
+    "id": 3,
+    "title": "Input action map incl. F tap/hold (R2)",
+    "done": true
+  },
+  {
+    "spec": "01-core-engine",
+    "id": 4,
+    "title": "Follow camera with motion cap (R3)",
+    "done": true
+  },
+  {
+    "spec": "01-core-engine",
+    "id": 5,
+    "title": "Layered renderer stub (R3)",
+    "done": true
+  },
+  {
+    "spec": "01-core-engine",
+    "id": 6,
+    "title": "Audio buses with volume controls (R4)",
+    "done": true,
+    "unlockedPart": "Static Bell"
+  },
+  {
+    "spec": "01-core-engine",
+    "id": 7,
+    "title": "Tests for loop math and tap/hold (R1, R2)",
+    "done": true
+  },
+  {
+    "spec": "01-core-engine",
+    "id": 8,
+    "title": "Deploy-to-match under 30 s check (R5)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 1,
+    "title": "Parts data (~12 parts, 6 slots) + preset mech (R2, R6)",
+    "done": true,
+    "unlockedPart": "Scout Frame"
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 2,
+    "title": "Weight curve functions + unit tests at breakpoints (R3)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 3,
+    "title": "Loadout totals + power balance (R3, R4)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 4,
+    "title": "Role tag derivation with tie rule (R5)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 5,
+    "title": "PBT: legal loadouts deploy, penalty monotonic/bounded, balance identity (R3, R4)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 6,
+    "title": "Garage list picker UI, keyboard + screen reader (R1)",
+    "done": true,
+    "unlockedPart": "Runner Legs"
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 7,
+    "title": "Stat bars, role tag, Overdraw and \"Too heavy to walk.\" states (R3\u2013R5)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 8,
+    "title": "localStorage save/restore (R6)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 9,
+    "title": "Hex part display (R7)",
+    "done": false
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 10,
+    "title": "Stat chips ARM/SPD/DMG/SEN, \"vs equipped\", 14px non-italic text (R8)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 11,
+    "title": "Overdraw line + stutter confirm on Deploy (R8)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 12,
+    "title": "\"cap from LEGS\" + role tooltip (R9)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 13,
+    "title": "Three-column layout, taller stat bars, reserved warning line, part hover border (R10)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 14,
+    "title": "Garage a11y: slot container role=group (was list); each slot aria-label starts with its visible label text, e.g. \"Legs \u2014 Runner Legs \u2014 press Enter\u2026\" (task 6 polish, a11y rule 5)",
+    "done": true
+  },
+  {
+    "spec": "02-mech-builder",
+    "id": 15,
+    "title": "Mech preview silhouette: `.hh-preview__art` renders a simple top-down SVG (legs/core/arms/back/head) via pure `silhouetteSpec(loadout)` + `refreshPreview` on the garage refresh path; present vs empty slots differ by shape (dashed) + label + opacity, phosphor/bone tokens, no animation. Unit test: tests/mech/silhouette.test.js (task 6 polish, a11y rule 6)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 1,
+    "title": "Combat config constants and arena data (R1, R5)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 2,
+    "title": "`applyDamage` + unit tests: clamp to 0, PBT any sequence (R3, R5)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 3,
+    "title": "`createProjectile` / `stepProjectile` / wall destroy + tests (R3)",
+    "done": true,
+    "unlockedPart": "Rivet Cannon"
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 4,
+    "title": "`createMech` / `moveMech` / `aimMech` with speed-penalty integration (R2)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 5,
+    "title": "Player fire: LMB spawn projectile, 300 ms cooldown (R3)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 6,
+    "title": "Enemy CHASE/SHOOT state machine + enemy fire cooldown (R4)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 7,
+    "title": "Projectile\u2013mech hit test, damage routing, phase transitions win/lose (R5, R6)",
+    "done": true,
+    "unlockedPart": "Ghost Plating"
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 8,
+    "title": "Arena wall collision for mechs and projectiles (R1)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 9,
+    "title": "Renderer: world layer (floor grid + walls), entity layer (mechs + projectiles) (R1, R4, R7)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 10,
+    "title": "HUD: player HP bar \u2265 7:1 contrast, enemy HP bar above sprite (R5, R7)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 11,
+    "title": "Win/lose overlay: keyboard (Enter/Space) + click restart, ember focus ring (R6, R7)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 12,
+    "title": "`createArena` / `updateArena` wired into engine loop hooks (R1\u2013R6)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 13,
+    "title": "Reduced-motion shake cap honored in camera during combat (R7)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 14,
+    "title": "Integration smoke test: arena ticks without errors, win/lose fire correctly (R6)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 15,
+    "title": "MUST End card: VICTORY/DESTROYED panel, cause + time survived, RETRY (default focus, Enter) + GARAGE buttons, keep restart guard, text fits at 1280x800 (R8)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 16,
+    "title": "MUST Fixed bottom-left HUD: HP, EN, cooldown ring, POWER OK/STUTTER, \u226520px tabular, \u22657:1; enemy bar label \"HP\" (R9)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 17,
+    "title": "MUST Hit feedback: 80 ms flash, floating damage numbers, 2\u20134 px player kick off under reduced motion (R10, closes task 13)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 18,
+    "title": "MUST Enemy shots bigger, blood-red, short trail (R10)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 19,
+    "title": "MUST Body clamp to wall (radius-aware) + 2 px dim wall + faint grid + start camera framing arena, with a clamp unit test (R11)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 20,
+    "title": "SHOULD Overdraw stutter: pulsing POWER tag + skipping ring (R12)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 21,
+    "title": "Hit-flash re-trigger rate limit (FLASH_RETRIGGER_MS/shouldCreateFlash/maybeCreateFlash) + unit tests, so bursts never strobe (R10, a11y rule 4)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 22,
+    "title": "Overhead HP-bar label readable on any fill: \u226512px bold, drawn above the bar with a 2px void stroke under the fill (task 10 polish, a11y rules 1 & 8)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 23,
+    "title": "STUTTER POWER tag pulse floor raised to 0.7 (0.7 + 0.3\u00b7pulse) so the word never dims below readable (task 20 polish, a11y rule 1)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 24,
+    "title": "Favicon: real favicon.svg in repo root + `<link rel=\"icon\">` in index.html (removes 404)",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 25,
+    "title": "Enemy HP 900 \u2192 400 (`ENEMY_MAX_HP`) so a clean build lands the kill inside the duel window (R5). Tests read `ENEMY_MAX_HP` symbolically, so they track the new value.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 26,
+    "title": "Enemy shot windup ~0.45 s: `ENEMY_SHOT_WINDUP_MS=450`; enemy enters a windup (telegraph flag `enemy.windupRemainingMs > 0`) before firing, projectile only spawns when the windup completes; red glow telegraph in `combatRenderer` (R4, a11y rules 4 & 6). Unit test: windup delays the shot by ~450 ms.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 27,
+    "title": "Real dash on Shift: 0.18 s burst at 3\u00d7 move speed with a 100 ms input buffer; cooldown by weight class \u2014 light 2.5 s (loadPct \u2264 80) / mid 3.5 s (\u2264 100) / heavy 4.5 s (> 100), mirroring the weight.js 80/100 bands; `dashRemainingMs`/`dashCooldownMs` on the player (R2). Expect-style test asserts measured dash duration \u2248 0.18 s and the cooldown bands.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 28,
+    "title": "Overdraw actually slows fire rate: when the build is overdrawn, the player fire cooldown is multiplied by `1 + overdrawPenaltyPct/100` (fire rate scaled by output/draw) through the arena fire path (R4). Test: shots-per-second is strictly slower under overdraw than a balanced build.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 29,
+    "title": "Headless AI-vs-AI balance tester (tests/CI only, no UI/renderer).",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 30,
+    "title": "Balance-harness fix (PLAN item A, no combat-number retune): `playerPolicy` now leads the shot.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 31,
+    "title": "LEVER 1 retune: `ENEMY_MAX_HP` 400 \u2192 2800.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 32,
+    "title": "LEVER 1b retune: `ENEMY_MAX_HP` 2800 \u2192 4200.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 33,
+    "title": "LEVER 2 (harness-only, NOT combat): seeded aim noise in `tests/combat/balanceCore.mjs` `playerPolicy`.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 34,
+    "title": "Fixed `tests/combat/arena.test.js` 'scripted sim: sustained fire \u2192 enemy dead \u2192 win'.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 35,
+    "title": "LEVER 2b (harness-only, NOT combat): raised `AIM_NOISE_SIGMA` 32 \u2192 60.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 36,
+    "title": "LEVER 2c (harness-only, NOT combat): set `AIM_NOISE_SIGMA` 60 \u2192 42 (midpoint).",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 37,
+    "title": "LEVER mix retune to satisfy BOTH stop criteria at once.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 38,
+    "title": "Strengthened the harness policy lapses (LEVER mix retune 11/5b, harness-only, NOT combat).",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 39,
+    "title": "Final levers toward BOTH stop criteria (lapse-movement-freeze + LEVER 3 light).",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 40,
+    "title": "LAST balance pass within the remaining credit budget (LEVER 4 + longer lapse).",
+    "done": true
+  },
+  {
+    "spec": "04-radar-relays",
+    "id": 1,
+    "title": "Visibility grid from relays + player (R1)",
+    "done": false
+  },
+  {
+    "spec": "04-radar-relays",
+    "id": 2,
+    "title": "Relay capture step with Scout \u00d72 and contest reset (R2)",
+    "done": false
+  },
+  {
+    "spec": "04-radar-relays",
+    "id": 3,
+    "title": "Static layer + damage spike/decay + No-static fallback (R1)",
+    "done": false
+  },
+  {
+    "spec": "04-radar-relays",
+    "id": 4,
+    "title": "Ping generation with seeded fakes for Liar's Eye (R3)",
+    "done": false
+  },
+  {
+    "spec": "04-radar-relays",
+    "id": 5,
+    "title": "Radar draw with colorblind shapes; Space pulse reveal (R3)",
+    "done": false
+  },
+  {
+    "spec": "04-radar-relays",
+    "id": 6,
+    "title": "Footstep/whisper cues + visual equivalents; Loud Bones (R4)",
+    "done": false
+  },
+  {
+    "spec": "04-radar-relays",
+    "id": 7,
+    "title": "Static Surge at 5:00 (R5)",
+    "done": false
+  },
+  {
+    "spec": "04-radar-relays",
+    "id": 8,
+    "title": "PBT: fake ratio, visibility monotonic (R3, R1)",
+    "done": false
+  }
+]

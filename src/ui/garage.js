@@ -127,8 +127,8 @@ export const GARAGE_CSS = `
 .hh-garage {
   position: fixed;
   inset: 0;
-  background: #0A0D0B;          /* void */
-  color: #E8E2D0;               /* bone */
+  background: var(--color-void, #0A0D0B);   /* void — flips on possession */
+  color: var(--color-bone, #E8E2D0);        /* bone text — flips on possession */
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
   font-size: 14px;
   display: grid;
@@ -148,7 +148,7 @@ export const GARAGE_CSS = `
 .hh-garage__title {
   font-family: 'VT323', monospace;
   font-size: 28px;
-  color: #39FF88; /* phosphor */
+  color: var(--color-phosphor, #39FF88); /* phosphor accent — flips on possession */
   letter-spacing: 0.05em;
   margin: 0;
 }
@@ -228,7 +228,7 @@ export const GARAGE_CSS = `
   font-family: 'Rajdhani', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: #E8E2D0; /* bone */
+  color: var(--color-bone, #E8E2D0); /* bone — flips on possession */
   flex: 1;
 }
 .hh-slot__caret {
@@ -473,8 +473,8 @@ export const GARAGE_CSS = `
 .hh-deploy {
   font-family: 'VT323', monospace;
   font-size: 24px;
-  color: #0A0D0B;
-  background: #39FF88; /* phosphor */
+  color: var(--color-void, #0A0D0B);
+  background: var(--color-phosphor, #39FF88); /* phosphor accent — flips on possession */
   border: none;
   padding: 8px 24px;
   min-height: 48px;
@@ -495,6 +495,30 @@ export const GARAGE_CSS = `
   color: #0A0D0B;
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* séance button — secondary action, sits to the left of the deploy column */
+.hh-seance-btn {
+  margin-right: auto;            /* push to the far left of the flex-end footer */
+  font-family: 'VT323', monospace;
+  font-size: 22px;
+  color: #9FD8FF;                /* ghost — in-world "other side" accent */
+  background: transparent;
+  border: 1px solid #1F9E57;     /* phosphor-dim */
+  padding: 6px 20px;
+  min-height: 48px;
+  cursor: pointer;
+  border-radius: 2px;
+  letter-spacing: 0.08em;
+  transition: background 120ms ease-out, color 120ms ease-out;
+}
+.hh-seance-btn:hover {
+  background: #121A15;           /* panel */
+  color: #E8E2D0;               /* bone */
+}
+.hh-seance-btn:focus {
+  outline: 2px solid #FF8A3D;    /* ember */
+  outline-offset: 2px;
 }
 
 /* deploy column — button + stutter confirm line (R8) */
@@ -714,7 +738,7 @@ function buildSilhouette(spec) {
  * @param {HTMLElement} root
  * @param {{ onDeploy: (loadout: Object, totals: Object) => void }} options
  */
-export function mountGarage(root, { onDeploy } = {}) {
+export function mountGarage(root, { onDeploy, onSeance } = {}) {
   injectCSS();
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -761,7 +785,15 @@ export function mountGarage(root, { onDeploy } = {}) {
   // Deploy stays allowed — a second press proceeds.
   const deployConfirm = el('div', { class: 'hh-deploy-confirm', role: 'alert', hidden: '' });
   deployCol.append(deployBtn, deployConfirm);
-  footer.append(deployCol);
+
+  // SÉANCE — opens the build-ledger terminal (and possesses the page).
+  const seanceBtn = el('button', { class: 'hh-seance-btn', type: 'button', 'aria-label': 'Open séance terminal' });
+  seanceBtn.textContent = 'SÉANCE';
+  seanceBtn.addEventListener('click', () => {
+    if (typeof onSeance === 'function') onSeance();
+  });
+
+  footer.append(seanceBtn, deployCol);
 
   // SR live region
   const srStatus = el('div', { class: 'hh-sr-status', role: 'status', 'aria-live': 'polite' });

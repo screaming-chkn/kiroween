@@ -28,6 +28,8 @@ import {
   LAYERS,
 }                              from './engine/render.js';
 import { mountGarage }         from './ui/garage.js';
+import { mountSeance }         from './ui/seance.js';
+import { injectPossessionCSS } from './ui/possession.js';
 import { playMusicBed }        from './engine/audio.js';
 import { createArena, updateArena } from './combat/arena.js';
 import { buildPlayerActions }  from './combat/actions.js';
@@ -55,6 +57,11 @@ document.body.appendChild(appRoot);
 // ── Boot ─────────────────────────────────────────────────────────────────────
 
 function boot() {
+  // Declare the sterile/possessed palette custom properties up front so themed
+  // components (e.g. the garage) read live var(--hh-*) values; opening the
+  // séance flips to the possessed palette via setPossessed(true).
+  injectPossessionCSS();
+
   const renderer = createRenderer(canvas);
   resizeToDisplay(renderer);
   window.addEventListener('resize', () => resizeToDisplay(renderer));
@@ -101,6 +108,11 @@ function showGarage(renderer, reducedMotion) {
       playMusicBed();
       garage.destroy();
       startArena(renderer, loadout, loadoutTotals, reducedMotion);
+    },
+    onSeance() {
+      // Open the séance terminal overlay. mountSeance possesses the page on
+      // open and restores the sterile palette on close (instant swap, no wipe).
+      mountSeance(appRoot, {});
     },
   });
 }
