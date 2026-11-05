@@ -115,14 +115,12 @@ function saveLoadout(loadout) {
 
 // ── CSS injected once ─────────────────────────────────────────────────────────
 
-let _cssInjected = false;
-
-function injectCSS() {
-  if (_cssInjected) return;
-  _cssInjected = true;
-
-  const style = document.createElement('style');
-  style.textContent = `
+/**
+ * Garage stylesheet. Exported as a plain string so layout rules (R10 and
+ * friends) can be asserted under Node without a DOM.
+ * @type {string}
+ */
+export const GARAGE_CSS = `
 /* ── Garage overlay ─────────────────────────────────── */
 
 .hh-garage {
@@ -159,12 +157,28 @@ function injectCSS() {
   color: #8F9A92; /* ash */
 }
 
-/* body — two columns */
+/* body — columns.
+   Default (<1280px): two columns (slots | part list); the preview + stats
+   column wraps to a full-width third row.
+   R10 ≥1280px: three columns slots | part list | mech preview + stats. */
 .hh-garage__body {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(220px, 1fr) 1fr;
+  grid-template-areas:
+    "slots picker"
+    "preview preview";
   gap: 0;
   overflow: hidden;
+}
+.hh-garage__slots  { grid-area: slots; }
+.hh-picker         { grid-area: picker; }
+.hh-preview        { grid-area: preview; }
+
+@media (min-width: 1280px) {
+  .hh-garage__body {
+    grid-template-columns: minmax(220px, 1fr) 1.3fr minmax(300px, 1fr);
+    grid-template-areas: "slots picker preview";
+  }
 }
 
 /* slot list (left) */
@@ -247,6 +261,29 @@ function injectCSS() {
   padding: 16px 0;
 }
 
+/* preview + stats column (third column at ≥1280px — R10) */
+.hh-preview {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  border-left: 1px solid #121A15; /* panel */
+}
+.hh-preview__art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  border: 1px solid #1F9E57;      /* phosphor-dim */
+  border-radius: 2px;
+  background: #121A15;            /* panel */
+  color: #1F9E57;                 /* phosphor-dim — placeholder silhouette */
+  font-family: 'VT323', monospace;
+  font-size: 24px;
+  letter-spacing: 0.1em;
+}
+
 /* part option */
 .hh-option {
   padding: 10px 12px;
@@ -260,13 +297,13 @@ function injectCSS() {
   gap: 4px;
   transition: background 120ms ease-out, border-color 120ms ease-out;
 }
-.hh-option:hover,
-.hh-option:focus {
+.hh-option:hover {
   background: #1a2a1f;
-  border-color: #1F9E57;
+  border-color: #E8E2D0; /* bone — R10 part hover border */
   outline: none;
 }
 .hh-option:focus {
+  background: #1a2a1f;
   outline: 2px solid #FF8A3D;
   outline-offset: 1px;
 }
@@ -328,8 +365,8 @@ function injectCSS() {
 .hh-garage__footer {
   padding: 12px 24px;
   border-top: 1px solid #1F9E57;
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
+  justify-content: flex-end;
   gap: 16px;
   align-items: center;
 }
@@ -379,12 +416,12 @@ function injectCSS() {
 }
 .hh-bar-group__label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;        /* R10: ≥12px bar labels */
   color: #8F9A92;
   text-transform: uppercase;
 }
 .hh-bar-track {
-  height: 6px;
+  height: 12px;           /* R10: stat bars ≥12px tall */
   background: #1F1F1F;
   border-radius: 1px;
   overflow: hidden;
@@ -449,14 +486,17 @@ function injectCSS() {
 }
 .hh-deploy-confirm[hidden] { display: none; }
 
-/* overdraw / blocked notice */
+/* overdraw / blocked notice — height reserved so the footer never jumps (R10) */
 .hh-notice {
   font-family: 'Share Tech Mono', monospace;
   font-size: 13px;
+  line-height: 1.4;
+  min-height: 1.4em;   /* reserve one line even when empty */
   margin-top: 4px;
 }
 .hh-notice--overdraw { color: #FF8A3D; }   /* ember */
 .hh-notice--blocked  { color: #FF4D5E; }   /* blood */
+.hh-notice--placeholder { color: transparent; }
 
 /* live region for screen readers */
 .hh-sr-status {
@@ -477,6 +517,15 @@ function injectCSS() {
   .hh-slot__caret { transition: none; }
 }
 `;
+
+let _cssInjected = false;
+
+function injectCSS() {
+  if (_cssInjected) return;
+  _cssInjected = true;
+
+  const style = document.createElement('style');
+  style.textContent = GARAGE_CSS;
   document.head.appendChild(style);
 }
 
@@ -596,11 +645,17 @@ export function mountGarage(root, { onDeploy } = {}) {
   // Picker panel
   const pickerPanel = el('div', { class: 'hh-picker', role: 'region', 'aria-label': 'Part picker', 'aria-live': 'polite' });
 
-  body.append(slotList, pickerPanel);
+  // Preview + stats column (third column at ≥1280px — R10).
+  const previewCol = el('div', { class: 'hh-preview', role: 'region', 'aria-label': 'Mech preview and stats' });
+  const previewArt = el('div', { class: 'hh-preview__art', 'aria-hidden': 'true' });
+  previewArt.textContent = 'MECH';
+  const summary = el('div', { class: 'hh-summary', 'aria-live': 'polite', 'aria-atomic': 'true' });
+  previewCol.append(previewArt, summary);
+
+  body.append(slotList, pickerPanel, previewCol);
 
   // Footer
   const footer = el('div', { class: 'hh-garage__footer' });
-  const summary = el('div', { class: 'hh-summary', 'aria-live': 'polite', 'aria-atomic': 'true' });
   const deployCol = el('div', { class: 'hh-deploy-col' });
   const deployBtn = el('button', { class: 'hh-deploy', type: 'button', 'aria-label': 'Deploy mech' });
   deployBtn.textContent = 'DEPLOY';
@@ -608,7 +663,7 @@ export function mountGarage(root, { onDeploy } = {}) {
   // Deploy stays allowed — a second press proceeds.
   const deployConfirm = el('div', { class: 'hh-deploy-confirm', role: 'alert', hidden: '' });
   deployCol.append(deployBtn, deployConfirm);
-  footer.append(summary, deployCol);
+  footer.append(deployCol);
 
   // SR live region
   const srStatus = el('div', { class: 'hh-sr-status', role: 'status', 'aria-live': 'polite' });
@@ -713,7 +768,8 @@ export function mountGarage(root, { onDeploy } = {}) {
     row1.append(wBlock, pBlock, rBlock);
     summary.append(row1);
 
-    // Notices
+    // Notices. The line is always present (empty when the build is fine) so its
+    // reserved height keeps the footer from jumping when a warning appears (R10).
     if (!deployable) {
       const notice = el('div', { class: 'hh-notice hh-notice--blocked', role: 'alert' });
       notice.textContent = 'Too heavy to walk.';
@@ -722,6 +778,11 @@ export function mountGarage(root, { onDeploy } = {}) {
       const pct = overdrawPenaltyPct(t.powerOut, t.powerDraw);
       const notice = el('div', { class: 'hh-notice hh-notice--overdraw' });
       notice.textContent = `Overdrawn: fire rate -${pct}%`;
+      summary.append(notice);
+    } else {
+      // Placeholder keeps the reserved line height; aria-hidden so SR skips it.
+      const notice = el('div', { class: 'hh-notice hh-notice--placeholder', 'aria-hidden': 'true' });
+      notice.textContent = '';
       summary.append(notice);
     }
 

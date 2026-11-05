@@ -11,7 +11,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { formatDelta, statChipLabel, overdrawPenaltyPct } from '../../src/ui/garage.js';
+import { formatDelta, statChipLabel, overdrawPenaltyPct, GARAGE_CSS } from '../../src/ui/garage.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
 
@@ -125,6 +125,61 @@ test('penalty is monotonic non-decreasing as output falls (fixed draw)', () => {
     assert.ok(pct >= prev, `pct=${pct} should be ≥ previous ${prev} (out=${out})`);
     prev = pct;
   }
+});
+
+// ── R10 garage layout (CSS, DOM-free) ────────────────────────────────────────
+
+console.log('\nsrc/ui/garage.js — R10 garage layout\n');
+
+/** Collapse a CSS block's whitespace so property checks are robust. */
+function block(css, selector) {
+  const start = css.indexOf(selector);
+  assert.ok(start >= 0, `selector not found: ${selector}`);
+  const open = css.indexOf('{', start);
+  const close = css.indexOf('}', open);
+  return css.slice(open + 1, close).replace(/\s+/g, ' ').trim();
+}
+
+test('≥1280px media query switches body to three columns', () => {
+  const mq = GARAGE_CSS.indexOf('@media (min-width: 1280px)');
+  assert.ok(mq >= 0, 'missing ≥1280px media query');
+  // Within the media query, the body uses a three-area template.
+  const slice = GARAGE_CSS.slice(mq, mq + 400);
+  assert.ok(
+    /grid-template-areas:\s*"slots picker preview"/.test(slice),
+    'three-column areas (slots | picker | preview) not set at ≥1280px',
+  );
+});
+
+test('default (<1280px) body keeps slots | picker with preview wrapping', () => {
+  const body = block(GARAGE_CSS, '.hh-garage__body {');
+  assert.ok(body.includes('"slots picker"'), 'default should keep slots | picker row');
+  assert.ok(body.includes('"preview preview"'), 'preview should wrap full-width by default');
+});
+
+test('stat bar track is at least 12px tall (R10)', () => {
+  const track = block(GARAGE_CSS, '.hh-bar-track {');
+  const m = track.match(/height:\s*(\d+)px/);
+  assert.ok(m, 'bar track has no px height');
+  assert.ok(Number(m[1]) >= 12, `bar track height ${m[1]}px < 12px`);
+});
+
+test('stat bar label is at least 12px (R10)', () => {
+  const lbl = block(GARAGE_CSS, '.hh-bar-group__label {');
+  const m = lbl.match(/font-size:\s*(\d+)px/);
+  assert.ok(m, 'bar label has no px font-size');
+  assert.ok(Number(m[1]) >= 12, `bar label font ${m[1]}px < 12px`);
+});
+
+test('warning line reserves height so the footer does not jump (R10)', () => {
+  const notice = block(GARAGE_CSS, '.hh-notice {');
+  assert.ok(/min-height:/.test(notice), 'notice line has no reserved min-height');
+});
+
+test('parts show a bone border on hover (R10)', () => {
+  const hover = block(GARAGE_CSS, '.hh-option:hover {');
+  // bone token is #E8E2D0.
+  assert.ok(/border-color:\s*#E8E2D0/i.test(hover), 'part hover border is not bone (#E8E2D0)');
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────
