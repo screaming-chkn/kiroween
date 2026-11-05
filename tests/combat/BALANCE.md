@@ -76,3 +76,9 @@
 | Siege Legs / Furnace Core / Hatchet Arm / Buckler Arm | 7.5s | — |
 | Siege Legs / Furnace Core / Lancer Arm / Spotter Arm | 7.5s | — |
 | Siege Legs / Furnace Core / Lancer Arm / Buckler Arm | 7.5s | — |
+
+## build agent readout (after lead-aim harness fix)
+
+- **Win-rate outliers:** ALL 16 builds flagged (100% win rate). No single-build outlier — the scripted lead-aim policy dominates the enemy before its 0.45s windup cycle can matter.
+- **Duel length vs 60–120s:** **FAIL.** Median ≈ **7.2–7.5 s** (far below target). Earlier no-lead policy timed out at 180s; lead-aim overcorrects.
+- **Outlier fixes:** NOT applied. PLAN item A hard cap was 10 Kiro credits; this item burned ≈9.6. Remaining ≈0.4 is too small for a combat retune. Recommended follow-up (separate budget): raise enemy HP and/or reduce player DPS / add aim noise so scripted medians land in 60–120s without 100% win rates.
