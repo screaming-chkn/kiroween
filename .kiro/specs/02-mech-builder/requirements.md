@@ -57,3 +57,7 @@ User story: As a player, I want to see how heavy my build is so I know how it wi
 - At ≥ 1280 px wide the garage SHALL use three columns: slots | part list | mech preview + stats; stat bars ≥ 12px tall with 12px labels.
 - The warning line's height SHALL be reserved so the footer does not jump when a warning appears.
 - Parts SHALL show a bone border on hover.
+
+## MVP scope lock (11/5)
+
+Garage with 6 slots, readable stats, overdraw confirm, and Deploy remain in MVP. Hexes as live mechanics, possession reveal animation (beyond instant swap), and phone/touch garage controls are **phase 2**.

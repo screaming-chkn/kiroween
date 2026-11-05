@@ -33,3 +33,11 @@ User story: As a player, I want static to hide what I can't see so scouting matt
 
 ### R6 Never take input
 - No static, ping or hex effect SHALL remove or alter player input.
+
+## MVP status (11/5)
+
+**PHASE 2 — deferred.** Static-as-fog radar, colorblind radar variants, relays/capture, ghost pings, and Static Surge are out of the 11/6 / show-owner MVP. Ship only if they land with a No-static toggle in one task later; otherwise leave this spec unchecked.
+
+**Seance terminal (related UI):** ship a plain list with a 1 Hz blinking cursor; typewriter animation is optional. Not required for MVP combat slice.
+
+**Possession reveal (related):** ship an **instant token/color swap** unless the full animation is solid by 11/20. Skip the static burst.
