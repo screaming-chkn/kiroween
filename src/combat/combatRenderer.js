@@ -372,13 +372,22 @@ function drawHPBar(ctx, bx, by, hp, maxHp, fillColor, label) {
   ctx.lineWidth   = 1;
   ctx.strokeRect(bx, by, HP_BAR_W, HP_BAR_H);
 
-  // HP text — bone (#E8E2D0) on dark track, ≥7:1 contrast
-  // Font size 11 world units → readable at default zoom; tabular nums.
-  ctx.fillStyle   = C.bone;
-  ctx.font        = `bold 10px "Share Tech Mono", monospace`;
-  ctx.textBaseline = 'middle';
+  // HP text — bone (#E8E2D0) label, drawn ABOVE the bar (not over the fill)
+  // so the phosphor/ember/blood fill can never swallow the digits. A 2 px void
+  // (#0A0D0B) stroke is laid under the fill as a halo, keeping ≥7:1 contrast on
+  // any fill colour (accessibility rule 1). Font is 12 px (rule 8 / ≥12px).
+  const text = `${label} ${Math.ceil(hp)}/${maxHp}`;
+  ctx.font         = `bold 12px "Share Tech Mono", monospace`;
+  ctx.textBaseline = 'bottom';           // sit the text on top of the bar
   ctx.textAlign    = 'left';
-  ctx.fillText(`${label} ${Math.ceil(hp)}/${maxHp}`, bx + 3, by + HP_BAR_H / 2);
+  ctx.lineJoin     = 'round';
+  ctx.lineWidth    = 2;                   // 2 px void halo under the glyphs
+  ctx.strokeStyle  = C.void;
+  const textX = bx + 3;
+  const textY = by - 2;                   // 2 px gap above the bar's top edge
+  ctx.strokeText(text, textX, textY);
+  ctx.fillStyle    = C.bone;
+  ctx.fillText(text, textX, textY);
 }
 
 /**
@@ -506,11 +515,11 @@ export function drawFixedHUD(ctx, state, vpW, vpH) {
   // R12: WHEN overdrawn THEN the ember STUTTER tag PULSES at ≤ 2 Hz. The pulse
   // is a cosine fade on the ember's opacity (one soft peak per cycle, never a
   // hard strobe) driven by the match clock — see hud.powerPulseAlpha. The tag
-  // never fades fully out (floor 0.4) so the word stays readable at every
+  // never fades fully out (floor 0.7) so the word stays readable at every
   // phase of the pulse (accessibility rule 1).
   if (stutter) {
     const pulse = powerPulseAlpha(state.elapsedMs ?? 0);
-    ctx.globalAlpha = 0.4 + 0.6 * pulse;
+    ctx.globalAlpha = 0.7 + 0.3 * pulse;
     ctx.fillStyle   = C.ember;
     ctx.fillText(powerLabel, powerValX, rowY);
     ctx.globalAlpha = 1;

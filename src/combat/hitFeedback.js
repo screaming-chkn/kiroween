@@ -26,14 +26,72 @@
 export const FLASH_DURATION_MS = 80;
 
 /**
+ * Minimum gap between the START of two hit-flashes on the same mech (ms).
+ *
+ * R10 flicker fix: without a floor, rapid hits (e.g. an enemy burst) could
+ * re-trigger createFlash every few ms and strobe the sprite, breaking the
+ * ≤ 2 flashes/second cap (accessibility rule 4). We refuse a new flash if the
+ * last one started less than FLASH_RETRIGGER_MS ago; the in-flight flash keeps
+ * ramping and floating damage numbers still spawn on every hit.
+ */
+export const FLASH_RETRIGGER_MS = 500;
+
+/**
  * Create a hit-flash timer.
  *
  * @param {number} [durationMs=FLASH_DURATION_MS]  Total flash lifetime in ms.
- * @returns {{ remainingMs: number, durationMs: number }}
+ * @param {number} [startedAtMs=0]                 Match-clock time the flash
+ *                                                 started (ms); used by
+ *                                                 {@link shouldCreateFlash} to
+ *                                                 rate-limit re-triggers.
+ * @returns {{ remainingMs: number, durationMs: number, startedAtMs: number }}
  */
-export function createFlash(durationMs = FLASH_DURATION_MS) {
+export function createFlash(durationMs = FLASH_DURATION_MS, startedAtMs = 0) {
   const d = Number.isFinite(durationMs) && durationMs > 0 ? durationMs : FLASH_DURATION_MS;
-  return { remainingMs: d, durationMs: d };
+  const t = Number.isFinite(startedAtMs) ? startedAtMs : 0;
+  return { remainingMs: d, durationMs: d, startedAtMs: t };
+}
+
+/**
+ * Pure rate-limit test: may we start a NEW flash right now?
+ *
+ * Returns true when there is no existing flash, when the existing flash has no
+ * recorded start time, or when at least FLASH_RETRIGGER_MS have elapsed since
+ * the existing flash started. Returns false while we are still inside the
+ * retrigger window, so a burst of hits produces at most one flash per window.
+ *
+ * @param {{ startedAtMs?: number } | null | undefined} existingFlash
+ * @param {number} nowMs       Current match-clock time in ms.
+ * @param {number} [retriggerMs=FLASH_RETRIGGER_MS]
+ * @returns {boolean}
+ */
+export function shouldCreateFlash(existingFlash, nowMs, retriggerMs = FLASH_RETRIGGER_MS) {
+  if (!existingFlash) return true;
+  const started = existingFlash.startedAtMs;
+  if (!Number.isFinite(started)) return true;
+  const gap = Number.isFinite(retriggerMs) ? retriggerMs : FLASH_RETRIGGER_MS;
+  const now = Number.isFinite(nowMs) ? nowMs : 0;
+  return now - started >= gap;
+}
+
+/**
+ * Pure helper that returns the flash to use after a hit at `nowMs`.
+ *
+ * WHEN a new flash is allowed (see {@link shouldCreateFlash}) THEN a fresh
+ * full-duration flash stamped with `nowMs` is returned; OTHERWISE the existing
+ * flash is returned unchanged (so it keeps ramping and is not re-triggered
+ * within FLASH_RETRIGGER_MS — R10 flicker fix).
+ *
+ * @param {{ startedAtMs?: number } | null | undefined} existingFlash
+ * @param {number} nowMs       Current match-clock time in ms.
+ * @param {number} [retriggerMs=FLASH_RETRIGGER_MS]
+ * @returns {{ remainingMs: number, durationMs: number, startedAtMs: number }}
+ */
+export function maybeCreateFlash(existingFlash, nowMs, retriggerMs = FLASH_RETRIGGER_MS) {
+  if (shouldCreateFlash(existingFlash, nowMs, retriggerMs)) {
+    return createFlash(FLASH_DURATION_MS, nowMs);
+  }
+  return existingFlash;
 }
 
 /**

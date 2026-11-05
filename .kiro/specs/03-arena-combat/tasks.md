@@ -22,3 +22,9 @@
 - [x] 18. MUST Enemy shots bigger, blood-red, short trail (R10)
 - [x] 19. MUST Body clamp to wall (radius-aware) + 2 px dim wall + faint grid + start camera framing arena, with a clamp unit test (R11)
 - [x] 20. SHOULD Overdraw stutter: pulsing POWER tag + skipping ring (R12)
+
+## Checkpoint fixes 11/5 (hardening of landed tasks; keep tests green)
+- [x] 21. Hit-flash re-trigger rate limit (FLASH_RETRIGGER_MS/shouldCreateFlash/maybeCreateFlash) + unit tests, so bursts never strobe (R10, a11y rule 4)
+- [x] 22. Overhead HP-bar label readable on any fill: ≥12px bold, drawn above the bar with a 2px void stroke under the fill (task 10 polish, a11y rules 1 & 8)
+- [x] 23. STUTTER POWER tag pulse floor raised to 0.7 (0.7 + 0.3·pulse) so the word never dims below readable (task 20 polish, a11y rule 1)
+- [x] 24. Favicon: real favicon.svg in repo root + `<link rel="icon">` in index.html (removes 404)

@@ -36,6 +36,7 @@ import {
   createFlash,
   stepFlash,
   flashActive,
+  maybeCreateFlash,
   createFloatingNumber,
   stepFloatingNumber,
 } from './hitFeedback.js';
@@ -196,6 +197,12 @@ export function updateArena(state, actions, dt) {
   // R10: collect new floating damage numbers spawned this tick.
   const newFloaters = [];
 
+  // R10 flicker fix: flashes are rate-limited by start time. We stamp new
+  // flashes with the match-clock time AT THE END of this tick so successive
+  // hits inside FLASH_RETRIGGER_MS do not re-trigger createFlash (and strobe
+  // the sprite). Floating damage numbers below are spawned on EVERY hit.
+  const nowMs = (state.elapsedMs ?? 0) + dt * 1000;
+
   const survivingProjectiles = steppedProjectiles.map(proj => {
     // Already dead (wall) — skip.
     if (proj.dead) return proj;
@@ -204,8 +211,11 @@ export function updateArena(state, actions, dt) {
       // Player projectile vs enemy mech.
       if (hitTestCircle(proj, enemyAfterHits, MECH_RADIUS)) {
         enemyAfterHits = applyDamage(enemyAfterHits, proj.damage);
-        // R10: flash the enemy + float a damage number at the impact point.
-        enemyAfterHits = { ...enemyAfterHits, flash: createFlash() };
+        // R10: flash the enemy (rate-limited) + always float a damage number.
+        enemyAfterHits = {
+          ...enemyAfterHits,
+          flash: maybeCreateFlash(enemyAfterHits.flash, nowMs),
+        };
         newFloaters.push(createFloatingNumber({
           x: enemyAfterHits.x,
           y: enemyAfterHits.y,
@@ -217,8 +227,11 @@ export function updateArena(state, actions, dt) {
       // Enemy projectile vs player mech.
       if (hitTestCircle(proj, playerAfterHits, MECH_RADIUS)) {
         playerAfterHits = applyDamage(playerAfterHits, proj.damage);
-        // R10: flash the player + float a damage number at the impact point.
-        playerAfterHits = { ...playerAfterHits, flash: createFlash() };
+        // R10: flash the player (rate-limited) + always float a damage number.
+        playerAfterHits = {
+          ...playerAfterHits,
+          flash: maybeCreateFlash(playerAfterHits.flash, nowMs),
+        };
         newFloaters.push(createFloatingNumber({
           x: playerAfterHits.x,
           y: playerAfterHits.y,

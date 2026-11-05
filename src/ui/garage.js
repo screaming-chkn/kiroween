@@ -640,7 +640,7 @@ export function mountGarage(root, { onDeploy } = {}) {
   const body = el('div', { class: 'hh-garage__body' });
 
   // Slot list
-  const slotList = el('div', { class: 'hh-garage__slots', role: 'list', 'aria-label': 'Mech slots' });
+  const slotList = el('div', { class: 'hh-garage__slots', role: 'group', 'aria-label': 'Mech slots' });
 
   // Picker panel
   const pickerPanel = el('div', { class: 'hh-picker', role: 'region', 'aria-label': 'Part picker', 'aria-live': 'polite' });
@@ -682,7 +682,7 @@ export function mountGarage(root, { onDeploy } = {}) {
       tabindex: '0',
       role: 'button',
       'aria-expanded': 'false',
-      'aria-label': `${SLOT_LABELS[slotKey]} slot — press Enter to pick a part`,
+      'aria-label': `${SLOT_LABELS[slotKey]} — empty — press Enter to pick a part`,
       'data-slot': slotKey,
     });
 
@@ -714,8 +714,10 @@ export function mountGarage(root, { onDeploy } = {}) {
     const part     = partId ? PARTS_BY_ID[partId] : null;
     nameSpan.textContent = part ? part.name : '— empty —';
     row.setAttribute('aria-expanded', activeSlot === slotKey ? 'true' : 'false');
+    // aria-label MUST start with the visible slot label text (accessibility
+    // rule 5 / label-in-name), e.g. "Legs — Runner Legs — press Enter…".
     row.setAttribute('aria-label',
-      `${SLOT_LABELS[slotKey]}: ${part ? part.name : 'empty'} — press Enter to pick a part`);
+      `${SLOT_LABELS[slotKey]} — ${part ? part.name : 'empty'} — press Enter to pick a part`);
   }
 
   /** Rebuild the footer summary (weight, power, role, stat bars). */

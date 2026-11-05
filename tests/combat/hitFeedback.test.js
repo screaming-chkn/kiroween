@@ -12,7 +12,10 @@
 import assert from 'node:assert/strict';
 import {
   FLASH_DURATION_MS,
+  FLASH_RETRIGGER_MS,
   createFlash,
+  shouldCreateFlash,
+  maybeCreateFlash,
   stepFlash,
   flashActive,
   flashIntensity,
@@ -96,6 +99,61 @@ test('stepFlash is pure (does not mutate the input)', () => {
   const f = createFlash();
   stepFlash(f, 0.040);
   assert.equal(f.remainingMs, 80);
+});
+
+// ── Flash re-trigger rate limit (R10 flicker fix) ────────────────────────────
+
+console.log('\nsrc/combat/hitFeedback.js — flash re-trigger rate limit\n');
+
+test('retrigger window constant is 500 ms', () => {
+  assert.equal(FLASH_RETRIGGER_MS, 500);
+});
+
+test('shouldCreateFlash always allows when there is no existing flash', () => {
+  assert.equal(shouldCreateFlash(null, 0), true);
+  assert.equal(shouldCreateFlash(undefined, 1234), true);
+});
+
+test('shouldCreateFlash allows when existing flash has no start time', () => {
+  // A flash without a finite startedAtMs cannot be rate-limited → allow.
+  assert.equal(shouldCreateFlash({}, 100), true);
+  assert.equal(shouldCreateFlash({ startedAtMs: NaN }, 100), true);
+});
+
+test('shouldCreateFlash refuses within 500 ms of startedAtMs', () => {
+  const flash = createFlash(FLASH_DURATION_MS, 1000); // started at t=1000 ms
+  assert.equal(shouldCreateFlash(flash, 1000), false); // same instant
+  assert.equal(shouldCreateFlash(flash, 1250), false); // 250 ms later
+  assert.equal(shouldCreateFlash(flash, 1499), false); // 499 ms later
+});
+
+test('shouldCreateFlash allows after ≥ 500 ms have elapsed', () => {
+  const flash = createFlash(FLASH_DURATION_MS, 1000);
+  assert.equal(shouldCreateFlash(flash, 1500), true); // exactly 500 ms
+  assert.equal(shouldCreateFlash(flash, 2000), true); // well past
+});
+
+test('maybeCreateFlash returns a fresh flash stamped with nowMs when allowed', () => {
+  const fresh = maybeCreateFlash(null, 1234);
+  assert.equal(fresh.remainingMs, FLASH_DURATION_MS);
+  assert.equal(fresh.durationMs, FLASH_DURATION_MS);
+  assert.equal(fresh.startedAtMs, 1234);
+  assert.ok(flashActive(fresh));
+});
+
+test('maybeCreateFlash keeps the existing flash unchanged inside the window', () => {
+  const existing = createFlash(FLASH_DURATION_MS, 1000);
+  const result = maybeCreateFlash(existing, 1200); // only 200 ms later
+  assert.equal(result, existing);                  // same object, not re-triggered
+  assert.equal(result.startedAtMs, 1000);
+});
+
+test('maybeCreateFlash re-triggers once the window has passed', () => {
+  const existing = createFlash(FLASH_DURATION_MS, 1000);
+  const result = maybeCreateFlash(existing, 1600); // 600 ms later
+  assert.notEqual(result, existing);
+  assert.equal(result.startedAtMs, 1600);
+  assert.equal(result.remainingMs, FLASH_DURATION_MS);
 });
 
 // ── Floating damage number spawn / step ─────────────────────────────────────

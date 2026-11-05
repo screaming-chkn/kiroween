@@ -15,3 +15,6 @@
 - [x] 11. Overdraw line + stutter confirm on Deploy (R8)
 - [x] 12. "cap from LEGS" + role tooltip (R9)
 - [x] 13. Three-column layout, taller stat bars, reserved warning line, part hover border (R10)
+
+## Checkpoint fixes 11/5 (hardening of landed tasks; keep tests green)
+- [x] 14. Garage a11y: slot container role=group (was list); each slot aria-label starts with its visible label text, e.g. "Legs — Runner Legs — press Enter…" (task 6 polish, a11y rule 5)
