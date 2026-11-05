@@ -178,8 +178,41 @@ test('warning line reserves height so the footer does not jump (R10)', () => {
 
 test('parts show a bone border on hover (R10)', () => {
   const hover = block(GARAGE_CSS, '.hh-option:hover {');
-  // bone token is #E8E2D0.
-  assert.ok(/border-color:\s*#E8E2D0/i.test(hover), 'part hover border is not bone (#E8E2D0)');
+  // bone token is #E8E2D0; now wired through var(--color-bone, #E8E2D0) so it
+  // reskins on possession while keeping the bone fallback.
+  assert.ok(
+    /border-color:\s*var\(--color-bone,\s*#E8E2D0\)/i.test(hover),
+    'part hover border is not the bone token var (var(--color-bone, #E8E2D0))',
+  );
+});
+
+test('garage CSS wires key chrome to possession tokens (reskins on .possessed)', () => {
+  // Title, slots, borders, deploy, silhouette strokes and the séance button
+  // must read from var(--color-*) so an instant .possessed swap repaints them.
+  assert.ok(
+    /color:\s*var\(--color-phosphor,/.test(block(GARAGE_CSS, '.hh-garage__title {')),
+    'title colour must be wired to var(--color-phosphor)',
+  );
+  assert.ok(
+    /background:\s*var\(--color-panel,/.test(block(GARAGE_CSS, '.hh-slot {')),
+    'slot background must be wired to var(--color-panel)',
+  );
+  assert.ok(
+    /border-top:\s*1px solid var\(--color-phosphor-dim,/.test(block(GARAGE_CSS, '.hh-garage__footer {')),
+    'footer border must be wired to var(--color-phosphor-dim)',
+  );
+  assert.ok(
+    /stroke:\s*var\(--color-phosphor,/.test(block(GARAGE_CSS, '.hh-sil__part {')),
+    'silhouette stroke must be wired to var(--color-phosphor)',
+  );
+  assert.ok(
+    /color:\s*var\(--color-ghost,/.test(block(GARAGE_CSS, '.hh-seance-btn {')),
+    'séance button colour must be wired to var(--color-ghost)',
+  );
+  assert.ok(
+    /background:\s*var\(--color-phosphor,/.test(block(GARAGE_CSS, '.hh-deploy {')),
+    'deploy background must be wired to var(--color-phosphor)',
+  );
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

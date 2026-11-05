@@ -14,17 +14,23 @@
  * Preset: "Drifter" — balanced starter build, SCOUT lean, all stats covered.
  *
  *   Slot   Part id             Weight   Capacity
- *   legs   legs-runner         20       80
+ *   legs   legs-runner         20       90
  *   core   core-pulse          15       (out: 10)
  *   armL   armL-spotter         8       (draw: 2)
  *   armR   armR-hatchet        12       (draw: 1)
  *   back   back-smoke           8       (draw: 1)
  *   head   head-optics          6       (draw: 2)
  *                            ─────
- *   Total weight              69  (load% = 69/80 × 100 = 86.25 — speed penalty ~9.4%)
+ *   Total weight              69  (load% = 69/90 × 100 ≈ 76.67 — light band:
+ *                                   speed penalty 0, dash cooldown 2.5 s)
  *   Power out                 10
  *   Power draw                 6  (spotter 2 + hatchet 1 + smoke 1 + optics 2)
  *   Balance                   +4  (no Overdraw)
+ *
+ * feel-pass (11/5, owner GO): legs-runner capacity raised 80 → 90 so the
+ * default Scout sits at ≈76.7% load — inside the penalty-free band (≤ 80%) — and
+ * so earns the light 2.5 s dash cooldown (dashCooldownForLoad(76.67) === 2500)
+ * for a snappy Scout feel. The dash table itself is untouched.
  *
  * Weight and power math verified against src/mech/loadout.js::totals().
  */

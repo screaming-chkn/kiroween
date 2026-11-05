@@ -44,7 +44,7 @@ export const PARTS = [
     slot:     'legs',
     name:     'Runner Legs',
     weight:   20,
-    capacity: 80,
+    capacity: 90,
     powerDraw: 1,
     stats:    { armor: 2, speed: 8, damage: 0, sensor: 2 },
     roles:    ['SCOUT'],

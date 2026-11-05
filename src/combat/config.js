@@ -70,16 +70,18 @@ export const PLAYER_PROJECTILE_DAMAGE = 17;
 /**
  * Damage dealt by a single enemy projectile.
  *
- * Balance retune LEVER 4 (11/5d, LAST pass): 15 → 35. Even with the sticky
- * lapse-movement-freeze (harness) opening sitting-duck windows, at 15 dmg the
- * enemy's slow ~1.95 s shot cycle could not drain the player's 300 HP before
- * the player closed the kill — the player averaged only ~77 dmg/fight (needs
- * 300 to lose) and win rates pinned at 100%. Raising per-shot damage to 35
- * means ~3 landed shots inside the freeze windows (now ~0.9 s each, LAPSE_TICKS
- * 30 → 55) can finish a 300 HP player, so the enemy actually wins some seeds
- * and win rates come off 100%. feel windup/dash/overdraw untouched.
+ * feel-pass (11/5, owner GO): lowered 35 → 20. At 35 the enemy's shots
+ * hit hard enough that a few landed rounds inside the harness freeze windows
+ * could delete the player's 300 HP faster than the duel felt fair — incoming
+ * fire read as a one-sided punish rather than a readable threat. Dropping
+ * per-shot damage to 20 keeps enemy fire a meaningful pressure (≈15 shots to
+ * drain 300 HP over the slow 1.5 s cycle) while leaving the player room to
+ * dash/break line-of-sight off the windup telegraph. Paired with the
+ * ENEMY_MAX_HP 2900 → 1400 cut below so duels stay a tight, winnable feel.
+ * Windup (450 ms), ENEMY_FIRE_COOLDOWN_MS (1500), and the dash table are all
+ * untouched (feel feel preserved).
  */
-export const ENEMY_PROJECTILE_DAMAGE  = 35;
+export const ENEMY_PROJECTILE_DAMAGE  = 20;
 
 /** Minimum time between player shots in milliseconds (R3). */
 export const FIRE_COOLDOWN_MS = 300;
@@ -99,46 +101,18 @@ export const PLAYER_MAX_HP = 300;
 /**
  * Starting hit-points for the enemy bot (R5).
  *
- * feel 11/5 feel pass: lowered 900 → 400 so a clean player build lands the
- * kill inside the 60–120 s "winnable duel" target instead of grinding.
- *
- * Balance retune (LEVER 1, owner approved): raised 400 → 2800 so perfect-lead
- * TTK is no longer ~7 s. At 20 dmg / 0.3 s cooldown the base perfect-lead TTK
- * is ~42 s (2800 / 20 × 0.3 s) before misses and projectile travel.
- *
- * Balance retune LEVER 1b (11/5): raised 2800 → 4200. At 2800 the harness's
- * perfect-lead player landed every shot, giving ~46 s medians and still a 100%
- * win rate — perfect lead was effectively god-mode. Pairing this HP bump with
- * seeded aim noise in the harness player policy (LEVER 2, harness-only) pushes
- * medians back into the 60–120 s window without touching windup, dash, or
- * overdraw fire-rate. 4200 / 20 × 0.3 s ≈ 63 s base perfect-lead TTK before any
- * misses or projectile travel.
- *
- * Balance retune LEVER mix (11/5): lowered 4200 → 3600. At 4200 the harness
- * settled into one of two failure modes depending on sigma: medians in-window
- * but a 100% win rate (sigma 32/42), or a healthy loss share but almost all
- * duels timing out at the 180 s cap (sigma 60). Shortening the baseline TTK
- * ~14% (3600 / 20 × 0.3 s ≈ 54 s base perfect-lead TTK) buys headroom so a
- * moderate aim-noise sigma (36) plus occasional harness-only player-policy
- * lapses can produce a real loss share while medians stay inside 60–120 s.
- * Windup, dash, and overdraw fire-rate are untouched (feel feel preserved).
- *
- * Balance retune LEVER 3 offset (11/5c): lowered 3600 → 3300 to offset the
- * PLAYER_PROJECTILE_DAMAGE 20 → 17 DPS cut so medians do not drift over 120 s.
- * With the lapse-movement-freeze (harness) now letting the enemy land shots,
- * the DPS cut widens the loss share; the paired HP trim keeps baseline
- * perfect-lead TTK near ~58 s (3300 / 17 × 0.3 s) so medians stay ~100–115 s.
- * Windup, dash, and overdraw fire-rate still untouched (feel feel preserved).
- *
- * Balance retune LEVER 1 offset (11/5d, LAST pass): lowered 3300 → 2900. The
- * LEVER 4 enemy-damage bump (15 → 35) and longer freeze (LAPSE_TICKS 30 → 55)
- * lengthen fights slightly — the enemy survives a little longer because the
- * player's own lapses cost more DPS time. Shaving enemy HP ~12% keeps baseline
- * perfect-lead TTK near ~51 s (2900 / 17 × 0.3 s) so player-side medians stay
- * near/under 120 s with PLAYER_PROJECTILE_DAMAGE = 17 even as some fights now
- * end in a loss. Windup, dash, and overdraw fire-rate still untouched.
+ * feel-pass (11/5, owner GO): lowered 2900 → 1400. The 2900 value was
+ * tuned against a perfect-lead harness player and made a real duel a grind —
+ * baseline perfect-lead TTK sat near ~51 s (2900 / 17 × 0.3 s) and medians
+ * drifted toward the 120 s ceiling. Halving HP to 1400 brings baseline
+ * perfect-lead TTK to ~25 s (1400 / 17 × 0.3 s); with misses, strafing, and
+ * projectile travel real duels land comfortably inside the 60–120 s winnable
+ * window and read as a decisive kill rather than a slog. Paired with the
+ * ENEMY_PROJECTILE_DAMAGE 35 → 20 cut above. Windup (450 ms),
+ * ENEMY_FIRE_COOLDOWN_MS (1500), and the dash table are untouched (feel feel
+ * preserved).
  */
-export const ENEMY_MAX_HP  = 2900;
+export const ENEMY_MAX_HP  = 1400;
 
 // ── Enemy AI ──────────────────────────────────────────────────────────────────
 

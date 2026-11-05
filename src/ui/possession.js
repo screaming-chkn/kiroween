@@ -29,17 +29,21 @@
 export const POSSESSED_CLASS = 'possessed';
 
 /**
- * Sterile military palette (unpossessed). Cold greys + a muted signal green;
- * no phosphor glow. Values are self-contained so the toggle is a pure reskin.
+ * Sterile military palette (unpossessed). Cold neutral greys with a faint blue
+ * cast — a dead, powered-down terminal. Deliberately NO phosphor green and no
+ * bone/ghost warmth so it reads *clearly* different from the possessed palette
+ * (hot green #39FF88 / bone / ghost blue). The "phosphor" readout slot is a
+ * cold steel grey, so when the séance flips `.possessed` the whole UI visibly
+ * jumps from grey military to live green haunt — an instant, unmistakable swap.
  */
 export const STERILE_TOKENS = {
-  '--color-void':         '#0B0E10',
-  '--color-panel':        '#161B1F',
-  '--color-phosphor':     '#B8C4C0', // sterile: readouts are cold grey-green
-  '--color-phosphor-dim': '#6E7A77',
-  '--color-bone':         '#D7DBDC',
-  '--color-ghost':        '#7FA6BF',
-  '--color-ember':        '#C8792E', // focus ring stays warm + visible
+  '--color-void':         '#0C0E10', // near-black cold slate
+  '--color-panel':        '#171B1F', // gunmetal panel
+  '--color-phosphor':     '#C3CBD2', // sterile: readouts are cold steel grey (no green)
+  '--color-phosphor-dim': '#6B747C', // dim steel
+  '--color-bone':         '#AEB6BD', // cold grey, not warm bone
+  '--color-ghost':        '#5E6B74', // muted slate, not ghost-blue
+  '--color-ember':        '#C8792E', // focus ring stays warm + visible (accessibility)
 };
 
 /**

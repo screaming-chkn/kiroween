@@ -140,7 +140,7 @@ export const GARAGE_CSS = `
 /* header */
 .hh-garage__header {
   padding: 16px 24px 8px;
-  border-bottom: 1px solid #1F9E57; /* phosphor-dim */
+  border-bottom: 1px solid var(--color-phosphor-dim, #1F9E57); /* flips on possession */
   display: flex;
   align-items: baseline;
   gap: 16px;
@@ -189,7 +189,7 @@ export const GARAGE_CSS = `
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
-  border-right: 1px solid #121A15; /* panel */
+  border-right: 1px solid var(--color-panel, #121A15); /* flips on possession */
 }
 
 /* individual slot row */
@@ -203,20 +203,20 @@ export const GARAGE_CSS = `
   cursor: pointer;
   border-radius: 2px;
   transition: background 120ms ease-out, border-color 120ms ease-out;
-  background: #121A15; /* panel */
+  background: var(--color-panel, #121A15); /* flips on possession */
 }
 .hh-slot:hover,
 .hh-slot:focus {
   background: #1a2a1f;
-  border-color: #1F9E57; /* phosphor-dim */
+  border-color: var(--color-phosphor-dim, #1F9E57); /* flips on possession */
   outline: none;
 }
 .hh-slot:focus {
-  outline: 2px solid #FF8A3D; /* ember — accessibility focus ring */
+  outline: 2px solid var(--color-ember, #FF8A3D); /* ember — accessibility focus ring */
   outline-offset: 1px;
 }
 .hh-slot[aria-expanded="true"] {
-  border-color: #39FF88; /* phosphor */
+  border-color: var(--color-phosphor, #39FF88); /* flips on possession */
 }
 .hh-slot__label {
   font-family: 'Share Tech Mono', monospace;
@@ -269,16 +269,16 @@ export const GARAGE_CSS = `
   flex-direction: column;
   gap: 16px;
   overflow-y: auto;
-  border-left: 1px solid #121A15; /* panel */
+  border-left: 1px solid var(--color-panel, #121A15); /* flips on possession */
 }
 .hh-preview__art {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 120px;
-  border: 1px solid #1F9E57;      /* phosphor-dim */
+  border: 1px solid var(--color-phosphor-dim, #1F9E57); /* flips on possession */
   border-radius: 2px;
-  background: #121A15;            /* panel */
+  background: var(--color-panel, #121A15);              /* flips on possession */
   padding: 8px;
 }
 
@@ -292,13 +292,13 @@ export const GARAGE_CSS = `
   display: block;
 }
 .hh-sil__part {
-  fill: #E8E2D0;                   /* bone */
-  stroke: #39FF88;                 /* phosphor */
+  fill: var(--color-bone, #E8E2D0);        /* bone — flips on possession */
+  stroke: var(--color-phosphor, #39FF88);  /* phosphor stroke — flips on possession */
   stroke-width: 1.5;
 }
 .hh-sil__part--empty {
-  fill: #121A15;                   /* panel */
-  stroke: #1F9E57;                 /* phosphor-dim */
+  fill: var(--color-panel, #121A15);            /* panel — flips on possession */
+  stroke: var(--color-phosphor-dim, #1F9E57);   /* phosphor-dim — flips on possession */
   stroke-width: 1.5;
   stroke-dasharray: 3 3;           /* dashed outline = empty, shape-based cue */
   opacity: 0.6;
@@ -326,16 +326,16 @@ export const GARAGE_CSS = `
 }
 .hh-option:hover {
   background: #1a2a1f;
-  border-color: #E8E2D0; /* bone — R10 part hover border */
+  border-color: var(--color-bone, #E8E2D0); /* bone — R10 part hover border, flips on possession */
   outline: none;
 }
 .hh-option:focus {
   background: #1a2a1f;
-  outline: 2px solid #FF8A3D;
+  outline: 2px solid var(--color-ember, #FF8A3D);
   outline-offset: 1px;
 }
 .hh-option[aria-selected="true"] {
-  border-color: #39FF88;
+  border-color: var(--color-phosphor, #39FF88); /* flips on possession */
   background: #0e1f14;
 }
 .hh-option__name {
@@ -391,7 +391,7 @@ export const GARAGE_CSS = `
 /* footer — stats + deploy */
 .hh-garage__footer {
   padding: 12px 24px;
-  border-top: 1px solid #1F9E57;
+  border-top: 1px solid var(--color-phosphor-dim, #1F9E57); /* flips on possession */
   display: flex;
   justify-content: flex-end;
   gap: 16px;
@@ -455,7 +455,7 @@ export const GARAGE_CSS = `
 }
 .hh-bar-fill {
   height: 100%;
-  background: #39FF88; /* phosphor */
+  background: var(--color-phosphor, #39FF88); /* flips on possession */
   border-radius: 1px;
   transition: width 120ms ease-out;
 }
@@ -464,7 +464,7 @@ export const GARAGE_CSS = `
 .hh-role {
   font-family: 'VT323', monospace;
   font-size: 20px;
-  color: #9FD8FF; /* ghost */
+  color: var(--color-ghost, #9FD8FF); /* ghost — flips on possession */
   letter-spacing: 0.1em;
 }
 .hh-role--null { color: #8F9A92; }
@@ -487,12 +487,12 @@ export const GARAGE_CSS = `
   background: #5fffaa;
 }
 .hh-deploy:focus {
-  outline: 2px solid #FF8A3D;
+  outline: 2px solid var(--color-ember, #FF8A3D);
   outline-offset: 2px;
 }
 .hh-deploy:disabled {
-  background: #1F9E57;
-  color: #0A0D0B;
+  background: var(--color-phosphor-dim, #1F9E57); /* flips on possession */
+  color: var(--color-void, #0A0D0B);
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -502,9 +502,9 @@ export const GARAGE_CSS = `
   margin-right: auto;            /* push to the far left of the flex-end footer */
   font-family: 'VT323', monospace;
   font-size: 22px;
-  color: #9FD8FF;                /* ghost — in-world "other side" accent */
+  color: var(--color-ghost, #9FD8FF);                /* ghost — flips on possession */
   background: transparent;
-  border: 1px solid #1F9E57;     /* phosphor-dim */
+  border: 1px solid var(--color-phosphor-dim, #1F9E57); /* flips on possession */
   padding: 6px 20px;
   min-height: 48px;
   cursor: pointer;
@@ -513,11 +513,11 @@ export const GARAGE_CSS = `
   transition: background 120ms ease-out, color 120ms ease-out;
 }
 .hh-seance-btn:hover {
-  background: #121A15;           /* panel */
-  color: #E8E2D0;               /* bone */
+  background: var(--color-panel, #121A15);           /* flips on possession */
+  color: var(--color-bone, #E8E2D0);                 /* flips on possession */
 }
 .hh-seance-btn:focus {
-  outline: 2px solid #FF8A3D;    /* ember */
+  outline: 2px solid var(--color-ember, #FF8A3D);    /* ember */
   outline-offset: 2px;
 }
 

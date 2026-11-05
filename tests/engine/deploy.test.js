@@ -40,6 +40,7 @@ import { totals }                        from '../../src/mech/loadout.js';
 import { speedPenalty }                  from '../../src/mech/weight.js';
 import { createArena, updateArena }      from '../../src/combat/arena.js';
 import { FIXED_DT }                      from '../../src/engine/loop.js';
+import { dashCooldownForLoad, dashWeightClass } from '../../src/combat/config.js';
 
 // ── Minimal test harness (matches tests/engine/loop.test.js) ─────────────────
 
@@ -178,6 +179,32 @@ test('each deploy tick is cheap (no per-tick stall on the critical path)', () =>
     `per-tick cost ${perTickMs.toFixed(4)}ms must be < 5ms`,
   );
   console.log(`    per-tick cost: ${perTickMs.toFixed(4)}ms over ${TICKS} ticks`);
+});
+
+// ── feel-pass — default Scout is light (≤ 80% load → 2.5 s dash CD) ──────
+
+console.log('\nfeel-pass — default Scout sits in the light dash band\n');
+
+test('default Drifter preset loads under 80% (penalty-free light band)', () => {
+  const t = totals(defaultLoadout(), PARTS_BY_ID);
+  // 69 weight / 90 capacity × 100 ≈ 76.67%.
+  assert.ok(t.loadPct < 80, `default load% must be < 80, got ${t.loadPct}`);
+  assert.ok(
+    Math.abs(t.loadPct - (69 / 90) * 100) < 1e-9,
+    `expected ≈76.67% (69/90), got ${t.loadPct}`,
+  );
+  // Penalty-free band → no speed penalty.
+  assert.equal(speedPenalty(t.loadPct), 0, 'light build must have zero speed penalty');
+});
+
+test('default Scout earns the light 2.5 s dash cooldown', () => {
+  const t = totals(defaultLoadout(), PARTS_BY_ID);
+  assert.equal(dashWeightClass(t.loadPct), 'light');
+  assert.equal(
+    dashCooldownForLoad(t.loadPct),
+    2500,
+    `default Scout dash cooldown must be 2500 ms, got ${dashCooldownForLoad(t.loadPct)}`,
+  );
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

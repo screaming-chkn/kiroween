@@ -86,6 +86,23 @@ test('possessed palette keeps the haunted phosphor green', () => {
   assert.equal(POSSESSED_TOKENS['--color-ghost'], '#9FD8FF');
 });
 
+test('sterile phosphor is a cold grey, clearly NOT the hot possessed green', () => {
+  // Sterile readouts must read as cold steel grey (R≈G≈B, no green dominance),
+  // so the possession swap to #39FF88 is unmistakable.
+  const sterile = STERILE_TOKENS['--color-phosphor'];
+  assert.notEqual(sterile, POSSESSED_TOKENS['--color-phosphor'], 'sterile phosphor must differ');
+  const r = parseInt(sterile.slice(1, 3), 16);
+  const g = parseInt(sterile.slice(3, 5), 16);
+  const b = parseInt(sterile.slice(5, 7), 16);
+  // Neutral grey: channels within a narrow band of each other (no phosphor pop).
+  const spread = Math.max(r, g, b) - Math.min(r, g, b);
+  assert.ok(spread <= 24, `sterile phosphor should be near-neutral grey, channel spread ${spread}`);
+  // Possessed green, by contrast, is strongly green-dominant.
+  const pg = parseInt(POSSESSED_TOKENS['--color-phosphor'].slice(3, 5), 16);
+  const pr = parseInt(POSSESSED_TOKENS['--color-phosphor'].slice(1, 3), 16);
+  assert.ok(pg - pr > 100, 'possessed phosphor must stay strongly green-dominant');
+});
+
 // ── applyPossessed ───────────────────────────────────────────────────────────
 
 console.log('\nsrc/ui/possession.js — applyPossessed\n');
