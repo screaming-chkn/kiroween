@@ -3,7 +3,11 @@
  *
  * Expect-style unit tests for the feel 11/5 combat feel pass:
  *
- *   1) Enemy HP lowered to 400 (winnable 60–120 s duel).
+ *   1) Enemy HP (LEVER 1 offset): 3300 → 2900 to offset the longer freeze
+ *      (LAPSE_TICKS 30 → 55) and stronger enemy shot (ENEMY_PROJECTILE_DAMAGE
+ *      15 → 35) so baseline perfect-lead TTK stays near ~51 s (2900/17dmg/0.3s),
+ *      keeping player-side medians near/under 120 s while the harness
+ *      lapse-movement-freeze now lets the enemy win some seeds.
  *   2) Enemy shot windup (~0.45 s) delays the projectile.
  *   3) Real dash on Shift: ~0.18 s burst at 3× speed, cooldown by weight class.
  *   4) Overdraw slows fire rate: shots-per-second drops under overdraw.
@@ -58,14 +62,14 @@ const DT_MS = DT * 1000;  // ≈ 16.667 ms
 
 // ── 1. Enemy HP ──────────────────────────────────────────────────────────────
 
-console.log('\n── 1. Enemy HP lowered to 400 ──\n');
+console.log('\n── 1. Enemy HP (LEVER 1 offset: 3300 → 2900) ──\n');
 
-test('ENEMY_MAX_HP is 400 (down from 900)', () => {
-  assert.equal(ENEMY_MAX_HP, 400);
+test('ENEMY_MAX_HP is 2900 (LEVER 1 offset, was 3300)', () => {
+  assert.equal(ENEMY_MAX_HP, 2900);
 });
 
 test('createEnemy starts at ENEMY_MAX_HP', () => {
-  assert.equal(createEnemy().hp, 400);
+  assert.equal(createEnemy().hp, ENEMY_MAX_HP);
 });
 
 // ── 2. Enemy shot windup ──────────────────────────────────────────────────────

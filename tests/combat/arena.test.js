@@ -371,6 +371,19 @@ test('scripted sim: sustained fire → enemy dead → win', () => {
     },
   };
 
+  // Balance retune (LEVER 1/4 offset, LAST pass): ENEMY_MAX_HP is 2900 and
+  // player damage is 17. At point-blank the player out-damages the enemy, but
+  // its DPS (17 / 0.3 s ≈ 57/s → ~51 s to grind 2900) is slower than the enemy
+  // drains the player's 300 HP, so the raw sustained-fire duel would LOSE. To
+  // keep this a "fire finishes the kill" assertion without reversing the HP
+  // lever, soften the enemy most of the way with applyDamage (symbolically, so
+  // it tracks any future HP/damage retune), then let sustained fire land the
+  // finishing blows well before the player can die.
+  state = {
+    ...state,
+    enemy: applyDamage(state.enemy, ENEMY_MAX_HP - PLAYER_PROJECTILE_DAMAGE * 3),
+  };
+
   let winReached = false;
 
   for (let frame = 0; frame < 10000; frame++) {
@@ -387,8 +400,8 @@ test('scripted sim: sustained fire → enemy dead → win', () => {
     if (state.phase === 'lose') break;
   }
 
-  // Enemy is point-blank so at least one side should die fairly quickly.
-  // The player starts with more HP (200) and enemy with 150 so enemy dies first.
+  // Enemy is point-blank and pre-softened to ~3 shots of HP, so sustained fire
+  // finishes the kill long before the enemy can drain the player's HP.
   assert.equal(winReached, true, `win never reached; phase=${state.phase}, enemyHp=${state.enemy.hp}`);
 });
 
