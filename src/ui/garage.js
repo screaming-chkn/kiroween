@@ -43,6 +43,7 @@ import { defaultLoadout }      from '../data/presets.js';
 import { equip, totals }       from '../mech/loadout.js';
 import { canDeploy }           from '../mech/weight.js';
 import { roleTag, roleTooltip } from '../mech/role.js';
+import { silhouetteSpec }       from '../mech/silhouette.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -278,11 +279,37 @@ export const GARAGE_CSS = `
   border: 1px solid #1F9E57;      /* phosphor-dim */
   border-radius: 2px;
   background: #121A15;            /* panel */
-  color: #1F9E57;                 /* phosphor-dim — placeholder silhouette */
-  font-family: 'VT323', monospace;
-  font-size: 24px;
-  letter-spacing: 0.1em;
+  padding: 8px;
 }
+
+/* top-down mech silhouette (SVG) — reflects equipped parts.
+   Present slots use bone fill + phosphor stroke; empty slots are dimmed so
+   absence reads by shape/opacity, never by colour alone (a11y rule 6). */
+.hh-preview__svg {
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  display: block;
+}
+.hh-sil__part {
+  fill: #E8E2D0;                   /* bone */
+  stroke: #39FF88;                 /* phosphor */
+  stroke-width: 1.5;
+}
+.hh-sil__part--empty {
+  fill: #121A15;                   /* panel */
+  stroke: #1F9E57;                 /* phosphor-dim */
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;           /* dashed outline = empty, shape-based cue */
+  opacity: 0.6;
+}
+.hh-sil__label {
+  fill: #8F9A92;                   /* ash */
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+.hh-sil__label--present { fill: #B9C2BA; }  /* lighter when filled */
 
 /* part option */
 .hh-option {
@@ -607,6 +634,78 @@ function el(tag, attrs = {}) {
   return node;
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** Create an SVG element with attributes (SVG needs its own namespace). */
+function svgEl(tag, attrs = {}) {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    node.setAttribute(k, String(v));
+  }
+  return node;
+}
+
+/**
+ * Layout of each silhouette part in the 100×140 viewBox (top-down view).
+ * `label` is the short slot code drawn beside/over the shape.
+ * Order matters: back is drawn first (behind the core), head last (on top).
+ */
+const SIL_SHAPES = [
+  { slot: 'back', label: 'BCK', shape: 'rect', attrs: { x: 34, y: 8,  width: 32, height: 20, rx: 3 },  lx: 50, ly: 21 },
+  { slot: 'armL', label: 'L',   shape: 'rect', attrs: { x: 6,  y: 52, width: 20, height: 44, rx: 4 },  lx: 16, ly: 76 },
+  { slot: 'armR', label: 'R',   shape: 'rect', attrs: { x: 74, y: 52, width: 20, height: 44, rx: 4 },  lx: 84, ly: 76 },
+  { slot: 'core', label: 'CORE',shape: 'rect', attrs: { x: 32, y: 48, width: 36, height: 44, rx: 4 },  lx: 50, ly: 72 },
+  { slot: 'legs', label: 'LEGS',shape: 'rect', attrs: { x: 30, y: 96, width: 40, height: 36, rx: 4 },  lx: 50, ly: 116 },
+  { slot: 'head', label: 'HD',  shape: 'circle', attrs: { cx: 50, cy: 40, r: 11 },                     lx: 50, ly: 42 },
+];
+
+/**
+ * Build a top-down SVG silhouette <svg> node from a silhouette spec.
+ * Present slots render solid (bone/phosphor); empty slots render dashed/dim.
+ * Each shape carries a <title> and visible short label so slots read by shape
+ * and text, never colour alone (a11y rule 6).
+ *
+ * @param {ReturnType<typeof silhouetteSpec>} spec
+ * @returns {SVGElement}
+ */
+function buildSilhouette(spec) {
+  const svg = svgEl('svg', {
+    class: 'hh-preview__svg',
+    viewBox: '0 0 100 140',
+    role: 'img',
+  });
+
+  const present = SIL_SHAPES.filter(s => spec[s.slot]?.present).map(s => s.slot);
+  svg.setAttribute('aria-label',
+    present.length
+      ? `Mech silhouette — equipped: ${present.join(', ')}`
+      : 'Mech silhouette — no parts equipped');
+
+  for (const def of SIL_SHAPES) {
+    const info = spec[def.slot] ?? { present: false, name: null };
+    const cls = info.present ? 'hh-sil__part' : 'hh-sil__part hh-sil__part--empty';
+    const shape = svgEl(def.shape, { ...def.attrs, class: cls });
+    const title = svgEl('title');
+    title.textContent = info.present
+      ? `${SLOT_LABELS[def.slot]}: ${info.name}`
+      : `${SLOT_LABELS[def.slot]}: empty`;
+    shape.append(title);
+    svg.append(shape);
+
+    const label = svgEl('text', {
+      x: def.lx, y: def.ly,
+      'text-anchor': 'middle',
+      'dominant-baseline': 'middle',
+      class: info.present ? 'hh-sil__label hh-sil__label--present' : 'hh-sil__label',
+      'aria-hidden': 'true',
+    });
+    label.textContent = def.label;
+    svg.append(label);
+  }
+
+  return svg;
+}
+
 // ── Mount ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -647,8 +746,7 @@ export function mountGarage(root, { onDeploy } = {}) {
 
   // Preview + stats column (third column at ≥1280px — R10).
   const previewCol = el('div', { class: 'hh-preview', role: 'region', 'aria-label': 'Mech preview and stats' });
-  const previewArt = el('div', { class: 'hh-preview__art', 'aria-hidden': 'true' });
-  previewArt.textContent = 'MECH';
+  const previewArt = el('div', { class: 'hh-preview__art' });
   const summary = el('div', { class: 'hh-summary', 'aria-live': 'polite', 'aria-atomic': 'true' });
   previewCol.append(previewArt, summary);
 
@@ -718,6 +816,13 @@ export function mountGarage(root, { onDeploy } = {}) {
     // rule 5 / label-in-name), e.g. "Legs — Runner Legs — press Enter…".
     row.setAttribute('aria-label',
       `${SLOT_LABELS[slotKey]} — ${part ? part.name : 'empty'} — press Enter to pick a part`);
+  }
+
+  /** Rebuild the top-down mech silhouette from the current loadout. */
+  function refreshPreview(nextLoadout = loadout) {
+    const spec = silhouetteSpec(nextLoadout, PARTS_BY_ID);
+    previewArt.innerHTML = '';
+    previewArt.append(buildSilhouette(spec));
   }
 
   /** Rebuild the footer summary (weight, power, role, stat bars). */
@@ -956,6 +1061,7 @@ export function mountGarage(root, { onDeploy } = {}) {
     clearDeployConfirm();
     refreshSlotRow(slotKey);
     refreshSummary();
+    refreshPreview();
     // Re-render picker so deltas + selection reflect new state.
     renderPicker(slotKey);
     announce(`Equipped ${part.name} in ${SLOT_LABELS[slotKey]}`);
@@ -1003,6 +1109,7 @@ export function mountGarage(root, { onDeploy } = {}) {
     refreshSlotRow(slotKey);
   }
   refreshSummary();
+  refreshPreview();
   closePicker(); // shows the "select a slot" prompt
 
   return {
@@ -1013,6 +1120,7 @@ export function mountGarage(root, { onDeploy } = {}) {
       clearDeployConfirm();
       for (const slotKey of Object.keys(SLOT_LABELS)) refreshSlotRow(slotKey);
       refreshSummary();
+      refreshPreview();
       if (activeSlot) renderPicker(activeSlot);
     },
     /** Remove the overlay from the DOM. */

@@ -18,3 +18,6 @@
 
 ## Checkpoint fixes 11/5 (hardening of landed tasks; keep tests green)
 - [x] 14. Garage a11y: slot container role=group (was list); each slot aria-label starts with its visible label text, e.g. "Legs — Runner Legs — press Enter…" (task 6 polish, a11y rule 5)
+
+## Preview polish 11/5 (SHOULD, optional)
+- [x] 15. Mech preview silhouette: `.hh-preview__art` renders a simple top-down SVG (legs/core/arms/back/head) via pure `silhouetteSpec(loadout)` + `refreshPreview` on the garage refresh path; present vs empty slots differ by shape (dashed) + label + opacity, phosphor/bone tokens, no animation. Unit test: tests/mech/silhouette.test.js (task 6 polish, a11y rule 6)
