@@ -42,7 +42,7 @@ import { PARTS, PARTS_BY_ID } from '../data/parts.js';
 import { defaultLoadout }      from '../data/presets.js';
 import { equip, totals }       from '../mech/loadout.js';
 import { canDeploy }           from '../mech/weight.js';
-import { roleTag }             from '../mech/role.js';
+import { roleTag, roleTooltip } from '../mech/role.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -682,7 +682,7 @@ export function mountGarage(root, { onDeploy } = {}) {
       class: `hh-stat__value${t.loadPct > 115 ? ' hh-stat__value--error' : t.loadPct > 80 ? ' hh-stat__value--warn' : ''}`,
       'aria-label': `Load ${t.loadPct.toFixed(0)}%`,
     });
-    wVal.textContent = `${t.loadPct.toFixed(0)}%  (${t.weight}/${t.capacity})`;
+    wVal.textContent = `${t.loadPct.toFixed(0)}%  (${t.weight}/${t.capacity} cap from LEGS)`;
     wBlock.append(wLabel, wVal);
 
     // Power
@@ -700,6 +700,14 @@ export function mountGarage(root, { onDeploy } = {}) {
     const rLabel = el('div', { class: 'hh-stat__label' }); rLabel.textContent = 'Role';
     const rVal   = el('div', { class: `hh-role${role ? '' : ' hh-role--null'}` });
     rVal.textContent = role ?? '—';
+    // R9: one-line tooltip naming the parts that set the role (e.g.
+    // "Role from: Back + Legs"). Exposed via title (pointer hover) and
+    // aria-label (screen readers) so it is never pointer-only.
+    const roleTip = roleTooltip(loadout, PARTS_BY_ID);
+    if (roleTip) {
+      rVal.setAttribute('title', roleTip);
+      rVal.setAttribute('aria-label', `Role ${role} — ${roleTip}`);
+    }
     rBlock.append(rLabel, rVal);
 
     row1.append(wBlock, pBlock, rBlock);

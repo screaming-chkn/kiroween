@@ -62,3 +62,59 @@ export function roleTag(loadout, partsById) {
   tied.sort();
   return tied[0];
 }
+
+// Human-readable slot labels for the role tooltip (R9). Kept here so the tooltip
+// text matches the slot vocabulary without importing UI code into the mech layer.
+const SLOT_LABELS = {
+  legs: 'Legs',
+  core: 'Core',
+  armL: 'Arm L',
+  armR: 'Arm R',
+  back: 'Back',
+  head: 'Head',
+};
+
+/**
+ * Names the equipped parts that set the current role tag (R9).
+ *
+ * Runs the same derivation as {@link roleTag}, then returns the slot labels of
+ * every equipped part whose `roles` array includes the winning role. These are
+ * exactly the parts that "voted" for the tag, so the tooltip can explain it
+ * (e.g. "Role from: Back + Legs").
+ *
+ * Pure function — no side-effects, safe to test in Node.
+ *
+ * @param {Object} loadout    - { legs, core, armL, armR, back, head } — part ids
+ * @param {Object} partsById  - Map of id → Part
+ * @returns {string[]}        - slot labels in fixed slot order, or [] when no role
+ */
+export function roleSources(loadout, partsById) {
+  const role = roleTag(loadout, partsById);
+  if (role == null) return [];
+
+  const sources = [];
+  // Iterate in a stable slot order so the tooltip reads the same every time.
+  for (const slot of Object.keys(SLOT_LABELS)) {
+    const id = loadout[slot];
+    if (id == null) continue;
+    const part = partsById[id];
+    if (part == null) continue;
+    if ((part.roles ?? []).includes(role)) {
+      sources.push(SLOT_LABELS[slot]);
+    }
+  }
+  return sources;
+}
+
+/**
+ * One-line tooltip text naming the parts that set the role (R9).
+ *
+ * @param {Object} loadout    - { legs, core, armL, armR, back, head } — part ids
+ * @param {Object} partsById  - Map of id → Part
+ * @returns {string}          - e.g. "Role from: Back + Legs", or "" when no role
+ */
+export function roleTooltip(loadout, partsById) {
+  const sources = roleSources(loadout, partsById);
+  if (sources.length === 0) return '';
+  return `Role from: ${sources.join(' + ')}`;
+}
