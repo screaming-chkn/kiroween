@@ -15,6 +15,10 @@ import {
   powerStateLabel,
   isPowerStutter,
   cooldownReadyFraction,
+  powerPulseAlpha,
+  POWER_PULSE_HZ,
+  stutterRingFraction,
+  STUTTER_RING_STEPS,
 } from '../../src/combat/hud.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
@@ -143,6 +147,86 @@ test('result is always within [0, 1]', () => {
     const r = cooldownReadyFraction(rem, total);
     assert.ok(r >= 0 && r <= 1, `fraction=${r} for rem=${rem}, total=${total}`);
   }
+});
+
+// ── powerPulseAlpha (R12 — Overdraw POWER pulse, ≤ 2 Hz) ──────────────────────
+
+console.log('\nsrc/combat/hud.js — powerPulseAlpha\n');
+
+test('pulse rate is capped at 2 Hz', () => {
+  assert.equal(POWER_PULSE_HZ, 2);
+});
+
+test('pulse starts at the trough (0) at t = 0', () => {
+  assert.ok(approxEq(powerPulseAlpha(0), 0));
+});
+
+test('pulse stays within [0, 1] across a full cycle', () => {
+  // One 2 Hz cycle is 500 ms; sample finely across two cycles.
+  for (let ms = 0; ms <= 1000; ms += 5) {
+    const a = powerPulseAlpha(ms);
+    assert.ok(a >= 0 && a <= 1, `alpha=${a} at t=${ms}ms`);
+  }
+});
+
+test('pulse peaks once per cycle at ≤ 2 Hz (peak at 250 ms, 750 ms)', () => {
+  // At 2 Hz the cosine peak (bright) lands at half a 500 ms cycle = 250 ms.
+  assert.ok(approxEq(powerPulseAlpha(250), 1, 1e-9), `t=250 → ${powerPulseAlpha(250)}`);
+  assert.ok(approxEq(powerPulseAlpha(750), 1, 1e-9), `t=750 → ${powerPulseAlpha(750)}`);
+  // Troughs back at the cycle boundaries.
+  assert.ok(approxEq(powerPulseAlpha(500), 0, 1e-9), `t=500 → ${powerPulseAlpha(500)}`);
+  assert.ok(approxEq(powerPulseAlpha(1000), 0, 1e-9), `t=1000 → ${powerPulseAlpha(1000)}`);
+});
+
+test('flashes no more than 2 times per second (one peak per cycle)', () => {
+  // Count distinct bright peaks (alpha crossing up through 0.99) in 1 second.
+  let peaks = 0;
+  let wasBright = false;
+  for (let ms = 0; ms <= 1000; ms++) {
+    const bright = powerPulseAlpha(ms) >= 0.99;
+    if (bright && !wasBright) peaks++;
+    wasBright = bright;
+  }
+  assert.ok(peaks <= 2, `expected ≤ 2 peaks/sec, got ${peaks}`);
+});
+
+test('a larger requested rate is clamped to 2 Hz', () => {
+  // 10 Hz requested must behave exactly like 2 Hz (peak still at 250 ms).
+  assert.ok(approxEq(powerPulseAlpha(250, 10), powerPulseAlpha(250, 2), 1e-9));
+});
+
+test('non-finite / negative time is treated as 0 (trough)', () => {
+  assert.ok(approxEq(powerPulseAlpha(NaN), 0));
+  assert.ok(approxEq(powerPulseAlpha(-100), 0));
+});
+
+// ── stutterRingFraction (R12 — ring skips on stuttered shots) ─────────────────
+
+console.log('\nsrc/combat/hud.js — stutterRingFraction\n');
+
+test('not stuttering passes the smooth fraction through unchanged', () => {
+  assert.ok(approxEq(stutterRingFraction(0.37, false), 0.37));
+  assert.ok(approxEq(stutterRingFraction(0.0, false), 0));
+  assert.ok(approxEq(stutterRingFraction(1.0, false), 1));
+});
+
+test('stuttering snaps the fraction to discrete steps (visible skip)', () => {
+  // Default 4 steps → boundaries at 0, .25, .5, .75, 1.
+  assert.ok(approxEq(stutterRingFraction(0.10, true), 0));
+  assert.ok(approxEq(stutterRingFraction(0.30, true), 0.25));
+  assert.ok(approxEq(stutterRingFraction(0.60, true), 0.5));
+  assert.ok(approxEq(stutterRingFraction(0.99, true), 0.75));
+  assert.ok(approxEq(stutterRingFraction(1.00, true), 1));
+});
+
+test('stutter default uses STUTTER_RING_STEPS', () => {
+  assert.equal(STUTTER_RING_STEPS, 4);
+});
+
+test('result is always within [0, 1] and clamps out-of-range input', () => {
+  assert.ok(approxEq(stutterRingFraction(1.5, true), 1));
+  assert.ok(approxEq(stutterRingFraction(-0.5, true), 0));
+  assert.ok(approxEq(stutterRingFraction(NaN, false), 0));
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

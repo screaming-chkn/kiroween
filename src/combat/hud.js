@@ -89,3 +89,63 @@ export function cooldownReadyFraction(fireCooldown, cooldownMs) {
   const clamped = Math.min(cooldownMs, remaining);
   return 1 - clamped / cooldownMs;
 }
+
+// ── Overdraw stutter (R12) ──────────────────────────────────────────────────────
+
+/**
+ * Pulse frequency for the Overdraw POWER tag, in hertz.
+ *
+ * Accessibility (accessibility.md rule 4): no content flashes more than
+ * 3 times/second, and our flicker cap is 2. A full ember pulse is one bright
+ * peak per cycle, so the cycle rate IS the flash rate — capped here at 2 Hz.
+ */
+export const POWER_PULSE_HZ = 2;
+
+/**
+ * Ember-pulse opacity in [0, 1] for the Overdraw POWER tag.
+ *
+ * WHEN the build is overdrawn (R12) THEN the POWER tag pulses ember at
+ * `hz` cycles/second. This returns a smooth cosine pulse so there is exactly
+ * one bright peak per cycle (never a hard strobe): 1 at the peak, 0 at the
+ * trough. `hz` is clamped to at most {@link POWER_PULSE_HZ} (2 Hz) so the
+ * flicker cap can never be exceeded, even if a caller passes a larger value.
+ *
+ * Pure: the current time is passed in (ms), so the pulse is directly testable
+ * without a clock.
+ *
+ * @param {number} nowMs  Current time in milliseconds (e.g. state.elapsedMs).
+ * @param {number} [hz=POWER_PULSE_HZ]  Pulse rate; clamped to (0, POWER_PULSE_HZ].
+ * @returns {number}  Pulse opacity in [0, 1].
+ */
+export function powerPulseAlpha(nowMs, hz = POWER_PULSE_HZ) {
+  const t = Number.isFinite(nowMs) && nowMs > 0 ? nowMs : 0;
+  const rate = Number.isFinite(hz) && hz > 0 ? Math.min(hz, POWER_PULSE_HZ) : POWER_PULSE_HZ;
+  // cos maps one cycle per 1/rate seconds; remap from [-1, 1] to [0, 1].
+  const phase = (t / 1000) * rate * 2 * Math.PI;
+  return (1 - Math.cos(phase)) / 2;
+}
+
+/** Number of discrete steps the cooldown ring snaps to while stuttering. */
+export const STUTTER_RING_STEPS = 4;
+
+/**
+ * Cooldown-ring fill fraction with Overdraw stutter applied (R12).
+ *
+ * WHEN overdrawn THEN the ring SHALL "visibly skip" rather than fill smoothly:
+ * the ready fraction is quantised to {@link STUTTER_RING_STEPS} discrete steps
+ * so it jumps in visible increments on stuttered shots. When not stuttering the
+ * fraction passes through unchanged (smooth fill).
+ *
+ * @param {number}  readyFraction  Smooth ready fraction in [0, 1]
+ *                                  (from {@link cooldownReadyFraction}).
+ * @param {boolean} stutter        True when the build is overdrawn.
+ * @param {number}  [steps=STUTTER_RING_STEPS]  Quantisation steps (≥ 1).
+ * @returns {number}  Ring fill fraction in [0, 1].
+ */
+export function stutterRingFraction(readyFraction, stutter, steps = STUTTER_RING_STEPS) {
+  const f = Number.isFinite(readyFraction) ? Math.min(1, Math.max(0, readyFraction)) : 0;
+  if (!stutter) return f;
+  const n = Number.isFinite(steps) && steps >= 1 ? Math.floor(steps) : STUTTER_RING_STEPS;
+  // Snap down to the nearest step boundary so the ring lurches between fills.
+  return Math.floor(f * n) / n;
+}

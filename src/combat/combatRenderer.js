@@ -34,6 +34,8 @@ import {
   powerStateLabel,
   isPowerStutter,
   cooldownReadyFraction,
+  powerPulseAlpha,
+  stutterRingFraction,
 } from './hud.js';
 import { FIRE_COOLDOWN_MS } from './config.js';
 import { projectileDrawRadius, projectileTrail } from './projectile.js';
@@ -500,11 +502,29 @@ export function drawFixedHUD(ctx, state, vpW, vpH) {
   ctx.font      = `bold ${FHUD_STAT_PX}px "Share Tech Mono", monospace`;
   // STUTTER draws in ember; OK draws in bone. The word itself carries the
   // meaning, so this is a redundant cue, not colour-only (accessibility rule 6).
-  ctx.fillStyle = stutter ? C.ember : C.bone;
-  ctx.fillText(powerLabel, powerValX, rowY);
+  //
+  // R12: WHEN overdrawn THEN the ember STUTTER tag PULSES at ≤ 2 Hz. The pulse
+  // is a cosine fade on the ember's opacity (one soft peak per cycle, never a
+  // hard strobe) driven by the match clock — see hud.powerPulseAlpha. The tag
+  // never fades fully out (floor 0.4) so the word stays readable at every
+  // phase of the pulse (accessibility rule 1).
+  if (stutter) {
+    const pulse = powerPulseAlpha(state.elapsedMs ?? 0);
+    ctx.globalAlpha = 0.4 + 0.6 * pulse;
+    ctx.fillStyle   = C.ember;
+    ctx.fillText(powerLabel, powerValX, rowY);
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.fillStyle = C.bone;
+    ctx.fillText(powerLabel, powerValX, rowY);
+  }
 
   // ── Weapon cooldown ring (top-right of the panel) ────────────────────────────
-  const ready = cooldownReadyFraction(player.fireCooldown ?? 0, FIRE_COOLDOWN_MS);
+  // R12: WHEN overdrawn THEN the ring visibly SKIPS — its fill snaps to a few
+  // discrete steps instead of sweeping smoothly, so stuttered shots read as a
+  // lurching ring rather than a steady recharge.
+  const readySmooth = cooldownReadyFraction(player.fireCooldown ?? 0, FIRE_COOLDOWN_MS);
+  const ready  = stutterRingFraction(readySmooth, stutter);
   const ringCx = panelX + FHUD_PANEL_W - FHUD_RING_R - FHUD_PAD;
   const ringCy = panelY + FHUD_RING_R + FHUD_PAD;
   drawCooldownRing(ctx, ringCx, ringCy, ready);
