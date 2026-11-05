@@ -36,6 +36,11 @@ import {
   cooldownReadyFraction,
 } from './hud.js';
 import { FIRE_COOLDOWN_MS } from './config.js';
+import {
+  flashActive,
+  flashIntensity,
+  floatingNumberAlpha,
+} from './hitFeedback.js';
 
 const C = {
   void:         '#0A0D0B',
@@ -170,6 +175,9 @@ function drawPlayerMech(ctx, mech) {
   ctx.beginPath();
   ctx.arc(x, y, 4, 0, Math.PI * 2);
   ctx.fill();
+
+  // R10 hit flash — brief white overlay on the body (ramps out over 80 ms).
+  drawHitFlash(ctx, x, y, angle, 6, Math.PI / 6, mech.flash);
 }
 
 /**
@@ -200,6 +208,38 @@ function drawEnemyMech(ctx, mech) {
   ctx.beginPath();
   ctx.arc(x, y, 4, 0, Math.PI * 2);
   ctx.fill();
+
+  // R10 hit flash — brief white overlay on the body (ramps out over 80 ms).
+  drawHitFlash(ctx, x, y, angle, 3, -Math.PI / 2, mech.flash);
+}
+
+/**
+ * Draw the R10 hit flash: a white/ember polygon overlay on a mech body that
+ * fades out over the flash lifetime. Alpha is driven by flashIntensity() so
+ * the single 80 ms ramp never strobes (accessibility rule 4). No-op when the
+ * flash is absent or expired.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} angle       Mech facing (radians).
+ * @param {number} sides       Body polygon sides (6 player, 3 enemy).
+ * @param {number} startAngle  Rotation offset matching the body shape.
+ * @param {object} flash       Flash timer from hitFeedback.createFlash.
+ */
+function drawHitFlash(ctx, cx, cy, angle, sides, startAngle, flash) {
+  if (!flashActive(flash)) return;
+  const intensity = flashIntensity(flash);
+  if (intensity <= 0) return;
+
+  drawPolygon(ctx, cx, cy, MECH_R + 2, sides, angle + startAngle);
+  ctx.globalAlpha = intensity;
+  ctx.fillStyle   = C.bone;   // white/bone flash (never colour-only; shape is the mech)
+  ctx.fill();
+  ctx.strokeStyle = C.ember;
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
 }
 
 /**
@@ -229,15 +269,44 @@ function drawProjectiles(ctx, projectiles) {
 }
 
 /**
+ * Draw all floating damage numbers (R10). Each rises and fades; the alpha is
+ * driven by floatingNumberAlpha(). Drawn in world space so they track the
+ * impact point. Numbers are bone (white) so they read on both mech colours.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {Array<object>} floaters
+ */
+function drawFloaters(ctx, floaters) {
+  if (!floaters || floaters.length === 0) return;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font         = `bold 18px "Share Tech Mono", monospace`;
+  for (const f of floaters) {
+    const alpha = floatingNumberAlpha(f);
+    if (alpha <= 0) continue;
+    ctx.globalAlpha = alpha;
+    // Shadow for legibility over bright sprites, then the bone number.
+    ctx.fillStyle = C.void;
+    ctx.fillText(`-${Math.round(f.amount)}`, f.x + 1, f.y + 1);
+    ctx.fillStyle = C.bone;
+    ctx.fillText(`-${Math.round(f.amount)}`, f.x, f.y);
+  }
+  ctx.globalAlpha  = 1;
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+/**
  * LAYERS.ENTITY draw callback — mechs and projectiles.
  *
  * @param {CanvasRenderingContext2D} ctx
- * @param {{ player: object, enemy: object, projectiles: Array }} state
+ * @param {{ player: object, enemy: object, projectiles: Array, floaters?: Array }} state
  */
 export function drawEntities(ctx, state) {
   drawProjectiles(ctx, state.projectiles);
   drawPlayerMech(ctx, state.player);
   drawEnemyMech(ctx,  state.enemy);
+  drawFloaters(ctx, state.floaters);
 }
 
 // ── HUD layer ──────────────────────────────────────────────────────────────────

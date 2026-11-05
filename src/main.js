@@ -37,6 +37,7 @@ import { drawWorld,
   drawOverlay,
 }                              from './combat/combatRenderer.js';
 import { speedPenalty }        from './mech/weight.js';
+import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
 
 // ── Canvas / loading ─────────────────────────────────────────────────────────
@@ -148,6 +149,13 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   });
   let shakeX = 0;
   let shakeY = 0;
+
+  // R10 player screen kick: a brief 2–4 px displacement when the player is
+  // hit, OFF under reduced motion (playerKickAmount returns 0). Decays each
+  // frame so it's a single punch, not a sustained shake. Added on top of the
+  // camera shake offset at render time.
+  let kickX = 0;
+  let kickY = 0;
 
   // Track previous player HP to detect hits (for camera trauma).
   let prevPlayerHp = arenaState.player.hp;
@@ -302,11 +310,25 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         phaseEndedAtMs = performance.now();
       }
 
-      // Camera trauma on player hit.
+      // R10 player screen kick on hit — 2–4 px, OFF under reduced motion.
+      // We keep a small camera trauma too so the shake system stays coherent,
+      // but the kick itself is the primary, reduced-motion-gated cue.
       if (arenaState.player.hp < prevPlayerHp) {
-        camera = addTrauma(camera, 0.35);
+        const kick = playerKickAmount(reducedMotion);
+        if (kick > 0) {
+          // Random direction so repeated hits don't push the same way.
+          const dir = Math.random() * Math.PI * 2;
+          kickX = Math.cos(dir) * kick;
+          kickY = Math.sin(dir) * kick;
+          camera = addTrauma(camera, 0.35);
+        }
       }
       prevPlayerHp = arenaState.player.hp;
+
+      // Decay the kick toward zero so it reads as a single punch (~120 ms).
+      const kickDecay = Math.max(0, 1 - dt * 8);
+      kickX *= kickDecay;
+      kickY *= kickDecay;
 
       // Camera: pin to arena centre when arena fits the viewport; follow +
       // clamp when the arena is larger than the viewport (R11).
@@ -324,7 +346,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     },
 
     render(_alpha) {
-      renderAll(renderer, arenaState, camera, shakeX, shakeY);
+      renderAll(renderer, arenaState, camera, shakeX + kickX, shakeY + kickY);
     },
   });
 

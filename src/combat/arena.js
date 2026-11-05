@@ -32,6 +32,13 @@ import { createMech, moveMech, aimMech } from './mech.js';
 import { createEnemy, stepEnemy }        from './enemy.js';
 import { createProjectile, stepProjectile, hitTestCircle } from './projectile.js';
 import { applyDamage }                   from './damage.js';
+import {
+  createFlash,
+  stepFlash,
+  flashActive,
+  createFloatingNumber,
+  stepFloatingNumber,
+} from './hitFeedback.js';
 
 // ── Internal ID counter ───────────────────────────────────────────────────────
 
@@ -93,6 +100,11 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     player,
     enemy,
     projectiles: [],
+    // R10 hit feedback: transient mech flashes + rising damage numbers.
+    // `flash` is a short timer stored on the player/enemy entities; the
+    // renderer reads it to tint the sprite. `floaters` is a culled list of
+    // rising/fading damage numbers in world space.
+    floaters: [],
     phase: 'playing',   // 'playing' | 'win' | 'lose'
     elapsedMs: 0,       // time survived so far (R8 end card)
   };
@@ -139,6 +151,9 @@ export function updateArena(state, actions, dt) {
   player = {
     ...player,
     fireCooldown: Math.max(0, player.fireCooldown - dt * 1000),
+    // R10: decay any active hit-flash on the player. A fresh hit this tick
+    // (step 7) replaces this with a full-duration flash.
+    flash: player.flash ? stepFlash(player.flash, dt) : player.flash,
   };
 
   // ── 4. Player fire (R3): LMB + cooldown elapsed ───────────────────────────
@@ -156,8 +171,13 @@ export function updateArena(state, actions, dt) {
   }
 
   // ── 5. Enemy AI tick (R4) ────────────────────────────────────────────────
-  const { enemy: updatedEnemy, projectile: enemyShot } =
+  const { enemy: updatedEnemyRaw, projectile: enemyShot } =
     stepEnemy(state.enemy, player, dt, arena, _nextId);
+  // R10: decay any active hit-flash on the enemy. A fresh hit this tick
+  // (step 7) replaces this with a full-duration flash.
+  const updatedEnemy = updatedEnemyRaw.flash
+    ? { ...updatedEnemyRaw, flash: stepFlash(updatedEnemyRaw.flash, dt) }
+    : updatedEnemyRaw;
   if (enemyShot) {
     _nextId++;   // consume the ID the enemy just used
     newProjectiles.push(enemyShot);
@@ -173,6 +193,9 @@ export function updateArena(state, actions, dt) {
   let playerAfterHits = player;
   let enemyAfterHits  = updatedEnemy;
 
+  // R10: collect new floating damage numbers spawned this tick.
+  const newFloaters = [];
+
   const survivingProjectiles = steppedProjectiles.map(proj => {
     // Already dead (wall) — skip.
     if (proj.dead) return proj;
@@ -181,12 +204,26 @@ export function updateArena(state, actions, dt) {
       // Player projectile vs enemy mech.
       if (hitTestCircle(proj, enemyAfterHits, MECH_RADIUS)) {
         enemyAfterHits = applyDamage(enemyAfterHits, proj.damage);
+        // R10: flash the enemy + float a damage number at the impact point.
+        enemyAfterHits = { ...enemyAfterHits, flash: createFlash() };
+        newFloaters.push(createFloatingNumber({
+          x: enemyAfterHits.x,
+          y: enemyAfterHits.y,
+          amount: proj.damage,
+        }));
         return { ...proj, dead: true };
       }
     } else {
       // Enemy projectile vs player mech.
       if (hitTestCircle(proj, playerAfterHits, MECH_RADIUS)) {
         playerAfterHits = applyDamage(playerAfterHits, proj.damage);
+        // R10: flash the player + float a damage number at the impact point.
+        playerAfterHits = { ...playerAfterHits, flash: createFlash() };
+        newFloaters.push(createFloatingNumber({
+          x: playerAfterHits.x,
+          y: playerAfterHits.y,
+          amount: proj.damage,
+        }));
         return { ...proj, dead: true };
       }
     }
@@ -196,6 +233,19 @@ export function updateArena(state, actions, dt) {
 
   // ── 8. Cull dead projectiles ─────────────────────────────────────────────
   const liveProjectiles = survivingProjectiles.filter(p => !p.dead);
+
+  // ── 8b. Step + cull floating damage numbers (R10) ─────────────────────────
+  const floaters = [...(state.floaters ?? []), ...newFloaters]
+    .map(f => stepFloatingNumber(f, dt))
+    .filter(f => !f.dead);
+
+  // Drop expired flashes so stale timers don't linger on the entities.
+  if (playerAfterHits.flash && !flashActive(playerAfterHits.flash)) {
+    playerAfterHits = { ...playerAfterHits, flash: null };
+  }
+  if (enemyAfterHits.flash && !flashActive(enemyAfterHits.flash)) {
+    enemyAfterHits = { ...enemyAfterHits, flash: null };
+  }
 
   // ── 9. Phase transitions (R6) ────────────────────────────────────────────
   let phase = 'playing';
@@ -210,6 +260,7 @@ export function updateArena(state, actions, dt) {
     player:      playerAfterHits,
     enemy:       enemyAfterHits,
     projectiles: liveProjectiles,
+    floaters,
     phase,
     // Accumulate survived time (R8). dt is seconds → convert to ms.
     elapsedMs:   (state.elapsedMs ?? 0) + dt * 1000,
