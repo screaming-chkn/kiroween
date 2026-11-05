@@ -18,13 +18,19 @@
  */
 
 import assert from 'node:assert/strict';
-import { parseTasksMd } from '../../scripts/build-seance-tasks.mjs';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseTasksMd, collectTasks } from '../../scripts/build-seance-tasks.mjs';
 import {
   taskLineText,
   unlockedLineText,
   countDone,
   seanceLines,
 } from '../../src/ui/seance.js';
+
+const __testDir = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = join(__testDir, '..', '..');
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
 
@@ -201,6 +207,26 @@ test("filter 'open' keeps only open tasks", () => {
 test('non-array input yields no lines', () => {
   assert.deepEqual(seanceLines(null), []);
   assert.deepEqual(seanceLines(undefined), []);
+});
+
+
+// ── committed seance-tasks.json freshness ─────────────────────────────────────
+
+console.log('\npublic/seance-tasks.json — freshness\n');
+
+test('committed JSON matches crawl of .kiro/specs/*/tasks.md', () => {
+  const fromSpecs = collectTasks(join(REPO_ROOT, '.kiro', 'specs'));
+  const committed = JSON.parse(readFileSync(join(REPO_ROOT, 'public', 'seance-tasks.json'), 'utf8'));
+  assert.equal(
+    committed.length,
+    fromSpecs.length,
+    `stale seance-tasks.json: committed ${committed.length} tasks, specs have ${fromSpecs.length}. Run: npm run build:seance`,
+  );
+  assert.deepEqual(
+    committed,
+    fromSpecs,
+    'stale seance-tasks.json content. Run: npm run build:seance and commit public/seance-tasks.json',
+  );
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────

@@ -383,6 +383,12 @@
     "done": true
   },
   {
+    "spec": "03-arena-combat",
+    "id": 41,
+    "title": "Feel-pass balance package. Scope limited to numbers + possession clarity; windup (450 ms), `ENEMY_FIRE_COOLDOWN_MS` (1500), and the whole dash duration/mult/buffer/cooldown table are UNTOUCHED (feel feel preserved).",
+    "done": true
+  },
+  {
     "spec": "04-radar-relays",
     "id": 1,
     "title": "Visibility grid from relays + player (R1)",
