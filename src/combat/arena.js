@@ -236,8 +236,19 @@ export function updateArena(state, actions, dt) {
   }
 
   // ── 5. Enemy AI tick (R4) ────────────────────────────────────────────────
+  // feel GO (11/5): track the player's velocity by finite difference from
+  // last tick's position (post-move this tick vs the previous state). The
+  // enemy's windup locks a lead-aim angle from this velocity, so a steady
+  // strafe gets clipped but dashing / breaking velocity during the windup
+  // escapes the lock. dt>0 always here (fixed timestep); guard anyway.
+  const invDt = dt > 0 ? 1 / dt : 0;
+  const playerForAi = {
+    ...player,
+    vx: (player.x - prev.x) * invDt,
+    vy: (player.y - prev.y) * invDt,
+  };
   const { enemy: updatedEnemyRaw, projectile: enemyShot } =
-    stepEnemy(state.enemy, player, dt, arena, _nextId);
+    stepEnemy(state.enemy, playerForAi, dt, arena, _nextId);
   // R10: decay any active hit-flash on the enemy. A fresh hit this tick
   // (step 7) replaces this with a full-duration flash.
   const updatedEnemy = updatedEnemyRaw.flash

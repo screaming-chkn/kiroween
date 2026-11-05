@@ -413,6 +413,18 @@
     "done": true
   },
   {
+    "spec": "03-arena-combat",
+    "id": 46,
+    "title": "Enemy fire now LEADS a moving player so a steady strafe gets clipped, while dashing/breaking velocity during the 0.45 s windup escapes the lead (R4). Numbers KEPT (all untouched): `ENEMY_MAX_HP` 2920, `PLAYER_PROJECTILE_DAMAGE` 14, `ENEMY_PROJECTILE_DAMAGE` 20, `ENEMY_SHOT_WINDUP_MS` 450, `ENEMY_FIRE_COOLDOWN_MS` 1500, the dash table. NO i-frames added.",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 47,
+    "title": "Fixed the lead-aim bug where the enemy locked an ANGLE at windup start but kept strafing during the 0.45 s windup, so the projectile spawned at the NEW (ex,ey) with the OLD angle and missed even a stationary player (sim2 M1: 34 shots / 1 hit). Fix: lock the predicted AIM POINT (world x/y), not the angle. Numbers KEPT (all untouched): `ENEMY_MAX_HP` 2920, `PLAYER_PROJECTILE_DAMAGE` 14, `ENEMY_PROJECTILE_DAMAGE` 20, `ENEMY_SHOT_WINDUP_MS` 450, `ENEMY_FIRE_COOLDOWN_MS` 1500, the dash table. NO i-frames added.",
+    "done": true
+  },
+  {
     "spec": "04-radar-relays",
     "id": 1,
     "title": "Visibility grid from relays + player (R1)",
