@@ -433,6 +433,22 @@ function injectCSS() {
   cursor: not-allowed;
 }
 
+/* deploy column — button + stutter confirm line (R8) */
+.hh-deploy-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.hh-deploy-confirm {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;            /* R8: ≥14px, non-italic */
+  color: #FF8A3D;             /* ember — ≥4.5:1 on void */
+  text-align: right;
+  max-width: 240px;
+}
+.hh-deploy-confirm[hidden] { display: none; }
+
 /* overdraw / blocked notice */
 .hh-notice {
   font-family: 'Share Tech Mono', monospace;
@@ -505,6 +521,30 @@ export function statChipLabel(key, delta) {
 }
 
 /**
+ * Fire-rate penalty for an overdrawn build, as a whole-number percent (R4/R8).
+ *
+ * When power draw exceeds output, weapons stutter: in-match fire rate is scaled
+ * by output/draw (R4), so the displayed reduction is (1 − output/draw) × 100.
+ * Returns 0 when the build is not overdrawn (balance ≥ 0) or when draw is 0.
+ *
+ * Bounded to [0, 100] and rounded to the nearest whole percent for the
+ * "Overdrawn: fire rate -X%" readout.
+ *
+ * @param {number} powerOut   - total core output
+ * @param {number} powerDraw  - total draw from weapons/sensors
+ * @returns {number}          - penalty percent in [0, 100]
+ */
+export function overdrawPenaltyPct(powerOut, powerDraw) {
+  // Not overdrawn (or no draw at all) → no stutter.
+  if (powerDraw <= 0) return 0;
+  if (powerOut >= powerDraw) return 0;
+
+  const scale = Math.max(0, powerOut) / powerDraw; // output/draw, clamped ≥ 0
+  const pct = (1 - scale) * 100;
+  return Math.min(100, Math.max(0, Math.round(pct)));
+}
+
+/**
  * Create a DOM element with optional class and attributes.
  * @param {string} tag
  * @param {{ [k: string]: string }} [attrs]
@@ -533,6 +573,7 @@ export function mountGarage(root, { onDeploy } = {}) {
 
   let loadout      = loadSaved();
   let activeSlot   = null;   // which slot picker is open
+  let deployConfirmPending = false; // R8: stutter confirm armed on overdrawn Deploy
 
   // ── Scaffold ───────────────────────────────────────────────────────────────
 
@@ -560,9 +601,14 @@ export function mountGarage(root, { onDeploy } = {}) {
   // Footer
   const footer = el('div', { class: 'hh-garage__footer' });
   const summary = el('div', { class: 'hh-summary', 'aria-live': 'polite', 'aria-atomic': 'true' });
+  const deployCol = el('div', { class: 'hh-deploy-col' });
   const deployBtn = el('button', { class: 'hh-deploy', type: 'button', 'aria-label': 'Deploy mech' });
   deployBtn.textContent = 'DEPLOY';
-  footer.append(summary, deployBtn);
+  // Confirm line shown when Deploy is pressed on an overdrawn build (R8).
+  // Deploy stays allowed — a second press proceeds.
+  const deployConfirm = el('div', { class: 'hh-deploy-confirm', role: 'alert', hidden: '' });
+  deployCol.append(deployBtn, deployConfirm);
+  footer.append(summary, deployCol);
 
   // SR live region
   const srStatus = el('div', { class: 'hh-sr-status', role: 'status', 'aria-live': 'polite' });
@@ -665,8 +711,9 @@ export function mountGarage(root, { onDeploy } = {}) {
       notice.textContent = 'Too heavy to walk.';
       summary.append(notice);
     } else if (t.balance < 0) {
+      const pct = overdrawPenaltyPct(t.powerOut, t.powerDraw);
       const notice = el('div', { class: 'hh-notice hh-notice--overdraw' });
-      notice.textContent = 'Overdraw — weapons will stutter.';
+      notice.textContent = `Overdrawn: fire rate -${pct}%`;
       summary.append(notice);
     }
 
@@ -835,6 +882,7 @@ export function mountGarage(root, { onDeploy } = {}) {
   function equipPart(slotKey, part) {
     loadout = equip(loadout, part);
     saveLoadout(loadout);
+    clearDeployConfirm();
     refreshSlotRow(slotKey);
     refreshSummary();
     // Re-render picker so deltas + selection reflect new state.
@@ -854,10 +902,29 @@ export function mountGarage(root, { onDeploy } = {}) {
   deployBtn.addEventListener('click', () => {
     if (deployBtn.disabled) return;
     const t = totals(loadout, PARTS_BY_ID);
+
+    // R8: overdrawn build must confirm before deploying (Deploy still allowed).
+    // First press arms the confirm line; a second press proceeds.
+    if (t.balance < 0 && !deployConfirmPending) {
+      deployConfirmPending = true;
+      deployConfirm.textContent = 'Weapons will stutter. Deploy anyway?';
+      deployConfirm.hidden = false;
+      announce('Weapons will stutter. Press Deploy again to deploy anyway.');
+      return;
+    }
+
+    clearDeployConfirm();
     if (typeof onDeploy === 'function') {
       onDeploy({ ...loadout }, t);
     }
   });
+
+  /** Hide and disarm the stutter confirm line. */
+  function clearDeployConfirm() {
+    deployConfirmPending = false;
+    deployConfirm.hidden = true;
+    deployConfirm.textContent = '';
+  }
 
   // ── Initial render ─────────────────────────────────────────────────────────
 
@@ -872,6 +939,7 @@ export function mountGarage(root, { onDeploy } = {}) {
     setLoadout(newLoadout) {
       loadout = { ...newLoadout };
       saveLoadout(loadout);
+      clearDeployConfirm();
       for (const slotKey of Object.keys(SLOT_LABELS)) refreshSlotRow(slotKey);
       refreshSummary();
       if (activeSlot) renderPicker(activeSlot);

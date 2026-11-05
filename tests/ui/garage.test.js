@@ -11,7 +11,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { formatDelta, statChipLabel } from '../../src/ui/garage.js';
+import { formatDelta, statChipLabel, overdrawPenaltyPct } from '../../src/ui/garage.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
 
@@ -74,6 +74,56 @@ test('label pairs a code with the signed delta text', () => {
   // Chip label must stay in sync with formatDelta's text.
   for (const d of [-5, -1, 0, 1, 7]) {
     assert.equal(statChipLabel('armor', d), `ARM ${formatDelta(d).text}`);
+  }
+});
+
+// ── overdrawPenaltyPct ────────────────────────────────────────────────────────
+
+console.log('\nsrc/ui/garage.js — overdrawPenaltyPct\n');
+
+test('no penalty when output meets or exceeds draw', () => {
+  assert.equal(overdrawPenaltyPct(10, 10), 0);
+  assert.equal(overdrawPenaltyPct(12, 10), 0);
+});
+
+test('no penalty when there is no draw', () => {
+  assert.equal(overdrawPenaltyPct(0, 0), 0);
+  assert.equal(overdrawPenaltyPct(5, 0), 0);
+});
+
+test('penalty is (1 - output/draw) rounded to whole percent', () => {
+  // output 8 / draw 10 → scale 0.8 → 20% reduction
+  assert.equal(overdrawPenaltyPct(8, 10), 20);
+  // output 5 / draw 10 → 50%
+  assert.equal(overdrawPenaltyPct(5, 10), 50);
+  // output 7 / draw 9 → 1 - 0.7777.. = 0.2222.. → 22%
+  assert.equal(overdrawPenaltyPct(7, 9), 22);
+});
+
+test('zero output with positive draw is a full 100% penalty', () => {
+  assert.equal(overdrawPenaltyPct(0, 10), 100);
+});
+
+test('negative output is clamped (never exceeds 100%)', () => {
+  assert.equal(overdrawPenaltyPct(-5, 10), 100);
+});
+
+test('result is always within [0, 100]', () => {
+  const cases = [[10, 10], [8, 10], [0, 10], [-3, 4], [1, 100], [99, 100]];
+  for (const [out, draw] of cases) {
+    const pct = overdrawPenaltyPct(out, draw);
+    assert.ok(pct >= 0 && pct <= 100, `pct=${pct} for out=${out} draw=${draw}`);
+    assert.ok(Number.isInteger(pct), `pct must be whole, got ${pct}`);
+  }
+});
+
+test('penalty is monotonic non-decreasing as output falls (fixed draw)', () => {
+  const draw = 10;
+  let prev = -1;
+  for (const out of [10, 9, 8, 5, 2, 0]) {
+    const pct = overdrawPenaltyPct(out, draw);
+    assert.ok(pct >= prev, `pct=${pct} should be ≥ previous ${prev} (out=${out})`);
+    prev = pct;
   }
 });
 
