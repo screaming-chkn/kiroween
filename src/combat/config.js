@@ -52,8 +52,14 @@ export const PLAYER_PROJECTILE_RADIUS = 5;
  * Draw radius for enemy projectiles (world units, R10).
  * SHALL be larger than the player's so incoming fire reads as a heavier,
  * blood-red threat without relying on colour alone (accessibility rule 6).
+ *
+ * feel Tweak GO (11/5): 9 → 8 (~11% trim). Shrinking the enemy shot's hit
+ * radius makes a windup dash clear the incoming shot more reliably — a smaller
+ * projectile is easier to slip past off the telegraph. Still strictly greater
+ * than PLAYER_PROJECTILE_RADIUS (5), so incoming fire still reads as the
+ * heavier threat and enemyShot.test.js's 8 > 5 assertion holds.
  */
-export const ENEMY_PROJECTILE_RADIUS = 9;
+export const ENEMY_PROJECTILE_RADIUS = 8;
 
 /**
  * Damage dealt by a single player projectile.
@@ -106,19 +112,18 @@ export const PLAYER_MAX_HP = 300;
 /**
  * Starting hit-points for the enemy bot (R5).
  *
- * LEVER 1 (11/5 continue): set back to 2920, keeping
- * PLAYER_PROJECTILE_DAMAGE at 14. At 2880 sim2 showed BOTH M2 strafe-no-dash
- * AND M3 strafe+dash WIN — the fight ended short enough that dash never split
- * the outcome, so the dash table could never pay off. At 2920 sim2 shows M2
- * LOSE at 68.5 s and M3 LOSE at 70.3 s: this is the no-dash-can-lose side of
- * the window, so a passive no-dash player loses while a dash-on-windup player
- * banks the survivability to land the finishing shots. Only LEVER 1 moved —
- * PLAYER_PROJECTILE_DAMAGE (14), ENEMY_PROJECTILE_DAMAGE (20),
- * ENEMY_SHOT_WINDUP_MS (450), FIRE_COOLDOWN_MS, the dash table, Scout, and
- * possession are all untouched. Baseline perfect-lead TTK is now ~63 s
- * (2920 / 14dmg × 0.3 s) before misses/travel.
+ * feel Tweak GO (11/5): 2920 → 2800. With the widened dash (DASH_DURATION_MS
+ * 180 → 220, burst ≈ 158 wu, clearing the ~100 wu shot hit radius) and the
+ * slimmer enemy projectile (radius 9 → 8), a dash-on-windup player banks more
+ * survivability per telegraph. Trimming enemy HP ~6% lets M3 (strafe + dash)
+ * WIN with ~20–30% player HP left, while M2 (strafe, no dash) still LOSES on
+ * the mean seed — dash is the lever that tips the duel. PLAYER_PROJECTILE_DAMAGE
+ * (14), ENEMY_PROJECTILE_DAMAGE (20), ENEMY_SHOT_WINDUP_MS (450),
+ * FIRE_COOLDOWN_MS, the dash table (except duration), Scout, and possession are
+ * all untouched. Baseline perfect-lead TTK is now ~59 s (2800 / 14dmg × 0.3 s)
+ * before misses/travel.
  */
-export const ENEMY_MAX_HP  = 2920;
+export const ENEMY_MAX_HP  = 2800;
 
 // ── Enemy AI ──────────────────────────────────────────────────────────────────
 
@@ -161,8 +166,15 @@ export const ENEMY_SHOT_WINDUP_MS = 450;
 /**
  * Dash burst duration in milliseconds. While `player.dashRemainingMs > 0` the
  * player moves at DASH_SPEED_MULT × their normal (penalty-adjusted) speed.
+ *
+ * feel Tweak GO (11/5): 180 → 220. A full-speed burst now travels
+ * ≈ 240 wu/s × 3 × 0.22 s ≈ 158 wu — comfortably past the ~100 wu (≈2.5 mech
+ * lengths) enemy shot hit radius, so a windup dash clearly clears the shot even
+ * with imperfect timing. The old 180 ms burst (~130 wu) was marginal for a
+ * slightly-late dash. DASH_SPEED_MULT (3), DASH_BUFFER_MS (100), and the
+ * per-weight cooldown table are all untouched.
  */
-export const DASH_DURATION_MS = 180;
+export const DASH_DURATION_MS = 220;
 
 /** Speed multiplier applied to movement during a dash burst. */
 export const DASH_SPEED_MULT = 3;

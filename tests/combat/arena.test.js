@@ -371,9 +371,9 @@ test('scripted sim: sustained fire → enemy dead → win', () => {
     },
   };
 
-  // LEVER 1 (11/5 continue): ENEMY_MAX_HP is 2920 and player damage
+  // feel Tweak GO (11/5): ENEMY_MAX_HP is 2800 and player damage
   // is 14. At point-blank the player out-damages the enemy, but its DPS
-  // (14 / 0.3 s ≈ 47/s → ~63 s to grind 2920) trails the enemy draining the
+  // (14 / 0.3 s ≈ 47/s → ~59 s to grind 2800) trails the enemy draining the
   // player's 300 HP, so the raw sustained-fire duel would LOSE. To keep this a
   // "fire finishes the kill" assertion without reversing the HP lever, soften
   // the enemy most of the way with applyDamage (symbolically, so it tracks any

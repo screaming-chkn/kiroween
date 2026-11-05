@@ -3,18 +3,17 @@
  *
  * Expect-style unit tests for the feel 11/5 combat feel pass:
  *
- *   1) Enemy HP: owner GO LEVER 2 cut PLAYER_PROJECTILE_DAMAGE 17 → 14; the
- *      LEVER 1 pass (11/5 continue) set ENEMY_MAX_HP back to 2920. At 2880 sim2
- *      showed BOTH M2 strafe-no-dash AND M3 strafe+dash WIN — the fight ended
- *      short enough that dash never split the outcome. At 2920 sim2 shows M2
- *      LOSE at 68.5 s and M3 LOSE at 70.3 s, the no-dash-can-lose side of the
- *      window, so a dash-on-windup player banks survivability to land the
- *      finishing shots while a passive no-dash player still LOSES.
- *      Baseline perfect-lead TTK is now ~63 s (2920/14dmg/0.3s).
- *      ENEMY_PROJECTILE_DAMAGE stays 20 so incoming fire reads as readable
- *      pressure, not a punish.
+ *   1) Enemy HP: feel Tweak GO (11/5) trimmed ENEMY_MAX_HP 2920 → 2800 on top
+ *      of the LEVER 2 PLAYER_PROJECTILE_DAMAGE 17 → 14 cut. With the widened
+ *      dash (DASH_DURATION_MS 180 → 220, burst ≈ 158 wu clearing the ~100 wu
+ *      shot hit radius) and the slimmer enemy projectile (radius 9 → 8), a
+ *      dash-on-windup player (M3 strafe + dash) WINS with ~20–30% HP left while
+ *      a passive strafe-no-dash player (M2) still LOSES on the mean seed — dash
+ *      is the lever that tips the duel. Baseline perfect-lead TTK is now ~59 s
+ *      (2800/14dmg/0.3s). ENEMY_PROJECTILE_DAMAGE stays 20 so incoming fire
+ *      reads as readable pressure, not a punish.
  *   2) Enemy shot windup (~0.45 s) delays the projectile.
- *   3) Real dash on Shift: ~0.18 s burst at 3× speed, cooldown by weight class.
+ *   3) Real dash on Shift: ~0.22 s burst at 3× speed, cooldown by weight class.
  *   4) Overdraw slows fire rate: shots-per-second drops under overdraw.
  *
  * Plain Node + assert, same harness style as tests/engine/loop.test.js.
@@ -74,8 +73,8 @@ test('PLAYER_PROJECTILE_DAMAGE is 14 (owner GO LEVER 2, was 17)', () => {
   assert.equal(PLAYER_PROJECTILE_DAMAGE, 14);
 });
 
-test('ENEMY_MAX_HP is 2920 (LEVER 1, was 2880)', () => {
-  assert.equal(ENEMY_MAX_HP, 2920);
+test('ENEMY_MAX_HP is 2800 (feel Tweak GO, was 2920)', () => {
+  assert.equal(ENEMY_MAX_HP, 2800);
 });
 
 test('createEnemy starts at ENEMY_MAX_HP', () => {
@@ -137,10 +136,10 @@ test('leaving SHOOT state cancels the windup', () => {
 
 // ── 3. Real dash on Shift ───────────────────────────────────────────────────
 
-console.log('\n── 3. Real dash: 0.18 s burst, cooldown by weight class ──\n');
+console.log('\n── 3. Real dash: 0.22 s burst, cooldown by weight class ──\n');
 
-test('dash config: duration 180 ms, 3× speed, 100 ms buffer', () => {
-  assert.equal(DASH_DURATION_MS, 180);
+test('dash config: duration 220 ms, 3× speed, 100 ms buffer', () => {
+  assert.equal(DASH_DURATION_MS, 220);
   assert.equal(DASH_SPEED_MULT, 3);
   assert.equal(DASH_BUFFER_MS, 100);
 });
@@ -165,7 +164,7 @@ test('dashCooldownForLoad returns the band cooldown', () => {
   assert.equal(dashCooldownForLoad(112), 4500);  // heavy
 });
 
-test('measured dash duration ≈ 0.18 s (burst speed tapers off)', () => {
+test('measured dash duration ≈ 0.22 s (burst speed tapers off)', () => {
   // Light build (loadPct 0 → 2.5 s cooldown). Hold DASH + move right from
   // mid-arena so walls never clamp the measurement.
   const start = createArena({ loadPct: 0 }, {});

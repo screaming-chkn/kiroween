@@ -425,6 +425,12 @@
     "done": true
   },
   {
+    "spec": "03-arena-combat",
+    "id": 48,
+    "title": "feel Tweak GO (numbers only): tightened dodge skill then HP in `src/combat/config.js` (R2/R5). Lead-aim POINT lock KEPT, NO i-frames, `ENEMY_SHOT_WINDUP_MS` 450, `PLAYER_PROJECTILE_DAMAGE` 14, `ENEMY_PROJECTILE_DAMAGE` 20 all untouched.",
+    "done": true
+  },
+  {
     "spec": "04-radar-relays",
     "id": 1,
     "title": "Visibility grid from relays + player (R1)",
