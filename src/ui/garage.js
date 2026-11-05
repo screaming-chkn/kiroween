@@ -66,6 +66,16 @@ const STAT_LABELS = {
   sensor: 'Sensor',
 };
 
+// Unique 3-letter codes for compact stat chips (R8). Full-word labels collide
+// on their first letter (Speed/Sensor both start "S"), so chips use these
+// distinct codes instead of a single initial.
+const STAT_CODES = {
+  armor:  'ARM',
+  speed:  'SPD',
+  damage: 'DMG',
+  sensor: 'SEN',
+};
+
 // Max stat value for bar width calculations (stats are 0–10 per design).
 const STAT_MAX = 10;
 
@@ -271,19 +281,33 @@ function injectCSS() {
   color: #E8E2D0;
 }
 .hh-option__flavor {
-  font-size: 12px;
-  color: #8F9A92;
-  font-style: italic;
+  font-size: 14px;        /* R8: body text ≥14px, non-italic */
+  line-height: 1.35;
+  color: #B9C2BA;         /* lighter ash — ≥4.5:1 on panel */
+}
+.hh-option__meta {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;        /* R8: tonnage/draw ≥14px, non-italic */
+  font-variant-numeric: tabular-nums;
+  color: #B9C2BA;         /* ≥4.5:1 on panel */
 }
 .hh-option__deltas {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: baseline;
   margin-top: 2px;
+}
+.hh-option__delta-caption {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;        /* R8: label ≥14px, non-italic */
+  color: #B9C2BA;         /* ≥4.5:1 on panel */
+  margin-right: 4px;
 }
 .hh-delta {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 12px;
+  font-size: 14px;        /* R8: readable ≥14px */
+  font-variant-numeric: tabular-nums;
   padding: 1px 4px;
   border-radius: 1px;
 }
@@ -463,10 +487,21 @@ function aggregateStats(loadout) {
  * @param {number} delta
  * @returns {{ text: string, cls: string }}
  */
-function formatDelta(delta) {
+export function formatDelta(delta) {
   if (delta > 0)  return { text: `+${delta}`, cls: 'hh-delta--up' };
   if (delta < 0)  return { text: `${delta}`,  cls: 'hh-delta--down' };
   return           { text: `±0`,               cls: 'hh-delta--same' };
+}
+
+/**
+ * Build the compact chip text for a stat delta, e.g. "SPD +2" (R8).
+ * Uses a unique 3-letter code so no two stats share a label.
+ * @param {keyof typeof STAT_CODES} key
+ * @param {number} delta
+ * @returns {string}
+ */
+export function statChipLabel(key, delta) {
+  return `${STAT_CODES[key]} ${formatDelta(delta).text}`;
 }
 
 /**
@@ -710,19 +745,23 @@ export function mountGarage(root, { onDeploy } = {}) {
       }
 
       // Stat deltas vs currently equipped part
-      const deltasEl = el('div', { class: 'hh-option__deltas', 'aria-label': 'Stat changes' });
+      const deltasEl = el('div', { class: 'hh-option__deltas', 'aria-label': 'Stat changes vs equipped' });
+      const deltaCaption = el('span', { class: 'hh-option__delta-caption', 'aria-hidden': 'true' });
+      deltaCaption.textContent = 'vs equipped';
+      deltasEl.append(deltaCaption);
       for (const key of STAT_KEYS) {
         const newVal  = part.stats[key] ?? 0;
         const oldVal  = equippedPart ? (equippedPart.stats[key] ?? 0) : 0;
         const delta   = newVal - oldVal;
-        const { text, cls } = formatDelta(delta);
-        const chip = el('span', { class: `hh-delta ${cls}`, 'aria-label': `${STAT_LABELS[key]} ${text}` });
-        chip.textContent = `${STAT_LABELS[key][0]}:${text}`;
+        const { cls } = formatDelta(delta);
+        const label   = statChipLabel(key, delta);
+        const chip = el('span', { class: `hh-delta ${cls}`, 'aria-label': `${STAT_LABELS[key]} ${formatDelta(delta).text} vs equipped` });
+        chip.textContent = label;
         deltasEl.append(chip);
       }
 
       // Weight + power line
-      const metaEl = el('div', { class: 'hh-option__flavor' });
+      const metaEl = el('div', { class: 'hh-option__meta' });
       const powerStr = part.powerOut != null
         ? `+${part.powerOut} out`
         : part.powerDraw != null
