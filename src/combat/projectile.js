@@ -16,7 +16,12 @@
  *   hitTestCircle(proj, target, targRad)   → boolean
  */
 
-import { PROJECTILE_SPEED, PROJECTILE_RADIUS } from './config.js';
+import {
+  PROJECTILE_SPEED,
+  PROJECTILE_RADIUS,
+  PLAYER_PROJECTILE_RADIUS,
+  ENEMY_PROJECTILE_RADIUS,
+} from './config.js';
 
 // ── createProjectile ──────────────────────────────────────────────────────────
 
@@ -92,4 +97,41 @@ export function hitTestCircle(proj, target, targetRadius) {
   const dy = proj.y - target.y;
   const combinedRadius = PROJECTILE_RADIUS + targetRadius;
   return (dx * dx + dy * dy) < (combinedRadius * combinedRadius);
+}
+
+// ── projectileDrawRadius ───────────────────────────────────────────────────────
+
+/**
+ * Visual draw radius for a projectile, keyed on its owner (R10).
+ * Enemy projectiles are strictly larger than the player's so incoming fire
+ * reads as a heavier threat. This is a render concern only — collision still
+ * uses PROJECTILE_RADIUS via hitTestCircle.
+ *
+ * @param {'player'|'enemy'} owner
+ * @returns {number} world-unit draw radius
+ */
+export function projectileDrawRadius(owner) {
+  return owner === 'enemy' ? ENEMY_PROJECTILE_RADIUS : PLAYER_PROJECTILE_RADIUS;
+}
+
+// ── projectileTrail ─────────────────────────────────────────────────────────────
+
+/**
+ * Compute a short trail for a projectile as a list of points behind it, derived
+ * from its velocity (R10 — "short trail"). Point 0 is the segment nearest the
+ * projectile; later points are further back. Pure: no state is kept between
+ * frames, so trails never desync from the live projectile position.
+ *
+ * @param {{ x:number, y:number, vx:number, vy:number }} proj
+ * @param {number} [segments=3]   number of trailing points
+ * @param {number} [spacing=0.012] seconds of travel between points
+ * @returns {Array<{ x:number, y:number }>} trailing points, newest first
+ */
+export function projectileTrail(proj, segments = 3, spacing = 0.012) {
+  const points = [];
+  for (let i = 1; i <= segments; i++) {
+    const t = spacing * i;
+    points.push({ x: proj.x - proj.vx * t, y: proj.y - proj.vy * t });
+  }
+  return points;
 }

@@ -42,6 +42,19 @@ export const PROJECTILE_SPEED = 600;
 /** Collision / hit-test radius for projectiles (world units). */
 export const PROJECTILE_RADIUS = 6;
 
+/**
+ * Draw radius for the player's projectiles (world units, R10).
+ * Matches the historical draw size so player shots read the same as before.
+ */
+export const PLAYER_PROJECTILE_RADIUS = 5;
+
+/**
+ * Draw radius for enemy projectiles (world units, R10).
+ * SHALL be larger than the player's so incoming fire reads as a heavier,
+ * blood-red threat without relying on colour alone (accessibility rule 6).
+ */
+export const ENEMY_PROJECTILE_RADIUS = 9;
+
 /** Damage dealt by a single player projectile. */
 export const PLAYER_PROJECTILE_DAMAGE = 20;
 

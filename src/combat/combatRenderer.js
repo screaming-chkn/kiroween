@@ -36,6 +36,7 @@ import {
   cooldownReadyFraction,
 } from './hud.js';
 import { FIRE_COOLDOWN_MS } from './config.js';
+import { projectileDrawRadius, projectileTrail } from './projectile.js';
 import {
   flashActive,
   flashIntensity,
@@ -245,24 +246,46 @@ function drawHitFlash(ctx, cx, cy, angle, sides, startAngle, flash) {
 /**
  * Draw all live projectiles.
  * Player projectiles: small phosphor circles.
- * Enemy projectiles:  small ember circles.
+ * Enemy projectiles:  larger blood-red circles with a short trail (R10).
+ *
+ * Radius is per-owner (projectileDrawRadius): enemy shots are strictly larger
+ * than the player's so incoming fire reads as a heavier threat, and they
+ * differ by shape-size + trail as well as colour (accessibility rule 6).
  *
  * @param {CanvasRenderingContext2D} ctx
- * @param {Array<{ x: number, y: number, owner: string }>} projectiles
+ * @param {Array<{ x: number, y: number, vx: number, vy: number, owner: string }>} projectiles
  */
 function drawProjectiles(ctx, projectiles) {
   for (const p of projectiles) {
-    ctx.fillStyle = p.owner === 'player' ? C.phosphor : C.ember;
+    const isEnemy = p.owner === 'enemy';
+    const r = projectileDrawRadius(p.owner);
+
+    // Enemy shots get a short blood-red trail fading toward the tail (R10).
+    if (isEnemy) {
+      const trail = projectileTrail(p);
+      for (let i = 0; i < trail.length; i++) {
+        const t = trail[i];
+        ctx.fillStyle   = C.blood;
+        ctx.globalAlpha = 0.35 * (1 - i / trail.length);
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, r * (1 - 0.2 * (i + 1)), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Core
+    ctx.fillStyle = isEnemy ? C.blood : C.phosphor;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
     ctx.fill();
 
     // Glow ring
-    ctx.strokeStyle = p.owner === 'player' ? C.phosphorDim : C.blood;
+    ctx.strokeStyle = isEnemy ? C.blood : C.phosphorDim;
     ctx.lineWidth   = 1;
     ctx.globalAlpha = 0.5;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, r + 3, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
