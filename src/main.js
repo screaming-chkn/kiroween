@@ -42,6 +42,9 @@ import { drawWorld,
 import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
+import { screenToWorld }       from './engine/camera.js';
+import { prefersTouchUi, mergeTouchActions } from './engine/touch.js';
+import { mountTouchControls }  from './ui/touchControls.js';
 
 // ── Canvas / loading ─────────────────────────────────────────────────────────
 
@@ -283,6 +286,32 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   canvas.addEventListener('keydown', onCardKeyDown);
   canvas.addEventListener('click',   onCardClick);
 
+  // ── Touch controls (phones/tablets only) ───────────────────────────────────
+  let touch = null;
+  const coarse = typeof window.matchMedia === 'function'
+    ? window.matchMedia('(pointer: coarse)').matches
+    : false;
+  if (prefersTouchUi({
+    maxTouchPoints: navigator.maxTouchPoints,
+    matchMediaCoarse: coarse,
+    width: window.innerWidth,
+  })) {
+    touch = mountTouchControls(document.body, {
+      getViewport: () => ({ width: window.innerWidth, height: window.innerHeight }),
+    });
+  }
+
+  /** CSS px → canvas px → world (mirrors actions.js). */
+  function touchScreenToWorld(p) {
+    const sx = canvas.clientWidth  > 0 ? canvas.width  / canvas.clientWidth  : 1;
+    const sy = canvas.clientHeight > 0 ? canvas.height / canvas.clientHeight : 1;
+    const { wx, wy } = screenToWorld(
+      p.x * sx, p.y * sy, camera,
+      renderer.canvas.width, renderer.canvas.height, shakeX, shakeY,
+    );
+    return { x: wx, y: wy };
+  }
+
   // ── Loop ───────────────────────────────────────────────────────────────────
   const loop = startLoop({
     update(dt) {
@@ -303,13 +332,16 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       }
 
       // Once the match is decided, stop updating but keep rendering.
-      if (arenaState.phase !== 'playing') return;
+      if (arenaState.phase !== 'playing') {
+        if (touch) touch.setActive(false);
+        return;
+      }
 
       // Build player actions from current input + camera.
       const vpW = renderer.canvas.width;
       const vpH = renderer.canvas.height;
 
-      const actions = buildPlayerActions(
+      let actions = buildPlayerActions(
         input,
         camera,
         vpW,
@@ -317,6 +349,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         shakeX,
         shakeY,
       );
+      if (touch) {
+        actions = mergeTouchActions(actions, touch.sample(), touchScreenToWorld);
+      }
 
       // Step the arena.
       arenaState = updateArena(arenaState, actions, dt);
@@ -324,6 +359,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       // Record when the phase first left 'playing' (for restart grace guard).
       if (arenaState.phase !== 'playing' && phaseEndedAtMs === 0) {
         phaseEndedAtMs = performance.now();
+        if (touch) touch.setActive(false);
       }
 
       // R10 player screen kick on hit — 2–4 px, OFF under reduced motion.
@@ -371,6 +407,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     canvas.removeEventListener('keydown',   onCardKeyDown);
     canvas.removeEventListener('click',     onCardClick);
     canvas.removeEventListener('mousedown', onCanvasMouseDown);
+    if (touch) { touch.destroy(); touch = null; }
     // Input listeners are re-added on the next startArena; remove the old ones
     // by a simple pattern: we defined them as inline arrows, so we need to
     // stash references.  For simplicity we rely on the fact that showGarage

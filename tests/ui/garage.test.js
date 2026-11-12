@@ -215,6 +215,29 @@ test('garage CSS wires key chrome to possession tokens (reskins on .possessed)',
   );
 });
 
+// ── Phone layout (spec 08) ───────────────────────────────────────────────────
+
+console.log('\nsrc/ui/garage.js — phone layout (≤700px)\n');
+
+test('≤700px media query stacks body in a single column', () => {
+  const mq = GARAGE_CSS.indexOf('@media (max-width: 700px)');
+  assert.ok(mq >= 0, 'missing max-width: 700px media query');
+  const slice = GARAGE_CSS.slice(mq).replace(/\s+/g, ' ');
+  assert.ok(/grid-template-columns:\s*1fr;/.test(slice), 'single-column template missing');
+  assert.ok(/"slots" "picker" "preview"/.test(slice), 'stacked areas missing');
+  assert.ok(/overflow-y:\s*auto/.test(slice), 'vertical scroll missing');
+  assert.ok(/env\(safe-area-inset-bottom\)/.test(slice), 'safe-area padding missing');
+});
+
+test('≤700px targets are at least 44px tall', () => {
+  const mq = GARAGE_CSS.indexOf('@media (max-width: 700px)');
+  assert.ok(/min-height:\s*44px/.test(GARAGE_CSS.slice(mq)), 'min-height: 44px missing');
+});
+
+test('desktop default rules still come before the phone override', () => {
+  assert.ok(GARAGE_CSS.indexOf('@media (min-width: 1280px)') < GARAGE_CSS.indexOf('@media (max-width: 700px)'));
+});
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);

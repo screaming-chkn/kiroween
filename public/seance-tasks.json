@@ -575,6 +575,54 @@
     "done": false
   },
   {
+    "spec": "08-phone-touch",
+    "id": 1,
+    "title": "Touch controller: stick dead-zone, fire/dash multi-touch (R1, R2)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 2,
+    "title": "Twin-stick aim rule + aimScreenFromDir (R3)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 3,
+    "title": "prefersTouchUi heuristic + mergeTouchActions (R3, R4)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 4,
+    "title": "Touch overlay DOM: touchControls.js with setActive/destroy (R2, R4)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 5,
+    "title": "Wire touch controls into startArena (R2, R6)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 6,
+    "title": "Responsive garage CSS for phones, desktop untouched (R4, R5)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 7,
+    "title": "index.html viewport-fit=cover, touch-action, overscroll (R4)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 8,
+    "title": "Tests: touch.test.js and garage phone-layout tests (R1–R6)",
+    "done": true
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",

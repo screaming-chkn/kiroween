@@ -567,6 +567,59 @@ export const GARAGE_CSS = `
   .hh-deploy { transition: none; }
   .hh-slot__caret { transition: none; }
 }
+
+/* ── Phone (≤700px, e.g. 390×844): single column, scrollable ───────────── */
+@media (max-width: 700px) {
+  .hh-garage {
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .hh-garage__header {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 12px 16px 8px;
+  }
+  .hh-garage__body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "slots"
+      "picker"
+      "preview";
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+  .hh-garage__slots,
+  .hh-picker,
+  .hh-preview {
+    overflow: visible;
+    max-width: 100%;
+    padding: 12px 16px;
+    border-left: none;
+    border-right: none;
+  }
+  .hh-slot,
+  .hh-option,
+  .hh-deploy,
+  .hh-seance-btn {
+    min-height: 44px;
+    max-width: 100%;
+  }
+  .hh-garage__footer {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 12px 16px;
+    max-width: 100%;
+  }
+  .hh-deploy-col { align-items: stretch; }
+  .hh-summary__row { gap: 12px; }
+  .hh-stat-block { min-width: 0; }
+}
 `;
 
 let _cssInjected = false;
