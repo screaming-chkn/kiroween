@@ -239,3 +239,74 @@ export function drawCompactHp(ctx, state, view = null) {
   drawBar(ctx, 'enemy', state?.enemy, view);
   ctx.restore();
 }
+
+// ── Phone-only enemy edge arrow (draw-only) ──────────────────────────────────
+
+export const EDGE_ARROW = Object.freeze({ size: 14, margin: 24, hudGap: 10, padGap: 12 });
+
+/**
+ * Where to draw the off-screen enemy arrow (CSS px), or null when not needed.
+ * @returns {null | { x: number, y: number, angle: number, edge: 'left'|'right'|'top'|'bottom' }}
+ */
+export function edgeArrowPlacement({
+  enabled, ex, ey, er = 0, cssW, cssH,
+  insetTop = 0, insetBottom = 0, hud = null, bottomLimit = null,
+}) {
+  if (!enabled) return null;
+  if (ex + er >= 0 && ex - er <= cssW && ey + er >= 0 && ey - er <= cssH) return null;
+
+  const m = EDGE_ARROW.margin;
+  const left = m;
+  const right = cssW - m;
+  const top = m + insetTop;
+  const bottom = Math.min(cssH - m - Math.max(16, insetBottom), bottomLimit ?? Infinity);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  const ox = clamp(cssW / 2, left, right);
+  const oy = clamp(cssH / 2, top, bottom);
+  const dx = ex - ox;
+  const dy = ey - oy;
+  const angle = Math.atan2(dy, dx);
+
+  let t = Infinity;
+  let edge = 'top';
+  // Order matters for corner ties: top/bottom checked last with <= so they win.
+  if (dx > 0) { const c = (right - ox) / dx; if (c < t) { t = c; edge = 'right'; } }
+  if (dx < 0) { const c = (left - ox) / dx; if (c < t) { t = c; edge = 'left'; } }
+  if (dy > 0) { const c = (bottom - oy) / dy; if (c <= t) { t = c; edge = 'bottom'; } }
+  if (dy < 0) { const c = (top - oy) / dy; if (c <= t) { t = c; edge = 'top'; } }
+  if (!Number.isFinite(t)) return null;
+
+  let x = clamp(ox + dx * t, left, right);
+  let y = clamp(oy + dy * t, top, bottom);
+
+  if (hud) {
+    const g = EDGE_ARROW.hudGap;
+    if (x >= hud.x - g && x <= hud.x + hud.w + g && y >= hud.y - g && y <= hud.y + hud.h + g) {
+      y = clamp(hud.y + hud.h + g, top, bottom);
+    }
+  }
+  return { x, y, angle, edge };
+}
+
+/** Draw the arrow (scale = CSS→canvas px factor). */
+export function drawEdgeArrow(ctx, placement, scale = 1) {
+  if (!placement) return;
+  ctx.save();
+  ctx.translate(placement.x * scale, placement.y * scale);
+  ctx.rotate(placement.angle);
+  const size = EDGE_ARROW.size * scale;
+  ctx.beginPath();
+  ctx.moveTo(size, 0);
+  ctx.lineTo(-size * 0.6, size * 0.7);
+  ctx.lineTo(-size * 0.25, 0);
+  ctx.lineTo(-size * 0.6, -size * 0.7);
+  ctx.closePath();
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#0A0D0B';
+  ctx.lineWidth = 3 * scale;
+  ctx.stroke();
+  ctx.fillStyle = '#39FF88';
+  ctx.fill();
+  ctx.restore();
+}

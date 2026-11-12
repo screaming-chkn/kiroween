@@ -10,6 +10,7 @@ import {
   circleOverlapsRect, windupGlowStyle, drawWindupGlow, compactHpLayout, drawCompactHp,
   rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
+  EDGE_ARROW, edgeArrowPlacement, drawEdgeArrow,
 } from '../../src/ui/phoneCombatUi.js';
 
 let passed = 0;
@@ -189,5 +190,72 @@ test('phoneHudRect overlap: inside overlaps, y = 0.6*2532 does not', () => {
   assert.ok(circleOverlapsRect(100, 100, 30, r));
   assert.ok(!circleOverlapsRect(100, 0.6 * 2532, 30, r));
 });
+// ── Enemy edge arrow ─────────────────────────────────────────────────────────
+const EA = { enabled: true, cssW: 390, cssH: 844, er: 0 };
+const place = (ex, ey, extra = {}) => edgeArrowPlacement({ ...EA, ex, ey, ...extra });
+
+test('edgeArrow disabled -> null', () => {
+  assert.equal(place(-500, 400, { enabled: false }), null);
+});
+test('edgeArrow on-screen enemy -> null', () => {
+  assert.equal(place(195, 422), null);
+});
+test('edgeArrow off-screen but radius overlaps edge -> null', () => {
+  assert.equal(place(-10, 400, { er: 20 }), null);
+  assert.notEqual(place(-30, 400, { er: 20 }), null);
+});
+test('edgeArrow far right', () => {
+  const p = place(2000, 422);
+  assert.equal(p.edge, 'right');
+  near(p.x, 390 - EDGE_ARROW.margin);
+  assert.ok(Math.abs(p.angle) < 1e-9);
+});
+test('edgeArrow far left', () => {
+  const p = place(-2000, 422);
+  assert.equal(p.edge, 'left');
+  near(p.x, EDGE_ARROW.margin);
+  assert.ok(Math.abs(Math.abs(p.angle) - Math.PI) < 1e-9);
+});
+test('edgeArrow far above honours insetTop', () => {
+  const p = place(195, -2000, { insetTop: 47 });
+  assert.equal(p.edge, 'top');
+  near(p.y, 24 + 47);
+  near(p.angle, -Math.PI / 2);
+  near(place(195, -2000).y, 24);
+});
+test('edgeArrow far below stays above bottomLimit', () => {
+  const p = place(195, 3000, { bottomLimit: 700 });
+  assert.equal(p.edge, 'bottom');
+  assert.ok(p.y <= 700);
+  near(p.angle, Math.PI / 2);
+});
+test('edgeArrow corners point the right way and stay in bounds', () => {
+  const corners = [[-500, -500, -1, -1], [900, -500, 1, -1], [-500, 1500, -1, 1], [900, 1500, 1, 1]];
+  for (const [ex, ey, sx, sy] of corners) {
+    const p = place(ex, ey, { bottomLimit: 700 });
+    assert.equal(Math.sign(Math.cos(p.angle)), sx);
+    assert.equal(Math.sign(Math.sin(p.angle)), sy);
+    assert.ok(p.x >= 24 - 1e-9 && p.x <= 366 + 1e-9, `x ${p.x}`);
+    assert.ok(p.y >= 24 - 1e-9 && p.y <= 700 + 1e-9, `y ${p.y}`);
+  }
+});
+test('edgeArrow moves below the HUD when it would overlap', () => {
+  const hud = { x: 16, y: 12, w: 192, h: 103 };
+  const raw = place(-100, -1000);
+  assert.ok(raw.y < 115);
+  const p = place(-100, -1000, { hud });
+  assert.ok(p.y >= 12 + 103 + 10);
+  near(p.x, raw.x);
+});
+test('drawEdgeArrow smoke', () => {
+  const { ctx, calls } = fakeCtx();
+  drawEdgeArrow(ctx, { x: 10, y: 20, angle: 1, edge: 'left' }, 2);
+  assert.equal(calls.filter(c => c === 'save').length, calls.filter(c => c === 'restore').length);
+  assert.ok(calls.includes('fill') && calls.includes('stroke'));
+  const n = fakeCtx();
+  drawEdgeArrow(n.ctx, null);
+  assert.equal(n.calls.length, 0);
+});
+
 console.log(`phoneCombatUi: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

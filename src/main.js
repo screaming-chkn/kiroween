@@ -50,7 +50,8 @@ import {
   rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 }                              from './ui/phoneCombatUi.js';
-import { prefersTouchUi, mergeTouchActions } from './engine/touch.js';
+import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW } from './ui/phoneCombatUi.js';
+import { prefersTouchUi, mergeTouchActions, TOUCH_LAYOUT, stickRadiusPx } from './engine/touch.js';
 import { mountTouchControls }  from './ui/touchControls.js';
 
 // ── Canvas / loading ─────────────────────────────────────────────────────────
@@ -285,6 +286,43 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     }
   });
 
+  // Phone-only enemy edge arrow (draw-only). Safe-area insets read once.
+  let insetProbe = null;
+  let insetTop = 0;
+  let insetBottom = 0;
+  if (phonePortrait) {
+    insetProbe = document.createElement('div');
+    insetProbe.style.cssText =
+      'position:fixed;top:0;left:0;width:0;height:0;' +
+      'padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);' +
+      'visibility:hidden;pointer-events:none;';
+    document.body.appendChild(insetProbe);
+    const cs = getComputedStyle(insetProbe);
+    insetTop = parseFloat(cs.paddingTop) || 0;
+    insetBottom = parseFloat(cs.paddingBottom) || 0;
+  }
+  registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
+    if (!phonePortrait || st.phase !== 'playing') return;
+    const cssW = canvas.clientWidth || window.innerWidth;
+    const cssH = canvas.clientHeight || window.innerHeight;
+    const vpW = renderer.canvas.width;
+    const vpH = renderer.canvas.height;
+    const sp = worldToScreen(st.enemy.x, st.enemy.y, camera, vpW, vpH,
+      shakeX + kickX, shakeY + kickY);
+    const r = phoneHudRect(phoneHudScale(uiDpr));
+    const hud = { x: r.x / uiDpr, y: r.y / uiDpr, w: r.w / uiDpr, h: r.h / uiDpr };
+    const bottomLimit = Math.min(
+      TOUCH_LAYOUT.fire.cyFrac * cssH - TOUCH_LAYOUT.fire.rFrac * Math.min(cssW, cssH),
+      0.8 * cssH - stickRadiusPx(cssW, cssH),
+    ) - EDGE_ARROW.padGap;
+    const placement = edgeArrowPlacement({
+      enabled: phonePortrait,
+      ex: sp.sx / uiDpr, ey: sp.sy / uiDpr, er: 20 * camera.zoom / uiDpr,
+      cssW, cssH, insetTop, insetBottom, hud, bottomLimit,
+    });
+    drawEdgeArrow(ctx, placement, uiDpr);
+  });
+
   // Overlay needs viewport dimensions (drawn in screen space).
   // It returns the end-card button hit-rects so clicks can be mapped to a
   // button. Default focus is RETRY (index 0).
@@ -500,6 +538,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     canvas.removeEventListener('click',     onCardClick);
     canvas.removeEventListener('mousedown', onCanvasMouseDown);
     if (touch) { touch.destroy(); touch = null; }
+    if (insetProbe) { insetProbe.remove(); insetProbe = null; }
     // Input listeners are re-added on the next startArena; remove the old ones
     // by a simple pattern: we defined them as inline arrows, so we need to
     // stash references.  For simplicity we rely on the fact that showGarage

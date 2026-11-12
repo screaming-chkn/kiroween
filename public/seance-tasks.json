@@ -725,6 +725,12 @@
     "done": true
   },
   {
+    "spec": "08-phone-touch",
+    "id": 26,
+    "title": "Phone-only enemy edge arrow (portrait touch, off-screen only; clear of HUD, pads, safe areas; draw-only)",
+    "done": true
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",

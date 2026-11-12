@@ -25,3 +25,4 @@
 - [x] 23. Touch end-card text drawn unsquashed (44 px buttons kept)
 - [x] 24. Enemy bullet streak/halo/core and dash afterimage (draw-only)
 - [x] 25. Phone enemy HP number clamped inside the view
+- [x] 26. Phone-only enemy edge arrow (portrait touch, off-screen only; clear of HUD, pads, safe areas; draw-only)
