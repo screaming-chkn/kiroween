@@ -106,24 +106,32 @@ export const ENEMY_FIRE_COOLDOWN_MS = 1500;
 
 // ── HP ────────────────────────────────────────────────────────────────────────
 
-/** Starting hit-points for the player mech (R5). */
-export const PLAYER_MAX_HP = 300;
+/**
+ * Starting hit-points for the player mech (R5).
+ *
+ * owner GO 11/12 (shorter fights, target 30–45 s): PLAYER_MAX_HP 300 → 140 (×0.47),
+ * ENEMY_MAX_HP 2800 → 1500 (×0.54). Not an equal factor on purpose: the player
+ * gets free shots during the enemy's approach (it only fires inside
+ * ENEMY_FIRE_RANGE), a fixed chunk of damage that is a bigger share of a short
+ * fight, so an equal ×0.53 cut made strafe-without-dash win 80%. 140 = 7 enemy
+ * hits. Damage per hit (14 / 20), dash, windup, lead-aim, speeds and shot
+ * radius unchanged.
+ */
+export const PLAYER_MAX_HP = 140;
 
 /**
  * Starting hit-points for the enemy bot (R5).
  *
- * feel Tweak GO (11/5): 2920 → 2800. With the widened dash (DASH_DURATION_MS
- * 180 → 220, burst ≈ 158 wu, clearing the ~100 wu shot hit radius) and the
- * slimmer enemy projectile (radius 9 → 8), a dash-on-windup player banks more
- * survivability per telegraph. Trimming enemy HP ~6% lets M3 (strafe + dash)
- * WIN with ~20–30% player HP left, while M2 (strafe, no dash) still LOSES on
- * the mean seed — dash is the lever that tips the duel. PLAYER_PROJECTILE_DAMAGE
- * (14), ENEMY_PROJECTILE_DAMAGE (20), ENEMY_SHOT_WINDUP_MS (450),
- * FIRE_COOLDOWN_MS, the dash table (except duration), Scout, and possession are
- * all untouched. Baseline perfect-lead TTK is now ~59 s (2800 / 14dmg × 0.3 s)
- * before misses/travel.
+ * owner GO 11/12 (shorter fights, target 30–45 s): PLAYER_MAX_HP 300 → 140 (×0.47),
+ * ENEMY_MAX_HP 2800 → 1500 (×0.54). Not an equal factor on purpose: the player
+ * gets free shots during the enemy's approach (it only fires inside
+ * ENEMY_FIRE_RANGE), a fixed chunk of damage that is a bigger share of a short
+ * fight, so an equal ×0.53 cut made strafe-without-dash win 80%. 140 = 7 enemy
+ * hits. Damage per hit (14 / 20), dash, windup, lead-aim, speeds and shot
+ * radius unchanged.
+ * History: feel Tweak GO (11/5) 2920 → 2800.
  */
-export const ENEMY_MAX_HP  = 2800;
+export const ENEMY_MAX_HP  = 1500;
 
 // ── Enemy AI ──────────────────────────────────────────────────────────────────
 

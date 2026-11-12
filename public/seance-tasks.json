@@ -431,6 +431,12 @@
     "done": true
   },
   {
+    "spec": "03-arena-combat",
+    "id": 49,
+    "title": "Shorter fights: PLAYER_MAX_HP 300 → 140, ENEMY_MAX_HP 2800 → 1500 (sim2 10 seeds: M2 30% win ~38 s, M3 90% win ~39 s; damage/dash/windup/lead/speeds unchanged)",
+    "done": true
+  },
+  {
     "spec": "04-radar-relays",
     "id": 1,
     "title": "Visibility grid from relays + player (R1)",

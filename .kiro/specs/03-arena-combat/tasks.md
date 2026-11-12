@@ -140,3 +140,7 @@
   - Assertions updated: `feelPass.test.js` — header refreshed to the feel Tweak GO story, `assert.equal(ENEMY_MAX_HP, 2750)`, `assert.equal(DASH_DURATION_MS, 220)`, and the dash section banner/test name updated 0.18 s → 0.22 s (the measured-dash test reads `DASH_DURATION_MS` symbolically so its tolerance tracks automatically). `arena.test.js` sustained-fire win comment refreshed to the 2750 HP / ~59 s numbers (the pre-soften already uses `ENEMY_MAX_HP − PLAYER_PROJECTILE_DAMAGE·3` symbolically, so it tracks automatically). `enemyShot.test.js` unchanged — its 8 > 5 assertion still passes. No other test hard-codes these literals.
   - NOTE: because `tasks.md` was edited, `public/seance-tasks.json` was regenerated to stay in sync (it carries the task titles).
   - VERIFICATION NOTE: shell execution was disallowed for this task, so the suite was not run here; the config numbers and the updated assertions were kept mutually consistent by hand, and LSP diagnostics on `config.js` and the edited tests are clean. Re-run `node tests/combat/feelPass.test.js`, `tests/combat/enemyShot.test.js`, `tests/combat/arena.test.js` (or `npm test`) to confirm green, and `npm run test:balance` to regenerate `tests/combat/BALANCE.md` against the 14 dmg / 2750 HP numbers.
+
+## owner GO 11/12 — shorter fights (30–45 s)
+
+- [x] 49. Shorter fights: PLAYER_MAX_HP 300 → 140, ENEMY_MAX_HP 2800 → 1500 (sim2 10 seeds: M2 30% win ~38 s, M3 90% win ~39 s; damage/dash/windup/lead/speeds unchanged)

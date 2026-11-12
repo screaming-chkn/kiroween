@@ -93,3 +93,18 @@ Combat knobs applied: `ENEMY_MAX_HP=1400`, `ENEMY_PROJECTILE_DAMAGE=20`, windup/
 | dash light/mid/heavy CD | 2.5/3.5/4.5s | 2517/3517/4517ms | PASS |
 
 Gap: with lead-aim + player dmg 17, 1400 HP melts in ~28s. Closing the gap needs another GO (raise HP again and/or cut player DPS) — not done here (package numbers locked).
+
+## owner GO 11/12 — shorter fights (sim2, 10 seeds)
+
+Method: sim2 harness `reviews/feel-1105/sim2.mjs`, DASH_SUCCESS_RATE 0.22, seeds 0–9.
+
+| Case | Before (P300/E2800) | After (P140/E1500) |
+|---|---|---|
+| M2 strafe, no dash — win rate | 3/10 (30%) | 3/10 (30%) |
+| M2 — mean time to end | 68.2 s (62.4–73.3) | 37.6 s (33.1–40.0) |
+| M3 strafe + dash-on-windup — win rate | 9/10 (90%) | 9/10 (90%) |
+| M3 — mean time to end | 72.0 s (70.4–74.0) | 38.9 s (37.3–40.2) |
+| M3 dashed-shot dodge | 95.7% | 96.1% |
+| M3 avg player HP left on win | 54% (162/300) | 48% (67/140) |
+
+Rejected: equal ×0.53 (P160/E1500): M2 8/10 wins (split lost); P160/E1700: M2 2/10, M3 9/10 but ~44 s; P120/E1400: M3 8/10, ~35 s.
