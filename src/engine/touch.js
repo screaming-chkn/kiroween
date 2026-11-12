@@ -5,7 +5,7 @@
  * control scheme:
  *   • Left half  → virtual movement stick (drag to steer).
  *   • Bottom-right → FIRE button (held = firing).
- *   • Above fire → DASH button (held = dash; arena buffers the press like Shift).
+ *   • Left of fire, bottom row → DASH button (held = dash; arena buffers the press like Shift).
  *
  * Everything here is framework-free and DOM-free so it runs under plain Node
  * for tests. The DOM overlay in src/ui/touchControls.js wires real pointer
@@ -34,7 +34,7 @@
  *   • stick  — left ~45% width, bottom ~55% height. The stick origin recenters
  *              on the initial touch-down within this zone.
  *   • fire   — round button near the bottom-right corner.
- *   • dash   — round button above / inboard of fire.
+ *   • dash   — round button in the bottom row, left of fire.
  */
 export const TOUCH_LAYOUT = Object.freeze({
   // Movement-stick activation zone (anchored bottom-left).
@@ -55,10 +55,10 @@ export const TOUCH_LAYOUT = Object.freeze({
     cyFrac: 0.80,    // 80% down   (near bottom)
     rFrac:  0.11,    // radius vs min(vpW, vpH)
   }),
-  // DASH button — above / inboard of fire.
+  // DASH button — bottom row, left of FIRE (outside the stick zone).
   dash: Object.freeze({
-    cxFrac: 0.68,
-    cyFrac: 0.66,
+    cxFrac: 0.60,
+    cyFrac: 0.89,
     rFrac:  0.085,
   }),
 });

@@ -97,6 +97,19 @@ test('top-left (above the stick zone) is null', () => {
   assert.equal(hitTestTouchControl(50, 50, PHONE.width, PHONE.height), null);
 });
 
+test('390x844: dash is bottom row, clear of fire and the stick zone', () => {
+  const { width: w, height: h } = PHONE;
+  const min = Math.min(w, h);
+  const d = TOUCH_LAYOUT.dash;
+  const f = TOUCH_LAYOUT.fire;
+  const dx = d.cxFrac * w, dy = d.cyFrac * h, dr = d.rFrac * min;
+  const fx = f.cxFrac * w, fy = f.cyFrac * h, fr = f.rFrac * min;
+  assert.ok(Math.hypot(dx - fx, dy - fy) > dr + fr, 'dash overlaps fire');
+  const s = TOUCH_LAYOUT.stick;
+  assert.ok(dx - dr > (s.xFrac + s.wFrac) * w, 'dash overlaps stick zone');
+  assert.ok(dy + dr <= 0.95 * h, 'dash bottom edge below 95% height');
+});
+
 // ── controller multi-touch ───────────────────────────────────────────────────
 
 console.log('\nsrc/engine/touch.js — controller\n');

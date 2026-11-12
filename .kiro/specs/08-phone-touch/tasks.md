@@ -8,3 +8,8 @@
 - [x] 6. Responsive garage CSS for phones, desktop untouched (R4, R5)
 - [x] 7. index.html viewport-fit=cover, touch-action, overscroll (R4)
 - [x] 8. Tests: touch.test.js and garage phone-layout tests (R1–R6)
+- [x] 9. Portrait phone camera zoom + enemy-biased follow (camera.js helpers, main wiring, camera tests)
+- [x] 10. DASH button moved to bottom row left of FIRE (touch layout + tests)
+- [x] 11. Garage sticky DEPLOY footer at <=700px + layout-aware picker hint
+- [x] 12. Séance short titles (cut at first ':' or ';'), full title kept in JSON and aria-label
+- [x] 13. Kiro hook: run npm test on save of src/tests JS; tech steering note

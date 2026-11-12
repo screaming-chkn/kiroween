@@ -623,6 +623,36 @@
     "done": true
   },
   {
+    "spec": "08-phone-touch",
+    "id": 9,
+    "title": "Portrait phone camera zoom + enemy-biased follow (camera.js helpers, main wiring, camera tests)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 10,
+    "title": "DASH button moved to bottom row left of FIRE (touch layout + tests)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 11,
+    "title": "Garage sticky DEPLOY footer at <=700px + layout-aware picker hint",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 12,
+    "title": "Séance short titles (cut at first ':' or ';'), full title kept in JSON and aria-label",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 13,
+    "title": "Kiro hook: run npm test on save of src/tests JS; tech steering note",
+    "done": true
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",

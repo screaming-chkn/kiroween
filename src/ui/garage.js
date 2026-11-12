@@ -45,6 +45,15 @@ import { canDeploy }           from '../mech/weight.js';
 import { roleTag, roleTooltip } from '../mech/role.js';
 import { silhouetteSpec }       from '../mech/silhouette.js';
 
+/**
+ * Empty-picker hint, aware of the stacked (phone) layout.
+ * @param {boolean} stacked  True when slots are above the picker.
+ * @returns {string}
+ */
+export function pickerEmptyHint(stacked) {
+  return stacked ? 'Select a slot above.' : 'Select a slot on the left.';
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const LS_KEY = 'hh_loadout_v1';
@@ -571,19 +580,23 @@ export const GARAGE_CSS = `
 /* ── Phone (≤700px, e.g. 390×844): single column, scrollable ───────────── */
 @media (max-width: 700px) {
   .hh-garage {
-    display: block;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
     max-width: 100%;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
   .hh-garage__header {
+    flex: 0 0 auto;
     flex-wrap: wrap;
     gap: 4px 12px;
     padding: 12px 16px 8px;
   }
   .hh-garage__body {
+    flex: 1 1 auto;
+    min-height: 0;
     grid-template-columns: 1fr;
     grid-template-areas:
       "slots"
@@ -611,9 +624,14 @@ export const GARAGE_CSS = `
     max-width: 100%;
   }
   .hh-garage__footer {
+    flex: 0 0 auto;
+    position: sticky;
+    bottom: 0;
+    background: var(--color-void, #0A0D0B);   /* opaque, matches .hh-garage */
+    border-top: 1px solid var(--color-phosphor-dim, #1F9E57);
     flex-wrap: wrap;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
     max-width: 100%;
   }
   .hh-deploy-col { align-items: stretch; }
@@ -1136,7 +1154,10 @@ export function mountGarage(root, { onDeploy, onSeance } = {}) {
     activeSlot = null;
     pickerPanel.innerHTML = '';
     const empty = el('div', { class: 'hh-picker__empty' });
-    empty.textContent = 'Select a slot on the left.';
+    empty.textContent = pickerEmptyHint(
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(max-width: 700px)').matches === true,
+    );
     pickerPanel.append(empty);
   }
 

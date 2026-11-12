@@ -295,3 +295,66 @@ export function updateCamera(cam, target, dt, arena = null, vpW = 0, vpH = 0) {
 
   return tickShake(followed, dt);
 }
+
+// ── Portrait phone helpers ───────────────────────────────────────────────────
+
+/** Desired on-screen mech diameter (CSS px) on a portrait phone. */
+export const PHONE_MECH_TARGET_CSS_PX = 44;
+
+/** Fraction of the player→enemy vector the camera leans toward the enemy. */
+export const PHONE_ENEMY_BIAS = 0.35;
+
+/**
+ * True for a touch-UI device held in portrait.
+ * @param {{ touchUi: boolean, cssW: number, cssH: number }} p
+ * @returns {boolean}
+ */
+export function isPortraitTouch({ touchUi, cssW, cssH } = {}) {
+  return touchUi === true && cssH > cssW;
+}
+
+/**
+ * Zoom (canvas px per world unit) so the mech is ~targetCssPx CSS px wide,
+ * never lower than the fit-to-arena zoom.
+ * @param {{ fitZoom: number, dpr?: number, mechDiameterWu?: number, targetCssPx?: number }} p
+ * @returns {number}
+ */
+export function phoneCameraZoom({
+  fitZoom,
+  dpr = 1,
+  mechDiameterWu = 40,
+  targetCssPx = PHONE_MECH_TARGET_CSS_PX,
+}) {
+  return Math.max(fitZoom, (targetCssPx / mechDiameterWu) * dpr);
+}
+
+/**
+ * Camera follow point: player leaning toward the enemy, with each axis offset
+ * clamped so the player stays on screen. Returns the player position when the
+ * enemy is missing.
+ * @param {{x:number,y:number}} player
+ * @param {{x:number,y:number}|null|undefined} enemy
+ * @param {number} zoom
+ * @param {number} vpW
+ * @param {number} vpH
+ * @param {number} [bias]
+ * @param {number} [marginWu]
+ * @returns {{x:number,y:number}}
+ */
+export function phoneFollowPoint(
+  player,
+  enemy,
+  zoom,
+  vpW,
+  vpH,
+  bias = PHONE_ENEMY_BIAS,
+  marginWu = 80,
+) {
+  if (!enemy) return { x: player.x, y: player.y };
+  const limX = Math.max(0, vpW / 2 / zoom - marginWu);
+  const limY = Math.max(0, vpH / 2 / zoom - marginWu);
+  return {
+    x: player.x + clamp(bias * (enemy.x - player.x), -limX, limX),
+    y: player.y + clamp(bias * (enemy.y - player.y), -limY, limY),
+  };
+}

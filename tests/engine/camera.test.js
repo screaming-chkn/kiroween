@@ -27,6 +27,11 @@ import {
   SHAKE_MAX_REDUCED,
   TRAUMA_DECAY,
   FOLLOW_SPEED,
+  PHONE_MECH_TARGET_CSS_PX,
+  PHONE_ENEMY_BIAS,
+  isPortraitTouch,
+  phoneCameraZoom,
+  phoneFollowPoint,
 } from '../../src/engine/camera.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
@@ -497,6 +502,61 @@ test('updateCamera without arena falls back to plain follow', () => {
   const { camera: next } = updateCamera(cam, { x: 100, y: 0 }, 1);
   // dt=1 → t=1 → snaps to target
   assert.ok(approxEq(next.x, 100), `x=${next.x}`);
+});
+
+// ── Portrait phone helpers ───────────────────────────────────────────────────
+
+console.log('\nsrc/engine/camera.js — portrait phone helpers\n');
+
+test('constants', () => {
+  assert.equal(PHONE_MECH_TARGET_CSS_PX, 44);
+  assert.equal(PHONE_ENEMY_BIAS, 0.35);
+});
+
+test('isPortraitTouch: needs touchUi === true and cssH > cssW', () => {
+  assert.equal(isPortraitTouch({ touchUi: true, cssW: 390, cssH: 844 }), true);
+  assert.equal(isPortraitTouch({ touchUi: true, cssW: 844, cssH: 390 }), false);
+  assert.equal(isPortraitTouch({ touchUi: true, cssW: 500, cssH: 500 }), false);
+  assert.equal(isPortraitTouch({ touchUi: false, cssW: 390, cssH: 844 }), false);
+  assert.equal(isPortraitTouch({ touchUi: 1, cssW: 390, cssH: 844 }), false);
+});
+
+test('phoneCameraZoom at 390x844 dpr 3 gives mech >= 40 CSS px', () => {
+  const fitZoom = Math.min(1170 / 1200, 2532 / 900) * 0.95;
+  const z = phoneCameraZoom({ fitZoom, dpr: 3 });
+  assert.ok((z / 3) * 40 >= 40, `mech is ${(z / 3) * 40} CSS px`);
+});
+
+test('phoneCameraZoom never below fitZoom; desktop fitZoom unchanged', () => {
+  const desk = Math.min(1280 / 1200, 800 / 900) * 0.95;
+  assert.equal(phoneCameraZoom({ fitZoom: 5, dpr: 1 }), 5);
+  assert.ok(phoneCameraZoom({ fitZoom: desk, dpr: 1 }) >= desk);
+  assert.equal(desk, Math.min(1280 / 1200, 800 / 900) * 0.95);
+});
+
+test('phoneFollowPoint: bias toward enemy', () => {
+  const p = phoneFollowPoint({ x: 100, y: 100 }, { x: 200, y: 100 }, 1, 2000, 2000);
+  assert.ok(Math.abs(p.x - 135) < 1e-9);
+  assert.equal(p.y, 100);
+});
+
+test('phoneFollowPoint: clamps so the player stays on screen', () => {
+  const zoom = 3.3, vpW = 1170, vpH = 2532;
+  const player = { x: 100, y: 100 };
+  const p = phoneFollowPoint(player, { x: 10000, y: -10000 }, zoom, vpW, vpH);
+  const limX = vpW / 2 / zoom - 80;
+  const limY = vpH / 2 / zoom - 80;
+  assert.ok(Math.abs(p.x - player.x) <= limX + 1e-9);
+  assert.ok(Math.abs(p.y - player.y) <= limY + 1e-9);
+  // Player's screen position with camera at p stays inside the viewport.
+  const sx = (player.x - p.x) * zoom + vpW / 2;
+  const sy = (player.y - p.y) * zoom + vpH / 2;
+  assert.ok(sx >= 0 && sx <= vpW && sy >= 0 && sy <= vpH);
+});
+
+test('phoneFollowPoint: null enemy returns player position', () => {
+  assert.deepEqual(phoneFollowPoint({ x: 7, y: 9 }, null, 1, 100, 100), { x: 7, y: 9 });
+  assert.deepEqual(phoneFollowPoint({ x: 7, y: 9 }, undefined, 1, 100, 100), { x: 7, y: 9 });
 });
 
 // ── Summary ───────────────────────────────────────────────────────────────────

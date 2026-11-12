@@ -42,7 +42,20 @@ export const SEANCE_FALLBACK = [
 // ── Pure model helpers ───────────────────────────────────────────────────────
 
 /**
- * Render one task record to its terminal line text.
+ * Short display title: cut at the first ':' or ';', then trimmed. Titles with
+ * neither separator are just trimmed.
+ *
+ * @param {string} title
+ * @returns {string}
+ */
+export function shortTaskTitle(title) {
+  const s = String(title ?? '');
+  const i = s.search(/[:;]/);
+  return (i >= 0 ? s.slice(0, i) : s).trim();
+}
+
+/**
+ * Render one task record to its terminal line text (short title).
  *   done → "[x] <spec> 12. title"
  *   open → "[ ] <spec> 3. title"
  *
@@ -50,6 +63,17 @@ export const SEANCE_FALLBACK = [
  * @returns {string}
  */
 export function taskLineText(task) {
+  const box = task.done ? '[x]' : '[ ]';
+  return `${box} ${task.spec} ${task.id}. ${shortTaskTitle(task.title)}`;
+}
+
+/**
+ * Same line as taskLineText but with the whole title (used for aria-label).
+ *
+ * @param {{spec:string,id:number,title:string,done:boolean}} task
+ * @returns {string}
+ */
+export function fullTaskLineText(task) {
   const box = task.done ? '[x]' : '[ ]';
   return `${box} ${task.spec} ${task.id}. ${task.title}`;
 }
@@ -327,6 +351,7 @@ export function mountSeance(root, { onClose, tasks } = {}) {
         li.classList.add(line.done ? 'hh-seance__line--done' : 'hh-seance__line--open');
       }
       li.textContent = line.text;
+      if (line.kind === 'task') li.setAttribute('aria-label', fullTaskLineText(line.task));
       list.append(li);
     }
     const total = Array.isArray(taskArr) ? taskArr.length : 0;

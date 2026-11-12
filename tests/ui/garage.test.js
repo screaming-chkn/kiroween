@@ -11,7 +11,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { formatDelta, statChipLabel, overdrawPenaltyPct, GARAGE_CSS } from '../../src/ui/garage.js';
+import { formatDelta, statChipLabel, overdrawPenaltyPct, GARAGE_CSS, pickerEmptyHint } from '../../src/ui/garage.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
 
@@ -236,6 +236,21 @@ test('≤700px targets are at least 44px tall', () => {
 
 test('desktop default rules still come before the phone override', () => {
   assert.ok(GARAGE_CSS.indexOf('@media (min-width: 1280px)') < GARAGE_CSS.indexOf('@media (max-width: 700px)'));
+});
+
+test('pickerEmptyHint: stacked never says "left"', () => {
+  assert.equal(pickerEmptyHint(true), 'Select a slot above.');
+  assert.ok(!pickerEmptyHint(true).includes('left'));
+  assert.equal(pickerEmptyHint(false), 'Select a slot on the left.');
+});
+
+test('≤700px: sticky footer and scrolling body', () => {
+  const mq = GARAGE_CSS.indexOf('@media (max-width: 700px)');
+  const slice = GARAGE_CSS.slice(mq).replace(/\s+/g, ' ');
+  const footer = slice.match(/\.hh-garage__footer \{([^}]*)\}/);
+  const body = slice.match(/\.hh-garage__body \{([^}]*)\}/);
+  assert.ok(footer && /position:\s*sticky/.test(footer[1]), 'footer sticky missing');
+  assert.ok(body && /overflow-y:\s*auto/.test(body[1]), 'body overflow-y missing');
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

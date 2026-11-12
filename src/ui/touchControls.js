@@ -1,7 +1,8 @@
 /**
  * src/ui/touchControls.js — on-screen phone controls (DOM overlay).
  *
- * Draws a movement stick (bottom-left), FIRE (bottom-right) and DASH buttons
+ * Draws a movement stick (bottom-left), FIRE (bottom-right) and DASH (bottom
+ * row, left of FIRE) buttons
  * and forwards pointer events to createTouchController() from engine/touch.js.
  * No top-level DOM access, so TOUCH_CONTROLS_CSS can be imported under Node.
  *

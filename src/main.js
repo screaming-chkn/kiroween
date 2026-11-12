@@ -19,7 +19,7 @@
 
 import { startLoop }           from './engine/loop.js';
 import { createInputState }    from './engine/input.js';
-import { createCamera, updateCamera, addTrauma } from './engine/camera.js';
+import { createCamera, updateCamera, addTrauma, isPortraitTouch, phoneCameraZoom, phoneFollowPoint } from './engine/camera.js';
 import {
   createRenderer,
   registerLayer,
@@ -160,10 +160,31 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   const vpH0 = renderer.canvas.height || 800;
   // Leave a small margin (factor 0.95) so the wall stroke is never cropped.
   const fitZoom = Math.min(vpW0 / aw, vpH0 / ah) * 0.95;
+  // Touch-UI decision is made once, before the camera, and reused below.
+  const coarse = typeof window.matchMedia === 'function'
+    ? window.matchMedia('(pointer: coarse)').matches
+    : false;
+  const touchUi = prefersTouchUi({
+    maxTouchPoints: navigator.maxTouchPoints,
+    matchMediaCoarse: coarse,
+    width: window.innerWidth,
+  });
+  // Portrait phone: zoom in so the mech is readable, and bias toward the enemy.
+  const phonePortrait = isPortraitTouch({
+    touchUi,
+    cssW: canvas.clientWidth  || window.innerWidth,
+    cssH: canvas.clientHeight || window.innerHeight,
+  });
+  const startZoom = phonePortrait
+    ? phoneCameraZoom({
+        fitZoom,
+        dpr: canvas.width / (canvas.clientWidth || canvas.width),
+      })
+    : fitZoom;
   let camera = createCamera({
     x:            aw / 2,
     y:            ah / 2,
-    zoom:         fitZoom,
+    zoom:         startZoom,
     reducedMotion,
   });
   let shakeX = 0;
@@ -288,14 +309,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
   // ── Touch controls (phones/tablets only) ───────────────────────────────────
   let touch = null;
-  const coarse = typeof window.matchMedia === 'function'
-    ? window.matchMedia('(pointer: coarse)').matches
-    : false;
-  if (prefersTouchUi({
-    maxTouchPoints: navigator.maxTouchPoints,
-    matchMediaCoarse: coarse,
-    width: window.innerWidth,
-  })) {
+  if (touchUi) {
     touch = mountTouchControls(document.body, {
       getViewport: () => ({ width: window.innerWidth, height: window.innerHeight }),
     });
@@ -386,7 +400,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       // clamp when the arena is larger than the viewport (R11).
       const cameraResult = updateCamera(
         camera,
-        arenaState.player,
+        phonePortrait
+          ? phoneFollowPoint(arenaState.player, arenaState.enemy, camera.zoom, vpW, vpH)
+          : arenaState.player,
         dt,
         arenaState.arena,
         vpW,

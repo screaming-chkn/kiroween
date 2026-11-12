@@ -24,6 +24,8 @@ import { fileURLToPath } from 'node:url';
 import { parseTasksMd, collectTasks } from '../../scripts/build-seance-tasks.mjs';
 import {
   taskLineText,
+  shortTaskTitle,
+  fullTaskLineText,
   unlockedLineText,
   countDone,
   seanceLines,
@@ -128,6 +130,33 @@ test('done task renders with [x] box', () => {
 test('open task renders with [ ] box', () => {
   const text = taskLineText({ spec: '04-radar-relays', id: 3, title: 'Static', done: false });
   assert.equal(text, '[ ] 04-radar-relays 3. Static');
+});
+
+// ── unlockedLineText (src/ui/seance.js) ───────────────────────────────────────
+
+console.log('\nsrc/ui/seance.js — shortTaskTitle / fullTaskLineText\n');
+
+test('Task 26 of 03-arena-combat (real JSON) renders the short line', () => {
+  const committed = JSON.parse(readFileSync(join(REPO_ROOT, 'public', 'seance-tasks.json'), 'utf8'));
+  const t = committed.find((x) => x.spec === '03-arena-combat' && x.id === 26);
+  assert.ok(t, 'task 26 missing');
+  assert.equal(taskLineText(t), '[x] 03-arena-combat 26. Enemy shot windup ~0.45 s');
+  assert.ok(fullTaskLineText(t).includes('ENEMY_SHOT_WINDUP_MS'), 'full title kept');
+});
+
+test("first of ':' or ';' wins", () => {
+  assert.equal(shortTaskTitle('A: b; c'), 'A');
+  assert.equal(shortTaskTitle('A; b: c'), 'A');
+});
+
+test('no separator -> trimmed full title', () => {
+  assert.equal(shortTaskTitle('  Plain title  '), 'Plain title');
+});
+
+test('fullTaskLineText keeps the whole title', () => {
+  const t = { spec: 's', id: 4, title: 'Head: tail; more', done: false };
+  assert.equal(fullTaskLineText(t), '[ ] s 4. Head: tail; more');
+  assert.equal(taskLineText(t), '[ ] s 4. Head');
 });
 
 // ── unlockedLineText (src/ui/seance.js) ───────────────────────────────────────
