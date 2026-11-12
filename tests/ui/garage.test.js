@@ -253,6 +253,12 @@ test('≤700px: sticky footer and scrolling body', () => {
   assert.ok(body && /overflow-y:\s*auto/.test(body[1]), 'body overflow-y missing');
 });
 
+test('present silhouette label uses the void colour; séance outline is ghost', () => {
+  const present = GARAGE_CSS.match(/\.hh-sil__label--present \{([^}]*)\}/);
+  assert.ok(present && /fill:\s*var\(--color-void,/.test(present[1]), 'present label must use void');
+  assert.ok(/border:\s*1px solid var\(--color-ghost,/.test(block(GARAGE_CSS, '.hh-seance-btn {')));
+});
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);

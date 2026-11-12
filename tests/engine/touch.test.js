@@ -17,6 +17,7 @@ import {
   aimScreenFromDir,
   prefersTouchUi,
   mergeTouchActions,
+  touchSafeShift,
 } from '../../src/engine/touch.js';
 import { TOUCH_CONTROLS_CSS } from '../../src/ui/touchControls.js';
 
@@ -351,6 +352,37 @@ test('overlay sits at z-index 40 (below garage 100) with touch-action none', () 
 
 test('stickRadiusPx scales with the smaller viewport side', () => {
   near(stickRadiusPx(390, 844), TOUCH_LAYOUT.stickRadiusFrac * 390);
+});
+
+// ── Bottom safe-area shift ───────────────────────────────────────────────────
+
+console.log('\nsrc/engine/touch.js — touchSafeShift\n');
+
+test('touchSafeShift is 0 at 390x844 (inset 0 and 34)', () => {
+  assert.equal(touchSafeShift(390, 844, 0), 0);
+  assert.equal(touchSafeShift(390, 844, 34), 0);
+});
+
+test('touchSafeShift > 0 at 375x600 inset 34 and keeps pads clear', () => {
+  const W = 375, H = 600;
+  const s = touchSafeShift(W, H, 34);
+  assert.ok(s > 0);
+  const min = Math.min(W, H);
+  const f = TOUCH_LAYOUT.fire, d = TOUCH_LAYOUT.dash;
+  const bottoms = [
+    f.cyFrac * H + f.rFrac * min,
+    d.cyFrac * H + d.rFrac * min,
+    0.8 * H + stickRadiusPx(W, H),
+  ];
+  for (const b of bottoms) assert.ok(b - s <= H - 46 + 1e-9, `${b} - ${s}`);
+});
+
+test('controller with getBottomShift maps shifted dash tap to dash', () => {
+  const W = 375, H = 600;
+  const c = createTouchController({ getViewport: () => ({ width: W, height: H }), getBottomShift: () => 20 });
+  const d = TOUCH_LAYOUT.dash;
+  c.onPointerDown({ pointerId: 1, clientX: d.cxFrac * W, clientY: d.cyFrac * H - 20 });
+  assert.notEqual(c.activeDashId, null);
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

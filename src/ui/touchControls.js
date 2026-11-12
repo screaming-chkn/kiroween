@@ -14,6 +14,7 @@
 import {
   createTouchController,
   stickRadiusPx,
+  touchSafeShift,
   TOUCH_LAYOUT,
 } from '../engine/touch.js';
 
@@ -78,7 +79,20 @@ export function mountTouchControls(root, { getViewport }) {
     document.head.appendChild(style);
   }
 
-  const controller = createTouchController({ getViewport });
+  // Bottom safe-area inset, read once per layout via a hidden probe.
+  const probe = document.createElement('div');
+  probe.style.cssText =
+    'position:fixed;bottom:0;left:0;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;';
+  root.appendChild(probe);
+  let shift = 0;
+  function computeShift() {
+    const { width: w, height: h } = getViewport();
+    const inset = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+    shift = touchSafeShift(w, h, inset);
+  }
+  computeShift();
+
+  const controller = createTouchController({ getViewport, getBottomShift: () => shift });
 
   const overlay = document.createElement('div');
   overlay.className = 'hh-touch';
@@ -109,11 +123,12 @@ export function mountTouchControls(root, { getViewport }) {
     const { width: w, height: h } = getViewport();
     const min = Math.min(w, h);
     const sr = stickRadiusPx(w, h);
+    computeShift();
 
     const vis = controller.stickVisual();
     // Default rest spot: bottom-left (80% down keeps it well above the home bar).
     const restX = Math.max(sr + 16, 0.2 * w);
-    const restY = 0.8 * h;
+    const restY = 0.8 * h - shift;
     let ox = restX;
     let oy = restY;
     let kx = restX;
@@ -133,9 +148,9 @@ export function mountTouchControls(root, { getViewport }) {
     place(knobEl, kx, ky, sr * 0.45);
 
     const f = TOUCH_LAYOUT.fire;
-    place(fireEl, f.cxFrac * w, f.cyFrac * h, f.rFrac * min);
+    place(fireEl, f.cxFrac * w, f.cyFrac * h - shift, f.rFrac * min);
     const d2 = TOUCH_LAYOUT.dash;
-    place(dashEl, d2.cxFrac * w, d2.cyFrac * h, d2.rFrac * min);
+    place(dashEl, d2.cxFrac * w, d2.cyFrac * h - shift, d2.rFrac * min);
 
     fireEl.classList.toggle('hh-touch__btn--held', controller.activeFireId !== null);
     dashEl.classList.toggle('hh-touch__btn--held', controller.activeDashId !== null);
@@ -198,6 +213,7 @@ export function mountTouchControls(root, { getViewport }) {
       overlay.removeEventListener('touchmove', stopTouch);
       window.removeEventListener('resize', onResize);
       overlay.remove();
+      probe.remove();
     },
   };
 }

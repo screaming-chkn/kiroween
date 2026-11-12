@@ -51,21 +51,129 @@ export function circleOverlapsRect(cx, cy, r, rect) {
   return dx * dx + dy * dy <= r * r;
 }
 
-export function windupGlowStyle(remainingMs, windupMs) {
+export function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+/** Screen rect (HUD-layer transform, no shake) of the player's HP bar. */
+export function playerHpBarScreenRect(player, camera, vpW, vpH, compact) {
+  const w = compact ? 56 : 160;
+  const h = compact ? 5 : 12;
+  const top = player.y + (compact ? 30 : 36);
+  const extra = compact ? 0 : 16;
+  const wx = player.x - w / 2;
+  const z = camera.zoom;
+  const x = vpW / 2 + (wx - camera.x) * z;
+  const y = vpH / 2 + (top - extra - camera.y) * z;
+  return { x, y, w: w * z, h: (h + extra) * z };
+}
+
+export function playerOnlyState(st) {
+  return { ...st, enemy: { ...st.enemy, x: -1e6, y: -1e6 } };
+}
+
+/** Proxy ctx whose text draws are counter-scaled horizontally by kx. */
+export function unsquashTextCtx(ctx, kx) {
+  const wrap = (name) => (text, x, y, maxWidth) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(kx, 1);
+    if (maxWidth !== undefined) ctx[name](text, 0, 0, maxWidth);
+    else ctx[name](text, 0, 0);
+    ctx.restore();
+  };
+  const fill = wrap('fillText');
+  const stroke = wrap('strokeText');
+  return new Proxy(ctx, {
+    get(target, p) {
+      if (p === 'fillText') return fill;
+      if (p === 'strokeText') return stroke;
+      const v = target[p];
+      return typeof v === 'function' ? v.bind(target) : v;
+    },
+    set(target, p, v) {
+      target[p] = v;
+      return true;
+    },
+  });
+}
+
+export function drawEnemyShotGlow(ctx, projectiles) {
+  if (!projectiles) return;
+  for (const p of projectiles) {
+    if (p.owner !== 'enemy') continue;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#FF4D5E';
+    ctx.lineWidth = 6;
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    ctx.moveTo(p.x - (p.vx ?? 0) * 0.09, p.y - (p.vy ?? 0) * 0.09);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    ctx.fillStyle = '#FF4D5E';
+    ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.globalAlpha = 0.95;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+export function pushAfterimage(buf, player, max = 3) {
+  if (player && player.dashRemainingMs > 0) {
+    buf.push({ x: player.x, y: player.y, angle: player.aimAngle ?? player.angle ?? 0 });
+    while (buf.length > max) buf.shift();
+  } else if (buf.length) {
+    buf.shift();
+  }
+}
+
+export function drawDashAfterimages(ctx, buf) {
+  buf.forEach((a, i) => {
+    ctx.save();
+    ctx.strokeStyle = '#39FF88';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.12 * (i + 1);
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const ang = a.angle + (k * Math.PI) / 3;
+      const px = a.x + Math.cos(ang) * 20;
+      const py = a.y + Math.sin(ang) * 20;
+      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+export function windupGlowStyle(remainingMs, windupMs, cssPerWu = 1) {
   if (!(remainingMs > 0) || !(windupMs > 0)) return null;
   const p = Math.max(0, Math.min(1, 1 - remainingMs / windupMs));
+  const radius = 20 * (1.1 + 0.8 * p);
+  const ringWidth = 3.5 / cssPerWu;
+  const coreWidth = 1.5 / cssPerWu;
   return {
     progress: p,
-    radius: 20 * (1.1 + 0.8 * p),
-    lineWidth: 4 + 2 * p,
+    radius,
+    ringWidth,
+    coreWidth,
+    coreRadius: radius - ringWidth / 2 - coreWidth / 2,
     alpha: 0.6 + 0.4 * p,
-    haloWidth: 12,
+    coreAlpha: 0.4 + 0.6 * p,
+    haloWidth: 10 / cssPerWu,
     haloAlpha: 0.12 + 0.28 * p,
   };
 }
 
-export function drawWindupGlow(ctx, enemy, windupMs) {
-  const s = windupGlowStyle(enemy?.windupRemainingMs, windupMs);
+export function drawWindupGlow(ctx, enemy, windupMs, cssPerWu = 1) {
+  const s = windupGlowStyle(enemy?.windupRemainingMs, windupMs, cssPerWu);
   if (!s) return;
   ctx.save();
   ctx.strokeStyle = '#FF4D5E';
@@ -75,9 +183,15 @@ export function drawWindupGlow(ctx, enemy, windupMs) {
   ctx.arc(enemy.x, enemy.y, s.radius, 0, Math.PI * 2);
   ctx.stroke();
   ctx.globalAlpha = s.alpha;
-  ctx.lineWidth = s.lineWidth;
+  ctx.lineWidth = s.ringWidth;
   ctx.beginPath();
   ctx.arc(enemy.x, enemy.y, s.radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.globalAlpha = s.coreAlpha;
+  ctx.lineWidth = s.coreWidth;
+  ctx.beginPath();
+  ctx.arc(enemy.x, enemy.y, s.coreRadius, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
 }
@@ -88,7 +202,7 @@ export function compactHpLayout(kind) {
     : { w: 72, h: 5, offsetY: 30, showText: true, fontPx: 11 };
 }
 
-function drawBar(ctx, kind, ent) {
+function drawBar(ctx, kind, ent, view) {
   if (!ent) return;
   const L = compactHpLayout(kind);
   const max = ent.maxHp > 0 ? ent.maxHp : 1;
@@ -107,15 +221,21 @@ function drawBar(ctx, kind, ent) {
     ctx.textBaseline = 'bottom';
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#0A0D0B';
-    ctx.strokeText(txt, ent.x, top - 2);
+    let tx = ent.x;
+    let ty = top - 2;
+    if (view) {
+      tx = Math.max(view.left + 24, Math.min(view.right - 24, tx));
+      ty = Math.max(view.top + 14, ty);
+    }
+    ctx.strokeText(txt, tx, ty);
     ctx.fillStyle = '#E8E2D0';
-    ctx.fillText(txt, ent.x, top - 2);
+    ctx.fillText(txt, tx, ty);
   }
 }
 
-export function drawCompactHp(ctx, state) {
+export function drawCompactHp(ctx, state, view = null) {
   ctx.save();
-  drawBar(ctx, 'player', state?.player);
-  drawBar(ctx, 'enemy', state?.enemy);
+  drawBar(ctx, 'player', state?.player, view);
+  drawBar(ctx, 'enemy', state?.enemy, view);
   ctx.restore();
 }

@@ -683,6 +683,48 @@
     "done": true
   },
   {
+    "spec": "08-phone-touch",
+    "id": 19,
+    "title": "Bottom safe-area shift for touch pads + sticky DEPLOY padding (env(safe-area-inset-bottom))",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 20,
+    "title": "Player HP bar redrawn above the HUD whenever it overlaps it",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 21,
+    "title": "Windup ring 3.5 CSS px + white inner core, scaled with zoom (timing unchanged)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 22,
+    "title": "Garage diagram labels dark on light parts; SÉANCE outline readable",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 23,
+    "title": "Touch end-card text drawn unsquashed (44 px buttons kept)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 24,
+    "title": "Enemy bullet streak/halo/core and dash afterimage (draw-only)",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 25,
+    "title": "Phone enemy HP number clamped inside the view",
+    "done": true
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",

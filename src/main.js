@@ -47,6 +47,8 @@ import { ENEMY_SHOT_WINDUP_MS } from './combat/config.js';
 import {
   endCardScale, scaleRects, phoneHudScale, phoneHudViewportH, hudPanelRect, phoneHudRect,
   circleOverlapsRect, drawWindupGlow, drawCompactHp, HUD_UNDER_ALPHA,
+  rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
+  drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 }                              from './ui/phoneCombatUi.js';
 import { prefersTouchUi, mergeTouchActions } from './engine/touch.js';
 import { mountTouchControls }  from './ui/touchControls.js';
@@ -216,9 +218,23 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   renderer.callbacks[LAYERS.OVERLAY].length = 0;
 
   registerLayer(renderer, LAYERS.WORLD,   (ctx, st) => drawWorld(ctx, st));
+  const afterimages = [];
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawDashAfterimages(ctx, afterimages));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
-  registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawWindupGlow(ctx, st.enemy, ENEMY_SHOT_WINDUP_MS));
-  registerLayer(renderer, LAYERS.HUD,     (ctx, st) => (phonePortrait ? drawCompactHp(ctx, st) : drawHUD(ctx, st)));
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx, st, cam) =>
+    drawWindupGlow(ctx, st.enemy, ENEMY_SHOT_WINDUP_MS, (cam ?? camera).zoom / uiDpr));
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEnemyShotGlow(ctx, st.projectiles));
+  registerLayer(renderer, LAYERS.HUD,     (ctx, st) => {
+    if (!phonePortrait) { drawHUD(ctx, st); return; }
+    const vw = renderer.canvas.width;
+    const vh = renderer.canvas.height;
+    const hw = vw / 2 / camera.zoom;
+    const hh = vh / 2 / camera.zoom;
+    drawCompactHp(ctx, st, {
+      left: camera.x - hw, right: camera.x + hw,
+      top: camera.y - hh, bottom: camera.y + hh,
+    });
+  });
 
   // Fixed bottom-left combat HUD (R9) — screen space, so it lives on the
   // OVERLAY layer (drawn without the world transform) ahead of the end card.
@@ -232,7 +248,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const sp = worldToScreen(st.player.x, st.player.y, camera, vpW, vpH,
       shakeX + kickX, shakeY + kickY);
     const rect = touchUi ? phoneHudRect(s) : hudPanelRect(vpH);
-    if (circleOverlapsRect(sp.sx, sp.sy, 30 * camera.zoom, rect)) {
+    if (circleOverlapsRect(sp.sx, sp.sy, 30 * camera.zoom, rect) ||
+        rectsOverlap(playerHpBarScreenRect(st.player, camera, vpW, vpH, phonePortrait), rect)) {
       if (!hudOffscreen) hudOffscreen = document.createElement('canvas');
       if (hudOffscreen.width !== vpW || hudOffscreen.height !== vpH) {
         hudOffscreen.width = vpW;
@@ -251,6 +268,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       ctx.save();
       ctx.globalAlpha = HUD_UNDER_ALPHA;
       ctx.drawImage(hudOffscreen, 0, 0);
+      ctx.restore();
+      // Keep the player HP bar readable above the faded HUD.
+      ctx.save();
+      ctx.translate(vpW / 2 - camera.x * camera.zoom, vpH / 2 - camera.y * camera.zoom);
+      ctx.scale(camera.zoom, camera.zoom);
+      (phonePortrait ? drawCompactHp : drawHUD)(ctx, playerOnlyState(st));
       ctx.restore();
     } else if (touchUi) {
       ctx.save();
@@ -277,7 +300,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       });
       ctx.save();
       ctx.scale(sx, sy);
-      const result = drawOverlay(ctx, st, camera, vpW / sx, vpH / sy, restartReady, focusIndex);
+      const result = drawOverlay(unsquashTextCtx(ctx, sy / sx), st, camera, vpW / sx, vpH / sy, restartReady, focusIndex);
       ctx.restore();
       endCardButtons = result ? scaleRects(result.buttons, sx, sy) : null;
       return;
@@ -421,6 +444,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
       // Step the arena.
       arenaState = updateArena(arenaState, actions, dt);
+      pushAfterimage(afterimages, arenaState.player);
 
       // Record when the phase first left 'playing' (for restart grace guard).
       if (arenaState.phase !== 'playing' && phaseEndedAtMs === 0) {

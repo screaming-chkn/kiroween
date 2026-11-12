@@ -313,12 +313,12 @@ export const GARAGE_CSS = `
   opacity: 0.6;
 }
 .hh-sil__label {
-  fill: #8F9A92;                   /* ash */
+  fill: #B9C2BA;                   /* empty slot: light on dark */
   font-family: 'Share Tech Mono', monospace;
   font-size: 8px;
   letter-spacing: 0.04em;
 }
-.hh-sil__label--present { fill: #B9C2BA; }  /* lighter when filled */
+.hh-sil__label--present { fill: var(--color-void, #0A0D0B); font-weight: bold; }  /* dark on light part */
 
 /* part option */
 .hh-option {
@@ -513,7 +513,7 @@ export const GARAGE_CSS = `
   font-size: 22px;
   color: var(--color-ghost, #9FD8FF);                /* ghost — flips on possession */
   background: transparent;
-  border: 1px solid var(--color-phosphor-dim, #1F9E57); /* flips on possession */
+  border: 1px solid var(--color-ghost, #9FD8FF);
   padding: 6px 20px;
   min-height: 48px;
   cursor: pointer;
@@ -631,7 +631,7 @@ export const GARAGE_CSS = `
     border-top: 1px solid var(--color-phosphor-dim, #1F9E57);
     flex-wrap: wrap;
     justify-content: space-between;
-    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
+    padding: 12px 16px calc(max(16px, env(safe-area-inset-bottom)) + 12px);
     max-width: 100%;
   }
   .hh-deploy-col { align-items: stretch; }

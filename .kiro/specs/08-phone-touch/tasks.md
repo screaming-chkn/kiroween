@@ -18,3 +18,10 @@
 - [x] 16. Compact world HP bars at portrait phone zoom (player bar only, enemy bar + number)
 - [x] 17. Windup glow drawn thicker/brighter (render-only overlay ring + halo)
 - [x] 18. Touch HUD also fades to 35% when the mech is under it
+- [x] 19. Bottom safe-area shift for touch pads + sticky DEPLOY padding (env(safe-area-inset-bottom))
+- [x] 20. Player HP bar redrawn above the HUD whenever it overlaps it
+- [x] 21. Windup ring 3.5 CSS px + white inner core, scaled with zoom (timing unchanged)
+- [x] 22. Garage diagram labels dark on light parts; SÉANCE outline readable
+- [x] 23. Touch end-card text drawn unsquashed (44 px buttons kept)
+- [x] 24. Enemy bullet streak/halo/core and dash afterimage (draw-only)
+- [x] 25. Phone enemy HP number clamped inside the view

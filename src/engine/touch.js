@@ -156,6 +156,27 @@ export function stickRadiusPx(vpW, vpH) {
   return TOUCH_LAYOUT.stickRadiusFrac * Math.min(vpW, vpH);
 }
 
+/**
+ * How many px the pads must move up so the lowest one clears the bottom safe
+ * area (home bar). Layout fractions are unchanged; this is a render offset.
+ * @param {number} vpW
+ * @param {number} vpH
+ * @param {number} [insetBottom]
+ * @returns {number}
+ */
+export function touchSafeShift(vpW, vpH, insetBottom = 0) {
+  const pad = Math.max(16, insetBottom) + 12;
+  const min = Math.min(vpW, vpH);
+  const f = TOUCH_LAYOUT.fire;
+  const d = TOUCH_LAYOUT.dash;
+  const maxBottom = Math.max(
+    f.cyFrac * vpH + f.rFrac * min,
+    d.cyFrac * vpH + d.rFrac * min,
+    0.8 * vpH + stickRadiusPx(vpW, vpH),
+  );
+  return Math.max(0, maxBottom - (vpH - pad));
+}
+
 // ── Stateful controller ──────────────────────────────────────────────────────
 
 /**
@@ -202,6 +223,9 @@ export function createTouchController(opts = {}) {
       ? opts.getViewport
       : () => ({ width: 0, height: 0 });
 
+  const getBottomShift =
+    typeof opts.getBottomShift === 'function' ? opts.getBottomShift : () => 0;
+
   // ── Stick state ────────────────────────────────────────────────────────────
   let stickPointerId = null;   // pointerId currently driving the stick
   let stickOriginX = 0;        // screen px where the stick was first touched
@@ -237,7 +261,8 @@ export function createTouchController(opts = {}) {
    */
   function onPointerDown(ev) {
     const { width, height } = getViewport();
-    const zone = hitTestTouchControl(ev.clientX, ev.clientY, width, height);
+    const shift = getBottomShift() || 0;
+    const zone = hitTestTouchControl(ev.clientX, ev.clientY + shift, width, height);
     if (zone === 'stick' && stickPointerId === null) {
       stickPointerId = ev.pointerId;
       stickOriginX = ev.clientX;

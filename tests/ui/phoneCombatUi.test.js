@@ -8,6 +8,8 @@ import {
   PHONE_HUD_TOP, PHONE_HUD_SCALE,
   endCardScale, scaleRects, phoneHudScale, phoneHudViewportH, hudPanelRect, phoneHudRect,
   circleOverlapsRect, windupGlowStyle, drawWindupGlow, compactHpLayout, drawCompactHp,
+  rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
+  drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 } from '../../src/ui/phoneCombatUi.js';
 
 let passed = 0;
@@ -64,14 +66,86 @@ test('windupGlowStyle null cases', () => {
 });
 test('windupGlowStyle values', () => {
   const a = windupGlowStyle(450, 450);
-  near(a.progress, 0); near(a.radius, 22); near(a.lineWidth, 4); near(a.alpha, 0.6); near(a.haloAlpha, 0.12);
+  near(a.progress, 0); near(a.radius, 22); near(a.ringWidth, 3.5); near(a.alpha, 0.6); near(a.haloAlpha, 0.12);
+  near(a.coreWidth, 1.5); near(a.coreAlpha, 0.4);
+  near(a.coreRadius, 22 - 1.75 - 0.75);
+  const z = windupGlowStyle(450, 450, 1.1);
+  near(z.ringWidth * 1.1, 3.5);
   const b = windupGlowStyle(0.001, 450);
   assert.ok(b.progress > 0.999);
   near(Math.round(b.radius * 1000) / 1000, 38);
   for (let ms = 1; ms <= 450; ms += 7) {
     const s = windupGlowStyle(ms, 450);
-    assert.ok(s.alpha >= 0.6 && s.lineWidth >= 4);
+    assert.ok(s.alpha >= 0.6 && s.ringWidth === 3.5);
   }
+});
+test('rectsOverlap / playerHpBarScreenRect / playerOnlyState', () => {
+  assert.ok(rectsOverlap({ x: 0, y: 0, w: 10, h: 10 }, { x: 5, y: 5, w: 10, h: 10 }));
+  assert.ok(!rectsOverlap({ x: 0, y: 0, w: 10, h: 10 }, { x: 10, y: 0, w: 5, h: 5 }));
+  const r = playerHpBarScreenRect({ x: 100, y: 100 }, { x: 100, y: 100, zoom: 2 }, 400, 800, true);
+  near(r.w, 112); near(r.h, 10); near(r.x, 200 - 56); near(r.y, 400 + 60);
+  const d = playerHpBarScreenRect({ x: 100, y: 100 }, { x: 100, y: 100, zoom: 1 }, 400, 800, false);
+  near(d.w, 160); near(d.y, 400 + 36 - 16); near(d.h, 28);
+  const st = playerOnlyState({ player: { x: 1 }, enemy: { x: 5, y: 6, hp: 3 } });
+  assert.equal(st.enemy.x, -1e6); assert.equal(st.enemy.hp, 3);
+});
+test('windup draws white core', () => {
+  const styles = [];
+  const ctx = new Proxy({}, {
+    get(_, k) { return () => {}; },
+    set(_, k, v) { if (k === 'strokeStyle') styles.push(v); return true; },
+  });
+  drawWindupGlow(ctx, { x: 0, y: 0, windupRemainingMs: 200 }, 450, 1.1);
+  assert.ok(styles.includes('#FFFFFF'));
+});
+test('unsquashTextCtx translates + scales text, passes props', () => {
+  const log = [];
+  const real = {
+    font: '',
+    save() { log.push('save'); }, restore() { log.push('restore'); },
+    translate(x, y) { log.push(['translate', x, y]); },
+    scale(x, y) { log.push(['scale', x, y]); },
+    fillText(...a) { log.push(['fillText', ...a]); },
+    strokeText(...a) { log.push(['strokeText', ...a]); },
+  };
+  const c = unsquashTextCtx(real, 0.5);
+  c.font = '12px x';
+  assert.equal(real.font, '12px x');
+  assert.equal(c.font, '12px x');
+  c.fillText('hi', 10, 20);
+  assert.deepEqual(log, ['save', ['translate', 10, 20], ['scale', 0.5, 1], ['fillText', 'hi', 0, 0], 'restore']);
+  log.length = 0;
+  c.strokeText('hi', 1, 2, 30);
+  assert.deepEqual(log[3], ['strokeText', 'hi', 0, 0, 30]);
+});
+test('drawEnemyShotGlow only enemy shots', () => {
+  const { ctx, calls } = fakeCtx();
+  drawEnemyShotGlow(ctx, [{ owner: 'player', x: 0, y: 0, vx: 1, vy: 0 }]);
+  assert.equal(calls.length, 0);
+  drawEnemyShotGlow(ctx, [{ owner: 'enemy', x: 0, y: 0, vx: 100, vy: 0 }]);
+  assert.equal(calls.filter(c => c === 'arc').length, 2);
+  assert.equal(calls.filter(c => c === 'save').length, calls.filter(c => c === 'restore').length);
+});
+test('pushAfterimage keeps last 3, drains when not dashing', () => {
+  const buf = [];
+  for (let i = 0; i < 5; i++) pushAfterimage(buf, { x: i, y: 0, dashRemainingMs: 50, aimAngle: 1 });
+  assert.equal(buf.length, 3); assert.equal(buf[0].x, 2);
+  pushAfterimage(buf, { x: 9, y: 0, dashRemainingMs: 0 });
+  assert.equal(buf.length, 2);
+  const { ctx, calls } = fakeCtx();
+  drawDashAfterimages(ctx, buf);
+  assert.equal(calls.filter(c => c === 'stroke').length, 2);
+});
+test('drawCompactHp clamps enemy number inside view', () => {
+  const pos = [];
+  const ctx = new Proxy({}, {
+    get(_, k) { return (...a) => { if (k === 'fillText') pos.push([a[1], a[2]]); }; },
+    set() { return true; },
+  });
+  drawCompactHp(ctx, { player: { x: 0, y: 0, hp: 1, maxHp: 1 }, enemy: { x: -50, y: 0, hp: 5, maxHp: 10 } },
+    { left: 0, right: 100, top: 0, bottom: 100 });
+  assert.equal(pos[0][0], 24);
+  assert.ok(pos[0][1] >= 14);
 });
 test('compactHpLayout', () => {
   const p = compactHpLayout('player');
