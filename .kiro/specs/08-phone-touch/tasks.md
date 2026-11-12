@@ -12,4 +12,9 @@
 - [x] 10. DASH button moved to bottom row left of FIRE (touch layout + tests)
 - [x] 11. Garage sticky DEPLOY footer at <=700px + layout-aware picker hint
 - [x] 12. Séance short titles (cut at first ':' or ';'), full title kept in JSON and aria-label
-- [x] 13. Kiro hook: run npm test on save of src/tests JS; tech steering note
+- [x] 13. Kiro hook configured: .kiro/hooks/test-on-save.json (PostFileSave -> npm test); tech steering note
+- [x] 14. Touch end card scaled by DPR (fits width, RETRY/GARAGE >= 44 CSS px), hit-rects scaled to match
+- [x] 15. Fixed HUD: scaled + top-left on touch; desktop HUD fades to 35% while the mech is under it
+- [x] 16. Compact world HP bars at portrait phone zoom (player bar only, enemy bar + number)
+- [x] 17. Windup glow drawn thicker/brighter (render-only overlay ring + halo)
+- [x] 18. Touch HUD also fades to 35% when the mech is under it

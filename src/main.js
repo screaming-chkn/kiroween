@@ -42,7 +42,12 @@ import { drawWorld,
 import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
-import { screenToWorld }       from './engine/camera.js';
+import { screenToWorld, worldToScreen } from './engine/camera.js';
+import { ENEMY_SHOT_WINDUP_MS } from './combat/config.js';
+import {
+  endCardScale, scaleRects, phoneHudScale, phoneHudViewportH, hudPanelRect, phoneHudRect,
+  circleOverlapsRect, drawWindupGlow, drawCompactHp, HUD_UNDER_ALPHA,
+}                              from './ui/phoneCombatUi.js';
 import { prefersTouchUi, mergeTouchActions } from './engine/touch.js';
 import { mountTouchControls }  from './ui/touchControls.js';
 
@@ -175,6 +180,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     cssW: canvas.clientWidth  || window.innerWidth,
     cssH: canvas.clientHeight || window.innerHeight,
   });
+  const uiDpr = canvas.width / (canvas.clientWidth || canvas.width);
   const startZoom = phonePortrait
     ? phoneCameraZoom({
         fitZoom,
@@ -211,14 +217,49 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
   registerLayer(renderer, LAYERS.WORLD,   (ctx, st) => drawWorld(ctx, st));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
-  registerLayer(renderer, LAYERS.HUD,     (ctx, st) => drawHUD(ctx, st));
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawWindupGlow(ctx, st.enemy, ENEMY_SHOT_WINDUP_MS));
+  registerLayer(renderer, LAYERS.HUD,     (ctx, st) => (phonePortrait ? drawCompactHp(ctx, st) : drawHUD(ctx, st)));
 
   // Fixed bottom-left combat HUD (R9) — screen space, so it lives on the
   // OVERLAY layer (drawn without the world transform) ahead of the end card.
+  let hudOffscreen = null;   // lazily created (desktop fade-under only)
   registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
     // Hide the live HUD once the match ends so the end card panel is clean.
     if (st.phase !== 'playing') return;
-    drawFixedHUD(ctx, st, renderer.canvas.width, renderer.canvas.height);
+    const vpW = renderer.canvas.width;
+    const vpH = renderer.canvas.height;
+    const s = touchUi ? phoneHudScale(uiDpr) : 1;
+    const sp = worldToScreen(st.player.x, st.player.y, camera, vpW, vpH,
+      shakeX + kickX, shakeY + kickY);
+    const rect = touchUi ? phoneHudRect(s) : hudPanelRect(vpH);
+    if (circleOverlapsRect(sp.sx, sp.sy, 30 * camera.zoom, rect)) {
+      if (!hudOffscreen) hudOffscreen = document.createElement('canvas');
+      if (hudOffscreen.width !== vpW || hudOffscreen.height !== vpH) {
+        hudOffscreen.width = vpW;
+        hudOffscreen.height = vpH;
+      }
+      const octx = hudOffscreen.getContext('2d');
+      octx.clearRect(0, 0, vpW, vpH);
+      if (touchUi) {
+        octx.save();
+        octx.scale(s, s);
+        drawFixedHUD(octx, st, vpW / s, phoneHudViewportH());
+        octx.restore();
+      } else {
+        drawFixedHUD(octx, st, vpW, vpH);
+      }
+      ctx.save();
+      ctx.globalAlpha = HUD_UNDER_ALPHA;
+      ctx.drawImage(hudOffscreen, 0, 0);
+      ctx.restore();
+    } else if (touchUi) {
+      ctx.save();
+      ctx.scale(s, s);
+      drawFixedHUD(ctx, st, vpW / s, phoneHudViewportH());
+      ctx.restore();
+    } else {
+      drawFixedHUD(ctx, st, vpW, vpH);
+    }
   });
 
   // Overlay needs viewport dimensions (drawn in screen space).
@@ -230,6 +271,17 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
     const restartReady = canRestart(phaseEndedAtMs, performance.now(), null);
+    if (touchUi) {
+      const { sx, sy } = endCardScale({
+        touchUi, dpr: uiDpr, cssW: canvas.clientWidth || window.innerWidth,
+      });
+      ctx.save();
+      ctx.scale(sx, sy);
+      const result = drawOverlay(ctx, st, camera, vpW / sx, vpH / sy, restartReady, focusIndex);
+      ctx.restore();
+      endCardButtons = result ? scaleRects(result.buttons, sx, sy) : null;
+      return;
+    }
     const result = drawOverlay(ctx, st, camera, vpW, vpH, restartReady, focusIndex);
     endCardButtons = result ? result.buttons : null;
   });

@@ -11,5 +11,5 @@ inclusion: always
 - Keep dependencies near zero. No secrets or personal info in the repo.
 
 ## Hooks
-- `.kiro/hooks/test-on-save.json` runs `npm test` on save of `src/**/*.js` or `tests/**/*.js`.
-- Keep tests node-only and fast so the hook stays cheap.
+- `.kiro/hooks/test-on-save.json` is present and configured (schema v1, trigger PostFileSave, matcher src|tests *.js, command `npm test`).
+- Keep tests node-only and fast so the hook stays cheap if it runs.
