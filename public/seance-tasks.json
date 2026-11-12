@@ -141,6 +141,12 @@
     "done": true
   },
   {
+    "spec": "02-mech-builder",
+    "id": 16,
+    "title": "3D wireframe tank units (Necker-box hull + rotating turret + barrel; player hover-tank, enemy heavier twin-barrel tracked tank); render only, hitboxes unchanged; garage silhouette parts get wireframe depth edges",
+    "done": true
+  },
+  {
     "spec": "03-arena-combat",
     "id": 1,
     "title": "Combat config constants and arena data (R1, R5)",

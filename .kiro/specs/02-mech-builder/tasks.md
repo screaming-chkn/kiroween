@@ -21,3 +21,6 @@
 
 ## Preview polish 11/5 (SHOULD, optional)
 - [x] 15. Mech preview silhouette: `.hh-preview__art` renders a simple top-down SVG (legs/core/arms/back/head) via pure `silhouetteSpec(loadout)` + `refreshPreview` on the garage refresh path; present vs empty slots differ by shape (dashed) + label + opacity, phosphor/bone tokens, no animation. Unit test: tests/mech/silhouette.test.js (task 6 polish, a11y rule 6)
+
+## owner GO 11/12 — wireframe tanks
+- [x] 16. 3D wireframe tank units (Necker-box hull + rotating turret + barrel; player hover-tank, enemy heavier twin-barrel tracked tank); render only, hitboxes unchanged; garage silhouette parts get wireframe depth edges

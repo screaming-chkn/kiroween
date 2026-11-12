@@ -2,6 +2,7 @@
  * src/ui/phoneCombatUi.js — render/layout helpers for phone combat UI.
  * Pure ES module: no top-level DOM access; only the `ctx` passed in is used.
  */
+import { drawTankGhost } from './tankWire.js';
 
 export const END_CARD_W = 520;
 export const END_CARD_BTN_H = 52;
@@ -136,20 +137,7 @@ export function pushAfterimage(buf, player, max = 3) {
 
 export function drawDashAfterimages(ctx, buf) {
   buf.forEach((a, i) => {
-    ctx.save();
-    ctx.strokeStyle = '#39FF88';
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.12 * (i + 1);
-    ctx.beginPath();
-    for (let k = 0; k < 6; k++) {
-      const ang = a.angle + (k * Math.PI) / 3;
-      const px = a.x + Math.cos(ang) * 20;
-      const py = a.y + Math.sin(ang) * 20;
-      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.stroke();
-    ctx.restore();
+    drawTankGhost(ctx, 'player', a.x, a.y, a.angle, 0.12 * (i + 1));
   });
 }
 

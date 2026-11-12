@@ -29,6 +29,7 @@
 // ── Design token colours ──────────────────────────────────────────────────────
 
 import { endCardText } from './endcard.js';
+import { drawTank, updateHullHeading } from '../ui/tankWire.js';
 import {
   formatHudStat,
   powerStateLabel,
@@ -106,119 +107,41 @@ export function drawWorld(ctx, state) {
 // Mech radius in world units (matches config.js MECH_RADIUS = 20).
 const MECH_R = 20;
 
-// Barrel length extending from the mech centre (aim direction indicator).
-const BARREL_LEN = 30;
+// Render-only hull heading memory (follows movement; turret follows mech.angle).
+const hullState = {
+  player: { heading: null, pos: null },
+  enemy:  { heading: null, pos: null },
+};
 
-/**
- * Draw a regular N-gon centred at (cx, cy) with given radius.
- * @param {CanvasRenderingContext2D} ctx
- * @param {number} cx
- * @param {number} cy
- * @param {number} radius
- * @param {number} sides
- * @param {number} [startAngle=0]  Rotation offset in radians.
- */
-function drawPolygon(ctx, cx, cy, radius, sides, startAngle = 0) {
-  ctx.beginPath();
-  for (let i = 0; i < sides; i++) {
-    const a = startAngle + (i / sides) * Math.PI * 2;
-    const x = cx + Math.cos(a) * radius;
-    const y = cy + Math.sin(a) * radius;
-    if (i === 0) ctx.moveTo(x, y);
-    else          ctx.lineTo(x, y);
-  }
-  ctx.closePath();
+function drawWireTank(ctx, kind, mech, fallback) {
+  const st = hullState[kind];
+  const heading = updateHullHeading(st.heading, st.pos, { x: mech.x, y: mech.y }, fallback);
+  st.heading = heading;
+  st.pos = { x: mech.x, y: mech.y };
+  const flash = flashActive(mech.flash) ? flashIntensity(mech.flash) : 0;
+  drawTank(ctx, kind, mech.x, mech.y, heading, mech.angle, flash);
 }
 
 /**
- * Draw the aim barrel from a mech centre.
- * @param {CanvasRenderingContext2D} ctx
- * @param {number} cx
- * @param {number} cy
- * @param {number} angle  Radians.
- * @param {string} color
- */
-function drawBarrel(ctx, cx, cy, angle, color) {
-  const ex = cx + Math.cos(angle) * (MECH_R + BARREL_LEN);
-  const ey = cy + Math.sin(angle) * (MECH_R + BARREL_LEN);
-  ctx.strokeStyle = color;
-  ctx.lineWidth   = 3;
-  ctx.lineCap     = 'round';
-  ctx.beginPath();
-  ctx.moveTo(cx + Math.cos(angle) * MECH_R, cy + Math.sin(angle) * MECH_R);
-  ctx.lineTo(ex, ey);
-  ctx.stroke();
-}
-
-/**
- * Draw the player mech as a hexagon (ghost-blue fill, phosphor outline).
- * Distinct from the enemy by both shape (6-sided) and color.
+ * Player: light wireframe hover-tank, phosphor/ghost.
  *
  * @param {CanvasRenderingContext2D} ctx
  * @param {{ x: number, y: number, angle: number, hp: number, maxHp: number }} mech
  */
 function drawPlayerMech(ctx, mech) {
-  const { x, y, angle } = mech;
-
-  // Body — hexagon flat-top (rotate 90°)
-  drawPolygon(ctx, x, y, MECH_R, 6, angle + Math.PI / 6);
-  ctx.fillStyle   = C.ghost;
-  ctx.globalAlpha = 0.85;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = C.phosphor;
-  ctx.lineWidth   = 2;
-  ctx.stroke();
-
-  // Aim barrel
-  drawBarrel(ctx, x, y, angle, C.phosphor);
-
-  // Centre dot
-  ctx.fillStyle = C.void;
-  ctx.beginPath();
-  ctx.arc(x, y, 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  // R10 hit flash — brief white overlay on the body (ramps out over 80 ms).
-  drawHitFlash(ctx, x, y, angle, 6, Math.PI / 6, mech.flash);
+  drawWireTank(ctx, 'player', mech, 0);
 }
 
 /**
- * Draw the enemy mech as a triangle (blood-red fill, ember outline).
- * Distinct from the player by both shape (3-sided) and color.
+ * Enemy: heavier twin-barrel tracked wireframe tank, blood/ember.
  *
  * @param {CanvasRenderingContext2D} ctx
  * @param {{ x: number, y: number, angle: number, hp: number, maxHp: number }} mech
  */
 function drawEnemyMech(ctx, mech) {
-  const { x, y, angle } = mech;
-
-  // feel 11/5: red shot telegraph. While the enemy is winding up its shot
-  // (windupRemainingMs > 0) draw a blood-red halo that grows + brightens as
-  // the windup completes, giving the player a readable tell to dash/break LOS.
-  drawWindupTelegraph(ctx, x, y, mech.windupRemainingMs);
-
-  // Body — equilateral triangle pointing in aim direction
-  drawPolygon(ctx, x, y, MECH_R, 3, angle - Math.PI / 2);
-  ctx.fillStyle   = C.blood;
-  ctx.globalAlpha = 0.85;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = C.ember;
-  ctx.lineWidth   = 2;
-  ctx.stroke();
-
-  // Aim barrel
-  drawBarrel(ctx, x, y, angle, C.ember);
-
-  // Centre dot
-  ctx.fillStyle = C.void;
-  ctx.beginPath();
-  ctx.arc(x, y, 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  // R10 hit flash — brief white overlay on the body (ramps out over 80 ms).
-  drawHitFlash(ctx, x, y, angle, 3, -Math.PI / 2, mech.flash);
+  // feel 11/5: red shot telegraph (windup halo) drawn first.
+  drawWindupTelegraph(ctx, mech.x, mech.y, mech.windupRemainingMs);
+  drawWireTank(ctx, 'enemy', mech, Math.PI);
 }
 
 /**
@@ -259,35 +182,6 @@ function drawWindupTelegraph(ctx, cx, cy, windupRemainingMs) {
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
-}
-
-/**
- * Draw the R10 hit flash: a white/ember polygon overlay on a mech body that
- * fades out over the flash lifetime. Alpha is driven by flashIntensity() so
- * the single 80 ms ramp never strobes (accessibility rule 4). No-op when the
- * flash is absent or expired.
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {number} cx
- * @param {number} cy
- * @param {number} angle       Mech facing (radians).
- * @param {number} sides       Body polygon sides (6 player, 3 enemy).
- * @param {number} startAngle  Rotation offset matching the body shape.
- * @param {object} flash       Flash timer from hitFeedback.createFlash.
- */
-function drawHitFlash(ctx, cx, cy, angle, sides, startAngle, flash) {
-  if (!flashActive(flash)) return;
-  const intensity = flashIntensity(flash);
-  if (intensity <= 0) return;
-
-  drawPolygon(ctx, cx, cy, MECH_R + 2, sides, angle + startAngle);
-  ctx.globalAlpha = intensity;
-  ctx.fillStyle   = C.bone;   // white/bone flash (never colour-only; shape is the mech)
-  ctx.fill();
-  ctx.strokeStyle = C.ember;
-  ctx.lineWidth   = 2;
-  ctx.stroke();
-  ctx.globalAlpha = 1;
 }
 
 /**

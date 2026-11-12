@@ -312,6 +312,7 @@ export const GARAGE_CSS = `
   stroke-dasharray: 3 3;           /* dashed outline = empty, shape-based cue */
   opacity: 0.6;
 }
+.hh-sil__edge { fill: none; stroke: var(--color-phosphor, #39FF88); stroke-width: 1; opacity: 0.8; pointer-events: none; }
 .hh-sil__label {
   fill: #B9C2BA;                   /* empty slot: light on dark */
   font-family: 'Share Tech Mono', monospace;
@@ -786,6 +787,22 @@ function buildSilhouette(spec) {
       : `${SLOT_LABELS[def.slot]}: empty`;
     shape.append(title);
     svg.append(shape);
+
+    // Wireframe depth: same rect offset (+4,-4) plus 4 joining corner lines.
+    if (info.present && def.shape === 'rect') {
+      const { x, y, width: w, height: h } = def.attrs;
+      const o = 4;
+      const edge = svgEl('path', {
+        class: 'hh-sil__edge',
+        'aria-hidden': 'true',
+        d: `M${x + o} ${y - o}h${w}v${h}h${-w}z` +
+           `M${x} ${y}L${x + o} ${y - o}` +
+           `M${x + w} ${y}L${x + w + o} ${y - o}` +
+           `M${x + w} ${y + h}L${x + w + o} ${y + h - o}` +
+           `M${x} ${y + h}L${x + o} ${y + h - o}`,
+      });
+      svg.append(edge);
+    }
 
     const label = svgEl('text', {
       x: def.lx, y: def.ly,
