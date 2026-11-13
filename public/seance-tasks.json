@@ -481,7 +481,7 @@
   {
     "spec": "03-arena-combat",
     "id": 54,
-    "title": "Difficulty ramp: HAUNT LV n (sessionStorage), fight 1 at 0.8× enemy HP+damage, +0.1× per win or REDEPLOY, cap 1.2× at LV5; applied at spawn from main.js; tiny HUD label; LV1 still ~30–45s",
+    "title": "Difficulty ramp: HAUNT LV n (sessionStorage), fight 1 at 0.8× enemy HP+damage, +0.1× per WIN only (loss+REDEPLOY and loss+GARAGE keep the level; win then GARAGE/REDEPLOY is the next level), cap 1.2× at LV5; applied at spawn from main.js; tiny HUD label; LV1 still ~30–45s",
     "done": true
   },
   {

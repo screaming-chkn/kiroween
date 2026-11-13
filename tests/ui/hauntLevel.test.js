@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   MAX_HAUNT_LEVEL, hauntPressure, readHauntLevel, setHauntLevel, bumpHauntLevel,
-  applyHauntPressure, formatHauntLabel, drawHauntLevel,
+  applyHauntPressure, formatHauntLabel, drawHauntLevel, hauntAdvancesOn,
 } from '../../src/ui/hauntLevel.js';
 
 let passed = 0;
@@ -74,6 +74,28 @@ test('applyHauntPressure scales hp, maxHp, shotDamage on a copy', () => {
   const d = applyHauntPressure(e, 2);   // defaults 1500 / 20
   assert.equal(d.hp, 1350); assert.equal(d.shotDamage, 18);
   assert.equal(applyHauntPressure(e, 4, { baseHp: 1500, baseDamage: 20 }).shotDamage, 22);
+});
+
+test('hauntAdvancesOn: level goes up only after a win', () => {
+  assert.equal(hauntAdvancesOn('win', 'retry'), true);     // win + REDEPLOY
+  assert.equal(hauntAdvancesOn('win', 'garage'), true);    // win + GARAGE
+  assert.equal(hauntAdvancesOn('lose', 'retry'), false);   // loss + REDEPLOY
+  assert.equal(hauntAdvancesOn('lose', 'garage'), false);  // loss + GARAGE
+  assert.equal(hauntAdvancesOn('lose', null), false);
+  assert.equal(hauntAdvancesOn('playing', 'retry'), false);
+});
+
+test('policy applied to the level: loss keeps LV, win bumps once', () => {
+  try {
+    setHauntLevel(2);
+    if (hauntAdvancesOn('lose', 'retry')) bumpHauntLevel();
+    if (hauntAdvancesOn('lose', 'garage')) bumpHauntLevel();
+    assert.equal(readHauntLevel(), 2);
+    if (hauntAdvancesOn('win', 'retry')) bumpHauntLevel();
+    assert.equal(readHauntLevel(), 3);
+  } finally {
+    setHauntLevel(1);
+  }
 });
 
 test('formatHauntLabel', () => {

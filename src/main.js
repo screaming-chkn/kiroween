@@ -71,7 +71,7 @@ import { resetHpFx }           from './ui/phoneCombatUi.js';
 
 // ── Session-level state shared across arena restarts ────────────────────────
 
-/** Set when a fight ends in a win or the player picks REDEPLOY; consumed (once) by startArena. */
+/** Set only when a fight ends in a win (never by a loss, REDEPLOY or GARAGE); consumed (once) by startArena. */
 let advanceHaunt = false;
 /** End-card spec stamp from the build-time seance JSON; null until/unless real data loads. */
 let specStampText = null;
@@ -545,12 +545,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         loop.stop();
         cleanup();
         if (action === 'retry') {
-          // REDEPLOY always ramps the haunt level (flag, so no double bump).
-          advanceHaunt = true;
+          // REDEPLOY does not ramp by itself: advanceHaunt was set only if this
+          // match ended in a win, so a loss + REDEPLOY keeps the same level.
           // Restart a fresh match with the SAME loadout (R8).
           startArena(renderer, loadout, loadoutTotals, reducedMotion);
         } else {
-          // GARAGE — reopen the garage (a win already flagged the ramp; a loss does not).
+          // GARAGE — reopen the garage (a win already flagged the ramp; a loss keeps the level).
           showGarage(renderer, reducedMotion);
         }
         return;

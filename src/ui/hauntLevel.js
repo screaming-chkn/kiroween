@@ -63,6 +63,18 @@ export function bumpHauntLevel() {
 }
 
 /**
+ * Level policy: HAUNT LV advances only after a WIN. The end-card action never
+ * advances a loss (loss+REDEPLOY and loss+GARAGE keep the level).
+ *
+ * @param {'win'|'lose'|string} outcome
+ * @param {'retry'|'garage'|null} [action]
+ * @returns {boolean}
+ */
+export function hauntAdvancesOn(outcome, action = null) { // eslint-disable-line no-unused-vars
+  return outcome === 'win';
+}
+
+/**
  * Shallow copy of `enemy` with scaled hp / maxHp and a shotDamage the enemy
  * fire site honours. Never mutates the input.
  *
