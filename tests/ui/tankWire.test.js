@@ -34,6 +34,7 @@ function fakeCtx() {
     moveTo() { c.segs++; }, lineTo() { c.segs++; },
     fill() { c.fills++; }, stroke() { c.strokes++; },
     beginPath: noop, closePath: noop, ellipse: noop, arc: noop,
+    translate: noop, scale: noop,
   });
 }
 

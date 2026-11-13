@@ -28,6 +28,7 @@ import {
   LAYERS,
 }                              from './engine/render.js';
 import { mountGarage }         from './ui/garage.js';
+import { syncTankFx }          from './ui/tankFx.js';
 import { mountSeance }         from './ui/seance.js';
 import { injectPossessionCSS } from './ui/possession.js';
 import { playMusicBed }        from './engine/audio.js';
@@ -221,6 +222,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.WORLD,   (ctx, st) => drawWorld(ctx, st));
   const afterimages = [];
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawDashAfterimages(ctx, afterimages));
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => { syncTankFx(st); });
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st, cam) =>
     drawWindupGlow(ctx, st.enemy, ENEMY_SHOT_WINDUP_MS, (cam ?? camera).zoom / uiDpr));

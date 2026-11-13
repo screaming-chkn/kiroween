@@ -24,3 +24,7 @@
 
 ## owner GO 11/12 — wireframe tanks
 - [x] 16. 3D wireframe tank units (Necker-box hull + rotating turret + barrel; player hover-tank, enemy heavier twin-barrel tracked tank); render only, hitboxes unchanged; garage silhouette parts get wireframe depth edges
+
+## owner GO 11/12 — light tank FX
+
+- [x] 17. Light render-only tank FX: 1.3× draw scale + phosphor edge glow (additive wide then crisp 1px, brighter front edges), muzzle flash + ~4px/120ms barrel recoil from projectile ids, hover shadow + 1–2px deterministic sine bob (player/enemy out of phase); no src/combat edits, hitboxes unchanged

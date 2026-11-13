@@ -155,6 +155,20 @@ test('compactHpLayout', () => {
   assert.equal(compactHpLayout('enemy').showText, true);
 });
 
+test('compactHpLayout offsets: enemy lifted by scaled hull radius, player unchanged', () => {
+  near(compactHpLayout('enemy').offsetY, 30 + 1.3 * (40 / 2 + 28 / 2));
+  assert.equal(compactHpLayout('player').offsetY, 30);
+});
+test('drawCompactHp enemy label uses a 1 px outline', () => {
+  let lw = null;
+  const ctx = new Proxy({}, {
+    get(t, k) { return (...a) => { if (k === 'strokeText') lw = t.lineWidth; }; },
+    set(t, k, v) { t[k] = v; return true; },
+  });
+  drawCompactHp(ctx, { player: { x: 0, y: 0, hp: 1, maxHp: 1 }, enemy: { x: 0, y: 0, hp: 5, maxHp: 10 } });
+  assert.ok(lw > 0 && lw <= 1);
+});
+
 function fakeCtx() {
   const calls = [];
   const ctx = new Proxy({}, {
