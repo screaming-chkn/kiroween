@@ -29,7 +29,7 @@
 // ── Design token colours ──────────────────────────────────────────────────────
 
 import { endCardText } from './endcard.js';
-import { drawTank, updateHullHeading } from '../ui/tankWire.js';
+import { drawTank, updateHullHeading, TANK_DRAW_SCALE } from '../ui/tankWire.js';
 import {
   formatHudStat,
   powerStateLabel,
@@ -232,10 +232,14 @@ function drawProjectiles(ctx, projectiles) {
   }
 }
 
+/** Draw-only lift so the damage pop clears the scaled hull and turret. */
+export const FLOATER_DRAW_OFFSET_Y = TANK_DRAW_SCALE * 52;
+
 /**
  * Draw all floating damage numbers (R10). Each rises and fades; the alpha is
  * driven by floatingNumberAlpha(). Drawn in world space so they track the
  * impact point. Numbers are bone (white) so they read on both mech colours.
+ * Drawn at (f.x, f.y - FLOATER_DRAW_OFFSET_Y) with a 1px void outline.
  *
  * @param {CanvasRenderingContext2D} ctx
  * @param {Array<object>} floaters
@@ -249,11 +253,14 @@ function drawFloaters(ctx, floaters) {
     const alpha = floatingNumberAlpha(f);
     if (alpha <= 0) continue;
     ctx.globalAlpha = alpha;
-    // Shadow for legibility over bright sprites, then the bone number.
-    ctx.fillStyle = C.void;
-    ctx.fillText(`-${Math.round(f.amount)}`, f.x + 1, f.y + 1);
+    // 1px void outline for legibility, then the bone number (lifted above the tank).
+    const text = `-${Math.round(f.amount)}`, y = f.y - FLOATER_DRAW_OFFSET_Y;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = C.void;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(text, f.x, y);
     ctx.fillStyle = C.bone;
-    ctx.fillText(`-${Math.round(f.amount)}`, f.x, f.y);
+    ctx.fillText(text, f.x, y);
   }
   ctx.globalAlpha  = 1;
   ctx.textAlign    = 'left';

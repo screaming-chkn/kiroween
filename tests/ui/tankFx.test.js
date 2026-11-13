@@ -30,7 +30,7 @@ function fakeCtx() {
     save() { c.saves++; }, restore() { c.restores++; },
     moveTo() { c.segs++; }, lineTo() { c.segs++; },
     fill: noop, stroke: noop, beginPath: noop, closePath: noop,
-    ellipse: noop, arc: noop, translate: noop, scale: noop,
+    ellipse: noop, arc: noop, translate: noop, scale: noop, setLineDash: noop,
   });
 }
 

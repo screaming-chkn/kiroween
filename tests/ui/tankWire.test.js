@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import {
   TILT, project, BOX_EDGES, boxCorners, TANK_SPECS, tankGeometry,
-  updateHullHeading, drawTank, drawTankGhost,
+  updateHullHeading, drawTank, drawTankGhost, EDGE_STYLE, setEdgeStyle, TANK_PALETTE, setTankPalette,
 } from '../../src/ui/tankWire.js';
 
 let passed = 0;
@@ -34,7 +34,7 @@ function fakeCtx() {
     moveTo() { c.segs++; }, lineTo() { c.segs++; },
     fill() { c.fills++; }, stroke() { c.strokes++; },
     beginPath: noop, closePath: noop, ellipse: noop, arc: noop,
-    translate: noop, scale: noop,
+    translate: noop, scale: noop, setLineDash: noop,
   });
 }
 
@@ -127,6 +127,103 @@ test('drawTankGhost draws 12 hull edges, balanced', () => {
   assert.equal(c.saves, c.restores);
   assert.equal(c.segs, 24);
 });
+
+function dashCtx() {
+  const c = fakeCtx();
+  c.dashes = [];
+  c.setLineDash = p => c.dashes.push(p.slice());
+  return c;
+}
+
+test('EDGE_STYLE defaults to dashed-tech; TANK_PALETTE defaults to mono-green', () => {
+  assert.equal(EDGE_STYLE, 'dashed-tech');
+  assert.equal(TANK_PALETTE, 'mono-green');
+});
+
+test('default style draws balanced and resets lineDash to []', () => {
+  const c = dashCtx();
+  drawTank(c, 'player', 100, 100, 0.5, 1.0, 0);
+  assert.equal(c.saves, c.restores);
+  assert.ok(c.dashes.length > 0);
+  assert.deepEqual(c.dashes[c.dashes.length - 1], []);
+});
+
+test('dashed/tech/dashed-tech draws balanced; dashed styles reset lineDash', () => {
+  try {
+    for (const style of ['dashed', 'tech', 'dashed-tech']) {
+      setEdgeStyle(style);
+      const c = dashCtx();
+      drawTank(c, 'enemy', 100, 100, 0.5, 1.0, 0);
+      assert.equal(c.saves, c.restores, style);
+      if (style !== 'tech') {
+        const L = TANK_SPECS.enemy.hull.L;
+        assert.ok(c.dashes.length > 0, style);
+        assert.deepEqual(c.dashes[0], [Math.max(4, 0.16 * L), Math.max(2, 0.06 * L)]);
+        assert.deepEqual(c.dashes[c.dashes.length - 1], [], style);
+      }
+    }
+  } finally { setEdgeStyle('dashed-tech'); }
+});
+
+test('tech draws more segments than solid; solid never dashes', () => {
+  try {
+    setEdgeStyle('solid');
+    const a = dashCtx(); drawTank(a, 'player', 0, 0, 0, 0, 0);
+    assert.equal(a.dashes.length, 0);
+    setEdgeStyle('tech');
+    const b = dashCtx(); drawTank(b, 'player', 0, 0, 0, 0, 0);
+    assert.ok(b.segs > a.segs, `${b.segs} > ${a.segs}`);
+  } finally { setEdgeStyle('dashed-tech'); }
+});
+
+function colorCtx() {
+  const c = dashCtx();
+  c.styles = new Set();
+  let cur;
+  Object.defineProperty(c, 'strokeStyle', {
+    get: () => cur, set: v => { cur = v; c.styles.add(v); },
+  });
+  return c;
+}
+
+function drawColors(kind, flash = 0) {
+  const c = colorCtx();
+  c.fireFlash = flash;
+  drawTank(c, kind, 0, 0, 0, 0, 0);
+  return c.styles;
+}
+
+test('default draw: player #47FF9A (glow #20B05C), enemy #FF3B5C, no old colours/orange/gold', () => {
+  const p = drawColors('player');
+  assert.ok(p.has('#47FF9A'));
+  assert.ok(p.has('#20B05C'));
+  assert.ok(!p.has('#5CE1FF'));
+  const e = drawColors('enemy');
+  assert.ok(e.has('#FF3B5C'));
+  for (const s of [p, e]) {
+    assert.ok(!s.has('#39FF88'));
+    assert.ok(!s.has('#FF4A4A'));
+    assert.ok(!s.has('#5CE1FF'));
+    assert.ok(!s.has('#FF8A3D'));
+    assert.ok(!s.has('#FFBF3D'));
+  }
+});
+
+test("setTankPalette('mono-blue'): player #3EF6FF, enemy still #FF3B5C", () => {
+  try {
+    setTankPalette('mono-blue');
+    const p = drawColors('player');
+    assert.ok(p.has('#3EF6FF'));
+    assert.ok(!p.has('#47FF9A'));
+    const e = drawColors('enemy');
+    assert.ok(e.has('#FF3B5C'));
+    for (const s of [p, e]) {
+      assert.ok(!s.has('#FF8A3D'));
+      assert.ok(!s.has('#FFBF3D'));
+    }
+  } finally { setTankPalette('mono-green'); setEdgeStyle('dashed-tech'); }
+});
+
 
 console.log(`\ntankWire: ${passed} passed, ${failed} failed\n`);
 if (failed > 0) process.exit(1);

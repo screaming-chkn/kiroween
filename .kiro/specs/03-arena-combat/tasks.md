@@ -144,3 +144,6 @@
 ## owner GO 11/12 — shorter fights (30–45 s)
 
 - [x] 49. Shorter fights: PLAYER_MAX_HP 300 → 140, ENEMY_MAX_HP 2800 → 1500 (sim2 10 seeds: M2 30% win ~38 s, M3 90% win ~39 s; damage/dash/windup/lead/speeds unchanged)
+
+## owner GO 11/12 — floater lift
+- [x] 50. Damage pop drawn offset above the 1.3× hull/turret (FLOATER_DRAW_OFFSET_Y) with a 1px void outline; draw-only in combatRenderer, spawn/timing unchanged

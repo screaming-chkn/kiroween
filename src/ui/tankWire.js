@@ -13,6 +13,33 @@ export const TILT = { x: 0.35, y: 0.7 };
 /** Draw-time scale around the tank origin (hitboxes unchanged). */
 export const TANK_DRAW_SCALE = 1.3;
 
+/** Edge look: 'solid' | 'dashed' | 'tech' | 'dashed-tech'. Render only; default dashed-tech. */
+export let EDGE_STYLE = 'dashed-tech';
+/** ES live bindings are read-only for importers, so tests/tools use this. */
+export function setEdgeStyle(v) { EDGE_STYLE = v; }
+
+/**
+ * Colour palettes (render only). Each mech is ONE colour: `line` for every crisp
+ * stroke, tick, fill and muzzle star; `glow` (slightly deeper) for additive halos.
+ */
+export const TANK_PALETTES = {
+  'mono-blue': {
+    player: { line: '#3EF6FF', glow: '#2B5BFF', fillAlpha: 0.14 },
+    enemy: { line: '#FF3B5C', glow: '#C01640', fillAlpha: 0.16 },
+  },
+  'mono-green': {
+    player: { line: '#47FF9A', glow: '#20B05C', fillAlpha: 0.14 },
+    enemy: { line: '#FF3B5C', glow: '#C01640', fillAlpha: 0.16 },
+  },
+};
+export let TANK_PALETTE = 'mono-green';
+export function setTankPalette(v) { TANK_PALETTE = v; }
+
+function paletteFor(kind) {
+  const p = (TANK_PALETTES[TANK_PALETTE] ?? TANK_PALETTES['mono-green'])[kind];
+  return { stroke: p.line, turretStroke: p.line, tick: p.line, fill: p.line, glow: p.glow, fillAlpha: p.fillAlpha };
+}
+
 /** Project a world point with height z into screen space (3/4 tilt). */
 export function project(x, y, z) {
   return { x: x + z * TILT.x, y: y - z * TILT.y };
@@ -50,11 +77,11 @@ export function boxCorners(cx, cy, z0, L, W, H, heading) {
 export const TANK_SPECS = {
   player: {
     hull: { L: 34, W: 24, H: 9 }, turret: { L: 16, W: 13, H: 7 }, barrelLen: 24, twin: false,
-    stroke: '#39FF88', turretStroke: '#9FD8FF', fill: '#9FD8FF', fillAlpha: 0.14, base: 'hover',
+    stroke: '#47FF9A', turretStroke: '#47FF9A', fill: '#47FF9A', fillAlpha: 0.14, base: 'hover',
   },
   enemy: {
     hull: { L: 40, W: 32, H: 12 }, turret: { L: 20, W: 17, H: 8 }, barrelLen: 28, twin: true,
-    stroke: '#FF4D5E', turretStroke: '#FF8A3D', fill: '#FF4D5E', fillAlpha: 0.16, base: 'treads',
+    stroke: '#FF3B5C', turretStroke: '#FF3B5C', fill: '#FF3B5C', fillAlpha: 0.16, base: 'treads',
   },
 };
 
@@ -145,7 +172,7 @@ function widePass(ctx, color, w, a, draw) {
 }
 
 /** Small wire star at (px,py), 5 short lines, plus faint glow. */
-function drawMuzzle(ctx, px, py, ang, flash, color) {
+function drawMuzzle(ctx, px, py, ang, flash, color, glow) {
   const rays = 5, len = 7.5 + 4.5 * flash;
   const lines = () => {
     ctx.beginPath();
@@ -156,7 +183,7 @@ function drawMuzzle(ctx, px, py, ang, flash, color) {
     }
     ctx.stroke();
   };
-  widePass(ctx, color, 3, 0.2 * flash, lines);
+  widePass(ctx, glow, 3, 0.2 * flash, lines);
   ctx.lineWidth = 1;
   ctx.globalAlpha = flash;
   ctx.strokeStyle = color;
@@ -174,13 +201,36 @@ function drawMuzzle(ctx, px, py, ang, flash, color) {
   ctx.stroke();
 }
 
+/** Short CAD-style ticks at each of a box's 8 corners, along two meeting edges. */
+function drawCornerTicks(ctx, pts, box) {
+  const len = 0.14 * Math.min(box.L, box.W);
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const base = i < 4 ? 0 : 4;
+    const loopNb = base + ((i - base + 1) % 4);
+    const vertNb = i < 4 ? i + 4 : i - 4;
+    for (const j of [loopNb, vertNb]) {
+      const dx = pts[j].x - pts[i].x, dy = pts[j].y - pts[i].y;
+      const d = Math.hypot(dx, dy) || 1;
+      ctx.moveTo(pts[i].x, pts[i].y);
+      ctx.lineTo(pts[i].x + (dx / d) * len, pts[i].y + (dy / d) * len);
+    }
+  }
+  ctx.stroke();
+}
+
 /** Draw a wireframe tank (all edges visible). */
 export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensity = 0) {
   ctx.save();
   const g = tankGeometry(kind, x, y, hullHeading, turretAngle);
-  const s = TANK_SPECS[kind];
+  const s = { ...TANK_SPECS[kind], ...paletteFor(kind) };
   const clock = fxClock();
   const bob = hoverBob(kind, clock);
+  const dashed = EDGE_STYLE === 'dashed' || EDGE_STYLE === 'dashed-tech';
+  const tech = EDGE_STYLE === 'tech' || EDGE_STYLE === 'dashed-tech';
+  const dashLen = Math.max(4, 0.16 * s.hull.L);
+  const gapLen = Math.max(2, 0.06 * s.hull.L);
+  const dash = [dashLen, gapLen];
   const fx0 = shotFx(kind, clock);
   ctx.translate(x, y);
   ctx.scale(TANK_DRAW_SCALE, TANK_DRAW_SCALE);
@@ -225,12 +275,18 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
 
   // c) wide additive glow, then crisp 1px with brighter front edges
   for (const [pts, col] of [[g.hull, s.stroke], [g.turret, s.turretStroke]]) {
-    widePass(ctx, col, 8, 0.12, () => strokeEdges(ctx, pts)); // under-halo
-    widePass(ctx, col, 5.5, 0.32, () => strokeEdges(ctx, pts)); // mid halo
+    widePass(ctx, s.glow, 8, 0.12, () => strokeEdges(ctx, pts)); // under-halo
+    widePass(ctx, s.glow, 5.5, 0.38, () => strokeEdges(ctx, pts)); // mid halo
     ctx.lineWidth = 1;
     ctx.globalAlpha = 1;
     ctx.strokeStyle = col;
+    if (dashed) ctx.setLineDash(dash);
     strokeEdges(ctx, pts);
+    if (dashed) ctx.setLineDash([]);
+    if (tech) {
+      ctx.strokeStyle = s.tick ?? s.turretStroke;
+      drawCornerTicks(ctx, pts, pts === g.hull ? s.hull : s.turret);
+    }
     ctx.strokeStyle = tint(col, 0.35);
     strokeSome(ctx, pts, FRONT_EDGES);
   }
@@ -249,16 +305,18 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
     }
     ctx.stroke();
   };
-  widePass(ctx, s.turretStroke, 5, 0.18, barrelPath);
+  widePass(ctx, s.glow, 5, 0.18, barrelPath);
   ctx.globalAlpha = 1;
   ctx.lineWidth = 2.4;
   ctx.strokeStyle = s.turretStroke;
+  if (dashed) ctx.setLineDash(dash);
   barrelPath();
+  if (dashed) ctx.setLineDash([]);
 
   // muzzle flash at the recoiled tip of the firing barrel
   if (fx0.flash > 0) {
     const b = bs[fx0.barrelIndex] ?? bs[0];
-    drawMuzzle(ctx, b.x2, b.y2, turretAngle, fx0.flash, s.turretStroke);
+    drawMuzzle(ctx, b.x2, b.y2, turretAngle, fx0.flash, s.turretStroke, s.glow);
   }
 
   // e) hit flash
@@ -282,7 +340,7 @@ export function drawTankGhost(ctx, kind, x, y, heading, alpha) {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.lineWidth = 1.6;
-  ctx.strokeStyle = s.stroke;
+  ctx.strokeStyle = paletteFor(kind).stroke;
   ctx.globalAlpha = alpha;
   strokeEdges(ctx, pts);
   ctx.restore();
