@@ -19,7 +19,7 @@ import {
   mergeTouchActions,
   touchSafeShift,
 } from '../../src/engine/touch.js';
-import { TOUCH_CONTROLS_CSS } from '../../src/ui/touchControls.js';
+import { TOUCH_CONTROLS_CSS, dashCooldownFraction } from '../../src/ui/touchControls.js';
 
 let passed = 0;
 let failed = 0;
@@ -348,6 +348,22 @@ test('overlay sits at z-index 40 (below garage 100) with touch-action none', () 
   assert.ok(/user-select:\s*none/.test(TOUCH_CONTROLS_CSS));
   assert.ok(/-webkit-tap-highlight-color:\s*transparent/.test(TOUCH_CONTROLS_CSS));
   assert.ok(/env\(safe-area-inset-bottom\)/.test(TOUCH_CONTROLS_CSS));
+});
+
+test('held press state: 0.40 fill + scale(0.94); DASH cooldown ring present', () => {
+  assert.ok(/hh-touch__btn--held\s*\{[^}]*rgba\(57,\s*255,\s*136,\s*0\.40\)/.test(TOUCH_CONTROLS_CSS));
+  assert.ok(/scale\(0\.94\)/.test(TOUCH_CONTROLS_CSS));
+  assert.ok(/--cd/.test(TOUCH_CONTROLS_CSS));
+  assert.ok(/conic-gradient/.test(TOUCH_CONTROLS_CSS));
+  assert.ok(/hh-touch__cd/.test(TOUCH_CONTROLS_CSS));
+});
+
+test('dashCooldownFraction: hidden at 0, remaining/base otherwise', () => {
+  assert.equal(dashCooldownFraction(0, 2500), 0);
+  assert.equal(dashCooldownFraction(1000, 0), 0);
+  assert.equal(dashCooldownFraction(1250, 2500), 0.5);
+  assert.equal(dashCooldownFraction(9999, 2500), 1);
+  assert.equal(dashCooldownFraction(undefined, 2500), 0);
 });
 
 test('stickRadiusPx scales with the smaller viewport side', () => {

@@ -38,7 +38,6 @@ import { drawWorld,
   drawEntities,
   drawHUD,
   drawFixedHUD,
-  drawOverlay,
 }                              from './combat/combatRenderer.js';
 import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
@@ -54,6 +53,39 @@ import {
 import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW } from './ui/phoneCombatUi.js';
 import { prefersTouchUi, mergeTouchActions, TOUCH_LAYOUT, stickRadiusPx } from './engine/touch.js';
 import { mountTouchControls }  from './ui/touchControls.js';
+import {
+  beginKillMoment, tickKillMoment, resetKillMoment, shouldDrawEndCard,
+  isKillMomentActive, killMomentPhase, drawKillShatter, drawKillFlicker,
+  killMomentT01, getKillSnapshot,
+}                              from './ui/killMoment.js';
+import { formatArenaSpecStamp } from './ui/specStamp.js';
+import { SEANCE_DATA_URL }     from './ui/seance.js';
+import { drawEndCardView }     from './ui/endCardView.js';
+import {
+  createTauntMachine, isDemoTaunts, drawPossessedTaunt,
+}                              from './ui/possessedTaunts.js';
+import {
+  readHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel,
+}                              from './ui/hauntLevel.js';
+import { resetHpFx }           from './ui/phoneCombatUi.js';
+
+// ── Session-level state shared across arena restarts ────────────────────────
+
+/** Set when a fight ends in a win or the player picks REDEPLOY; consumed (once) by startArena. */
+let advanceHaunt = false;
+/** End-card spec stamp from the build-time seance JSON; null until/unless real data loads. */
+let specStampText = null;
+let specStampRequested = false;
+
+/** Fetch the seance JSON once. Real counts only; any failure leaves null. */
+function loadSpecStamp() {
+  if (specStampRequested || typeof fetch !== 'function') return;
+  specStampRequested = true;
+  fetch(SEANCE_DATA_URL)
+    .then(res => (res.ok ? res.json() : null))
+    .then(json => { specStampText = formatArenaSpecStamp(json); })
+    .catch(() => { specStampText = null; });
+}
 
 // ── Canvas / loading ─────────────────────────────────────────────────────────
 
@@ -151,6 +183,21 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
   let arenaState = createArena(arenaStats);
 
+  // Difficulty ramp (HAUNT LV): applied at spawn, outside createArena math.
+  if (advanceHaunt) { bumpHauntLevel(); advanceHaunt = false; }
+  const hauntLv = readHauntLevel();
+  arenaState = { ...arenaState, enemy: applyHauntPressure(arenaState.enemy, hauntLv) };
+
+  // Kill-moment / taunt / HP-flash presentation state starts clean every match.
+  resetKillMoment();
+  resetHpFx();
+  loadSpecStamp();
+  const tauntMachine = createTauntMachine({ demo: isDemoTaunts(location.search) });
+  tauntMachine.reset();
+  tauntMachine.onSpawn(performance.now());
+  let prevWindup = arenaState.enemy.windupRemainingMs ?? 0;
+  let cardShownAtMs = 0;     // when the end card first drew (count-up clock)
+
   // ── Input ──────────────────────────────────────────────────────────────────
   const input = createInputState();
 
@@ -224,6 +271,11 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawDashAfterimages(ctx, afterimages));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => { syncTankFx(st); });
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx) => {
+    if (killMomentPhase() === 'shatter') {
+      drawKillShatter(ctx, getKillSnapshot(), killMomentT01(performance.now()));
+    }
+  });
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st, cam) =>
     drawWindupGlow(ctx, st.enemy, ENEMY_SHOT_WINDUP_MS, (cam ?? camera).zoom / uiDpr));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEnemyShotGlow(ctx, st.projectiles));
@@ -243,8 +295,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   // OVERLAY layer (drawn without the world transform) ahead of the end card.
   let hudOffscreen = null;   // lazily created (desktop fade-under only)
   registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
-    // Hide the live HUD once the match ends so the end card panel is clean.
-    if (st.phase !== 'playing') return;
+    // Hide the live HUD once the end card is up so the panel is clean (it stays
+    // through the kill moment so the HUD doesn't blink out mid-hit-stop).
+    if (st.phase !== 'playing' && shouldDrawEndCard()) return;
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
     const s = touchUi ? phoneHudScale(uiDpr) : 1;
@@ -333,20 +386,61 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
-    const restartReady = canRestart(phaseEndedAtMs, performance.now(), null);
+    const nowMs = performance.now();
+    const hudScale = touchUi ? uiDpr : 1;
+
+    // CRT flicker after the shatter (opacity-capped inside drawKillFlicker).
+    if (killMomentPhase() === 'flicker') {
+      drawKillFlicker(ctx, vpW, vpH, killMomentT01(nowMs));
+    }
+
+    // HAUNT LV label: top-right, clear of the top-left phone HUD and the pads.
+    drawHauntLevel(ctx, hauntLv, {
+      x: vpW - 8 * hudScale, y: (8 + insetTop) * hudScale, align: 'right', scale: hudScale,
+    });
+
+    const cardUp = shouldDrawEndCard();
+
+    // Possessed taunt. While playing it floats above the enemy (screen space,
+    // clamped); once the end card is up it sits near the top so the veil
+    // doesn't swallow the death line.
+    const taunt = tauntMachine.current();
+    let afterCard = null;
+    if (taunt) {
+      let tx;
+      let ty;
+      if (cardUp) {
+        tx = vpW / 2;
+        ty = (56 + insetTop) * hudScale;
+      } else {
+        const sp = worldToScreen(st.enemy.x, st.enemy.y, camera, vpW, vpH,
+          shakeX + kickX, shakeY + kickY);
+        tx = sp.sx;
+        ty = Math.max(48 * hudScale, Math.min(vpH - 140 * hudScale, sp.sy - 56 * camera.zoom));
+      }
+      if (!cardUp) drawPossessedTaunt(ctx, taunt, { x: tx, y: ty, scale: hudScale });
+      else afterCard = { x: tx, y: ty, scale: hudScale };
+    }
+
+    // End card — only once the kill moment has finished.
+    if (!cardUp) { endCardButtons = null; return; }
+    if (cardShownAtMs === 0) cardShownAtMs = nowMs;
+    const restartReady = canRestart(phaseEndedAtMs, nowMs, null);
+    const cardOpts = { shownAtMs: cardShownAtMs, nowMs, specStamp: specStampText };
     if (touchUi) {
       const { sx, sy } = endCardScale({
         touchUi, dpr: uiDpr, cssW: canvas.clientWidth || window.innerWidth,
       });
       ctx.save();
       ctx.scale(sx, sy);
-      const result = drawOverlay(unsquashTextCtx(ctx, sy / sx), st, camera, vpW / sx, vpH / sy, restartReady, focusIndex);
+      const result = drawEndCardView(unsquashTextCtx(ctx, sy / sx), st, camera, vpW / sx, vpH / sy, restartReady, focusIndex, cardOpts);
       ctx.restore();
       endCardButtons = result ? scaleRects(result.buttons, sx, sy) : null;
-      return;
+    } else {
+      const result = drawEndCardView(ctx, st, camera, vpW, vpH, restartReady, focusIndex, cardOpts);
+      endCardButtons = result ? result.buttons : null;
     }
-    const result = drawOverlay(ctx, st, camera, vpW, vpH, restartReady, focusIndex);
-    endCardButtons = result ? result.buttons : null;
+    if (afterCard) drawPossessedTaunt(ctx, taunt, afterCard);
   });
 
   // ── End-card handling (RETRY / GARAGE) ─────────────────────────────────────
@@ -451,10 +545,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         loop.stop();
         cleanup();
         if (action === 'retry') {
+          // REDEPLOY always ramps the haunt level (flag, so no double bump).
+          advanceHaunt = true;
           // Restart a fresh match with the SAME loadout (R8).
           startArena(renderer, loadout, loadoutTotals, reducedMotion);
         } else {
-          // GARAGE — reopen the garage.
+          // GARAGE — reopen the garage (a win already flagged the ramp; a loss does not).
           showGarage(renderer, reducedMotion);
         }
         return;
@@ -463,6 +559,10 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       // Once the match is decided, stop updating but keep rendering.
       if (arenaState.phase !== 'playing') {
         if (touch) touch.setActive(false);
+        // The restart grace starts together with the end card, not the kill moment.
+        if (phaseEndedAtMs === 0 && shouldDrawEndCard()) {
+          phaseEndedAtMs = performance.now();
+        }
         return;
       }
 
@@ -486,9 +586,23 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       arenaState = updateArena(arenaState, actions, dt);
       pushAfterimage(afterimages, arenaState.player);
 
-      // Record when the phase first left 'playing' (for restart grace guard).
-      if (arenaState.phase !== 'playing' && phaseEndedAtMs === 0) {
-        phaseEndedAtMs = performance.now();
+      // Taunt on the enemy's windup edge (0 → >0).
+      const windupNow = arenaState.enemy.windupRemainingMs ?? 0;
+      if (prevWindup <= 0 && windupNow > 0) tauntMachine.onWindup(performance.now());
+      prevWindup = windupNow;
+
+      // Playing → win/lose: start the kill moment (the early return above
+      // freezes combat for the hit-stop). The restart grace starts later, with
+      // the end card (see the non-playing branch above).
+      if (arenaState.phase !== 'playing') {
+        const killNow = performance.now();
+        beginKillMoment({
+          phase: arenaState.phase, enemy: arenaState.enemy, nowMs: killNow, reducedMotion,
+        });
+        if (arenaState.phase === 'win') {
+          advanceHaunt = true;
+          tauntMachine.onDeath(killNow);
+        }
         if (touch) touch.setActive(false);
       }
 
@@ -530,6 +644,15 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     },
 
     render(_alpha) {
+      const nowMs = performance.now();
+      tickKillMoment(nowMs);
+      tauntMachine.tick(nowMs);
+      if (touch) {
+        touch.setDashCooldown(
+          arenaState.player.dashCooldownMs ?? 0,
+          arenaState.player.dashCooldownBaseMs ?? 0,
+        );
+      }
       renderAll(renderer, arenaState, camera, shakeX + kickX, shakeY + kickY);
     },
   });
@@ -540,6 +663,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     canvas.removeEventListener('click',     onCardClick);
     canvas.removeEventListener('mousedown', onCanvasMouseDown);
     if (touch) { touch.destroy(); touch = null; }
+    resetKillMoment();
+    tauntMachine.reset();
     if (insetProbe) { insetProbe.remove(); insetProbe = null; }
     // Input listeners are re-added on the next startArena; remove the old ones
     // by a simple pattern: we defined them as inline arrows, so we need to

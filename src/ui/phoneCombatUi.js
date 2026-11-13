@@ -190,18 +190,35 @@ export function compactHpLayout(kind) {
     : { w: 72, h: 5, offsetY: 30 + TANK_DRAW_SCALE * (TANK_SPECS.enemy.hull.L / 2 + TANK_SPECS.enemy.barrelLen / 2), showText: true, fontPx: 11 };
 }
 
-function drawBar(ctx, kind, ent, view) {
+function drawBar(ctx, kind, ent, view, fx = null) {
   if (!ent) return;
   const L = compactHpLayout(kind);
   const max = ent.maxHp > 0 ? ent.maxHp : 1;
   const pct = Math.max(0, Math.min(1, (ent.hp ?? 0) / max));
   const left = ent.x - L.w / 2;
   const top = kind === 'player' ? ent.y + L.offsetY : ent.y - L.offsetY - L.h;
+  const pulsing = kind === 'player' && fx && fx.pulse;
+  if (pulsing) { ctx.save(); ctx.globalAlpha = fx.pulseAlpha; }
   ctx.fillStyle = '#1A1A1A';
   ctx.fillRect(left, top, L.w, L.h);
   ctx.fillStyle = pct < 0.25 ? '#FF4D5E' : pct < 0.5 ? '#FF8A3D'
     : kind === 'player' ? '#39FF88' : '#FF8A3D';
   ctx.fillRect(left, top, L.w * pct, L.h);
+  if (pulsing) ctx.restore();
+  if (kind === 'player' && fx && fx.flash && fx.flash.active) {
+    // Hit flash: the HP number appears under the bar in blood red with a 2px shake.
+    const txt = `${Math.ceil(ent.hp ?? 0)}`;
+    ctx.font = 'bold 14px "Share Tech Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#0A0D0B';
+    const tx = ent.x + fx.flash.shakePx;
+    const ty = top + L.h + 2;
+    ctx.strokeText(txt, tx, ty);
+    ctx.fillStyle = fx.flash.color;
+    ctx.fillText(txt, tx, ty);
+  }
   if (L.showText) {
     const txt = `${Math.ceil(ent.hp ?? 0)}`;
     ctx.font = `bold ${L.fontPx}px "Share Tech Mono", monospace`;
@@ -221,9 +238,76 @@ function drawBar(ctx, kind, ent, view) {
   }
 }
 
-export function drawCompactHp(ctx, state, view = null) {
+// ── Compact HP hit flash (draw-only; never changes HP values) ────────────────
+
+export const HIT_FLASH_MS = 150;
+export const HIT_FLASH_COLOR = '#FF4D5E';
+export const HIT_SHAKE_PX = 2;
+export const HP_LOW_FRAC = 0.25;
+export const HP_PULSE_MS = 500;   // 2 Hz — within the 2/s flicker cap
+
+/**
+ * Flash state for a hit that began at t0.
+ * @returns {{active:boolean, color:string|null, shakePx:number}}
+ */
+export function hitFlash(nowMs, t0) {
+  const e = nowMs - t0;
+  if (!Number.isFinite(e) || e < 0 || e >= HIT_FLASH_MS) {
+    return { active: false, color: null, shakePx: 0 };
+  }
+  return {
+    active: true,
+    color: HIT_FLASH_COLOR,
+    shakePx: Math.floor(e / 50) % 2 === 0 ? HIT_SHAKE_PX : -HIT_SHAKE_PX,
+  };
+}
+
+/** True when the player is alive but under 25% HP. */
+export function shouldPulseHp(hp, maxHp) {
+  return maxHp > 0 && hp > 0 && hp / maxHp < HP_LOW_FRAC;
+}
+
+/** Bar alpha 0.65–1 over HP_PULSE_MS. */
+export function hpPulseAlpha(nowMs) {
+  const s = 0.5 + 0.5 * Math.sin((2 * Math.PI * nowMs) / HP_PULSE_MS);
+  return 0.65 + 0.35 * s;
+}
+
+const hpFx = { lastHp: null, t0: -Infinity };
+function moduleNow() {
+  return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+}
+
+/** Record an HP drop (call each frame); returns the hit start time or -Infinity. */
+export function trackHpDrop(hp, nowMs) {
+  if (hpFx.lastHp !== null && hp < hpFx.lastHp) hpFx.t0 = nowMs;
+  hpFx.lastHp = hp;
+  return hpFx.t0;
+}
+
+/** Forget tracked HP (new match). */
+export function resetHpFx() { hpFx.lastHp = null; hpFx.t0 = -Infinity; }
+
+/**
+ * @param {*} ctx
+ * @param {*} state
+ * @param {*} [view]
+ * @param {{nowMs?:number}} [opts]  Caller may pass nowMs; otherwise a module clock.
+ */
+export function drawCompactHp(ctx, state, view = null, opts = null) {
+  const now = opts?.nowMs ?? moduleNow();
+  const p = state?.player;
+  let fx = null;
+  if (p) {
+    const t0 = trackHpDrop(p.hp ?? 0, now);
+    fx = {
+      flash: hitFlash(now, t0),
+      pulse: shouldPulseHp(p.hp ?? 0, p.maxHp ?? 0),
+      pulseAlpha: hpPulseAlpha(now),
+    };
+  }
   ctx.save();
-  drawBar(ctx, 'player', state?.player, view);
+  drawBar(ctx, 'player', state?.player, view, fx);
   drawBar(ctx, 'enemy', state?.enemy, view);
   ctx.restore();
 }

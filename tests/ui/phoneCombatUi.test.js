@@ -11,6 +11,7 @@ import {
   rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
   EDGE_ARROW, edgeArrowPlacement, drawEdgeArrow,
+  hitFlash, shouldPulseHp, hpPulseAlpha, resetHpFx,
 } from '../../src/ui/phoneCombatUi.js';
 
 let passed = 0;
@@ -269,6 +270,53 @@ test('drawEdgeArrow smoke', () => {
   const n = fakeCtx();
   drawEdgeArrow(n.ctx, null);
   assert.equal(n.calls.length, 0);
+});
+
+test('hitFlash: active 150ms, red, 2px shake', () => {
+  assert.equal(hitFlash(100, 100).active, true);
+  assert.equal(hitFlash(100, 100).color, '#FF4D5E');
+  assert.equal(Math.abs(hitFlash(100, 100).shakePx), 2);
+  assert.equal(Math.abs(hitFlash(160, 100).shakePx), 2);
+  assert.equal(hitFlash(100 + 149, 100).active, true);
+  assert.equal(hitFlash(100 + 150, 100).active, false);
+  assert.equal(hitFlash(100, 200).active, false);
+  assert.equal(hitFlash(100, -Infinity).active, false);
+  assert.equal(hitFlash(120, 100).shakePx, 2);
+  assert.equal(hitFlash(160, 100).shakePx, -2);
+});
+test('shouldPulseHp under 25% only while alive', () => {
+  assert.equal(shouldPulseHp(74, 300), true);
+  assert.equal(shouldPulseHp(75, 300), false);
+  assert.equal(shouldPulseHp(0, 300), false);
+  assert.equal(shouldPulseHp(10, 0), false);
+});
+test('hpPulseAlpha stays in 0.65..1', () => {
+  for (let t = 0; t < 1000; t += 17) {
+    const a = hpPulseAlpha(t);
+    assert.ok(a >= 0.65 - 1e-9 && a <= 1 + 1e-9, `${a}`);
+  }
+});
+test('drawCompactHp flashes the number on an HP drop (balanced, no HP change)', () => {
+  resetHpFx();
+  const texts = [];
+  let saves = 0, restores = 0;
+  const target = { save() { saves++; }, restore() { restores++; }, fillText(t) { texts.push(t); } };
+  const ctx = new Proxy(target, {
+    get(t, k) { return k in t ? t[k] : () => {}; },
+    set(t, k, v) { t[k] = v; return true; },
+  });
+  const st = (hp) => ({ player: { x: 0, y: 0, hp, maxHp: 300 }, enemy: { x: 0, y: -200, hp: 5, maxHp: 10 } });
+  drawCompactHp(ctx, st(300), null, { nowMs: 1000 });
+  assert.ok(!texts.includes('280'));
+  const s2 = st(280);
+  drawCompactHp(ctx, s2, null, { nowMs: 1010 });
+  assert.ok(texts.includes('280'));
+  assert.equal(s2.player.hp, 280);
+  texts.length = 0;
+  drawCompactHp(ctx, st(280), null, { nowMs: 1200 });
+  assert.ok(!texts.includes('280'), 'flash over after 150ms');
+  assert.equal(saves, restores);
+  resetHpFx();
 });
 
 console.log(`phoneCombatUi: ${passed} passed, ${failed} failed`);

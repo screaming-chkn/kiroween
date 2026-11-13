@@ -272,7 +272,7 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
           x:      ex,
           y:      ey,
           angle:  fireAngle,
-          damage: ENEMY_PROJECTILE_DAMAGE,
+          damage: (enemy.shotDamage ?? ENEMY_PROJECTILE_DAMAGE),
           owner:  'enemy',
         });
         nextCooldown = ENEMY_FIRE_COOLDOWN_MS;

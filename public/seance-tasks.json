@@ -461,6 +461,30 @@
     "done": true
   },
   {
+    "spec": "03-arena-combat",
+    "id": 51,
+    "title": "Kill-moment presentation (render only): 200ms hit-stop in main.js on playing→win/lose, then enemy dashed edges fly apart, brief CRT flicker, then the end card; no combat timing / HP constant changes",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 52,
+    "title": "End-card polish (render/text only): stats count up ~600ms, big WIN / LOSS stamp, REDEPLOY as solid green primary (id stays retry); src/ui/endCardView.js + main.js",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 53,
+    "title": "End-card spec stamp: one dim line 'built from .kiro/specs/03-arena-combat · N/N tasks [x]' from build-time seance JSON, real counts only",
+    "done": true
+  },
+  {
+    "spec": "03-arena-combat",
+    "id": 54,
+    "title": "Difficulty ramp: HAUNT LV n (sessionStorage), fight 1 at 0.8× enemy HP+damage, +0.1× per win or REDEPLOY, cap 1.2× at LV5; applied at spawn from main.js; tiny HUD label; LV1 still ~30–45s",
+    "done": true
+  },
+  {
     "spec": "04-radar-relays",
     "id": 1,
     "title": "Visibility grid from relays + player (R1)",
@@ -761,6 +785,18 @@
     "done": true
   },
   {
+    "spec": "08-phone-touch",
+    "id": 27,
+    "title": "FIRE/DASH press state (40% accent fill, scale 0.94) and a conic ring sweeping the existing DASH cooldown; layout/hit tests unchanged",
+    "done": true
+  },
+  {
+    "spec": "08-phone-touch",
+    "id": 28,
+    "title": "Compact phone HP: flash the number red with a 2px shake for 150ms on hit, pulse the bar under 25% (src/ui only)",
+    "done": true
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",
@@ -806,6 +842,12 @@
     "spec": "haunted-spec",
     "id": 8,
     "title": "Pure-function tests: `tests/ui/seance.test.js` (parseTasksMd + séance",
+    "done": true
+  },
+  {
+    "spec": "haunted-spec",
+    "id": 9,
+    "title": "Possessed CRT taunts on spawn / windup / death from .kiro/steering/possessed-taunts.md (Hook 12 PG-13 lines); typewriter overlay; demo flag forces the spawn and death lines; windup cooldown 8s",
     "done": true
   }
 ]

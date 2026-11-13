@@ -57,10 +57,31 @@ export const TOUCH_CONTROLS_CSS = `
   min-height: 44px;
 }
 .hh-touch__btn--held {
-  background: rgba(57, 255, 136, 0.45);
+  background: rgba(57, 255, 136, 0.40);
   color: #0A0D0B;
+  transform: scale(0.94);
 }
+.hh-touch__cd {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  --cd: 0;
+  background: conic-gradient(rgba(57, 255, 136, 0.55) calc(var(--cd) * 360deg), transparent 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
+}
+.hh-touch__cd[hidden] { display: none; }
 `;
+
+/**
+ * Remaining fraction of the dash cooldown for the ring: 0 (hidden) when either
+ * value is 0/invalid, otherwise clamp(remaining / base, 0, 1).
+ */
+export function dashCooldownFraction(remainingMs, baseMs) {
+  if (!(remainingMs > 0) || !(baseMs > 0)) return 0;
+  return Math.min(1, remainingMs / baseMs);
+}
 
 const STYLE_ID = 'hh-touch-style';
 
@@ -69,7 +90,7 @@ const STYLE_ID = 'hh-touch-style';
  *
  * @param {HTMLElement} root
  * @param {{ getViewport: () => { width: number, height: number } }} opts
- * @returns {{ destroy: () => void, sample: () => any, controller: any, setActive: (on: boolean) => void }}
+ * @returns {{ destroy: () => void, sample: () => any, controller: any, setActive: (on: boolean) => void, setDashCooldown: (remainingMs: number, baseMs: number) => void }}
  */
 export function mountTouchControls(root, { getViewport }) {
   if (!document.getElementById(STYLE_ID)) {
@@ -108,6 +129,10 @@ export function mountTouchControls(root, { getViewport }) {
   const dashEl = document.createElement('div');
   dashEl.className = 'hh-touch__btn hh-touch__btn--dash';
   dashEl.textContent = 'DASH';
+  const cdEl = document.createElement('div');
+  cdEl.className = 'hh-touch__cd';
+  cdEl.hidden = true;
+  dashEl.appendChild(cdEl);
   overlay.append(stickEl, knobEl, fireEl, dashEl);
   root.appendChild(overlay);
 
@@ -196,6 +221,13 @@ export function mountTouchControls(root, { getViewport }) {
   return {
     controller,
     sample() { return controller.sample(); },
+    /** Sweep the ring on DASH: remaining/base; hidden when either is 0. */
+    setDashCooldown(remainingMs, baseMs) {
+      const f = dashCooldownFraction(remainingMs, baseMs);
+      if (f <= 0) { cdEl.hidden = true; return; }
+      cdEl.hidden = false;
+      cdEl.style.setProperty('--cd', f.toFixed(3));
+    },
     setActive(on) {
       overlay.hidden = !on;
       overlay.style.pointerEvents = on ? '' : 'none';

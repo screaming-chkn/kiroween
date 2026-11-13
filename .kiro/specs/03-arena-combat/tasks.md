@@ -147,3 +147,7 @@
 
 ## owner GO 11/12 — floater lift
 - [x] 50. Damage pop drawn offset above the 1.3× hull/turret (FLOATER_DRAW_OFFSET_Y) with a 1px void outline; draw-only in combatRenderer, spawn/timing unchanged
+- [x] 51. Kill-moment presentation (render only): 200ms hit-stop in main.js on playing→win/lose, then enemy dashed edges fly apart, brief CRT flicker, then the end card; no combat timing / HP constant changes
+- [x] 52. End-card polish (render/text only): stats count up ~600ms, big WIN / LOSS stamp, REDEPLOY as solid green primary (id stays retry); src/ui/endCardView.js + main.js
+- [x] 53. End-card spec stamp: one dim line 'built from .kiro/specs/03-arena-combat · N/N tasks [x]' from build-time seance JSON, real counts only
+- [x] 54. Difficulty ramp: HAUNT LV n (sessionStorage), fight 1 at 0.8× enemy HP+damage, +0.1× per win or REDEPLOY, cap 1.2× at LV5; applied at spawn from main.js; tiny HUD label; LV1 still ~30–45s

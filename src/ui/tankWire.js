@@ -7,6 +7,7 @@
  */
 
 import { fxClock, shotFx, hoverBob } from './tankFx.js';
+import { shouldDrawEnemy } from './killMoment.js';
 
 export const TILT = { x: 0.35, y: 0.7 };
 
@@ -221,6 +222,7 @@ function drawCornerTicks(ctx, pts, box) {
 
 /** Draw a wireframe tank (all edges visible). */
 export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensity = 0) {
+  if (kind === 'enemy' && !shouldDrawEnemy()) return;
   ctx.save();
   const g = tankGeometry(kind, x, y, hullHeading, turretAngle);
   const s = { ...TANK_SPECS[kind], ...paletteFor(kind) };

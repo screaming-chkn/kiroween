@@ -26,3 +26,5 @@
 - [x] 24. Enemy bullet streak/halo/core and dash afterimage (draw-only)
 - [x] 25. Phone enemy HP number clamped inside the view
 - [x] 26. Phone-only enemy edge arrow (portrait touch, off-screen only; clear of HUD, pads, safe areas; draw-only)
+- [x] 27. FIRE/DASH press state (40% accent fill, scale 0.94) and a conic ring sweeping the existing DASH cooldown; layout/hit tests unchanged
+- [x] 28. Compact phone HP: flash the number red with a 2px shake for 150ms on hit, pulse the bar under 25% (src/ui only)
