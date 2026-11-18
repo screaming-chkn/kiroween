@@ -23,6 +23,7 @@ import {
   ARENA_HEIGHT,
   PLAYER_MAX_HP,
   PLAYER_PROJECTILE_DAMAGE,
+  PROJECTILE_SPEED,
   MECH_RADIUS,
   FIRE_COOLDOWN_MS,
   PLAYER_START_X,
@@ -116,6 +117,20 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     loadoutTotals.powerDraw ?? 0,
   );
   player.fireCooldownMult = 1 + _penaltyPct / 100;
+
+  // ── Loadout effects (M4.5, R8) ─────────────────────────────────────────────
+  // Applied only when the caller passes combatMods (FEATURES.loadoutEffects on).
+  // No field → none of this runs, so behaviour is exactly the pre-M4.5 sim.
+  const mods = loadoutTotals.combatMods;
+  if (mods) {
+    player.maxHp += mods.maxHpBonus;
+    player.hp    += mods.maxHpBonus;
+    player.dashCooldownBaseMs = Math.round(player.dashCooldownBaseMs * mods.dashCooldownMult);
+    player.fireCooldownMult  *= mods.fireCooldownMult;
+    player.shotDamage          = mods.shotDamage;
+    player.projectileSpeedMult = mods.projectileSpeedMult;
+    player.incomingDamageMult  = mods.incomingDamageMult;
+  }
 
   const enemy = createEnemy({
     speedPenalty: loadoutTotals.enemySpeedPenalty ?? 0,
@@ -223,14 +238,19 @@ export function updateArena(state, actions, dt) {
   // strictly slower than a balanced build. Defaults to 1 when not overdrawn.
   let newProjectiles = [];
   if (act.fire && player.fireCooldown === 0) {
-    newProjectiles.push(createProjectile({
+    const shot = {
       id:     nextId('pproj'),
       x:      player.x,
       y:      player.y,
       angle:  player.angle,
-      damage: PLAYER_PROJECTILE_DAMAGE,
+      damage: player.shotDamage ?? PLAYER_PROJECTILE_DAMAGE,
       owner:  'player',
-    }));
+    };
+    // M4.5: only a build with a projectile-speed mod passes a speed.
+    if (player.projectileSpeedMult) {
+      shot.speed = PROJECTILE_SPEED * player.projectileSpeedMult;
+    }
+    newProjectiles.push(createProjectile(shot));
     const fireMult = player.fireCooldownMult ?? 1;
     player = { ...player, fireCooldown: FIRE_COOLDOWN_MS * fireMult };
   }
@@ -301,7 +321,11 @@ export function updateArena(state, actions, dt) {
     } else {
       // Enemy projectile vs player mech.
       if (hitTestCircle(proj, playerAfterHits, MECH_RADIUS)) {
-        playerAfterHits = applyDamage(playerAfterHits, proj.damage);
+        // M4.5: incoming-damage multiplier only when the build has one.
+        const inDmg = playerAfterHits.incomingDamageMult
+          ? Math.round(proj.damage * playerAfterHits.incomingDamageMult)
+          : proj.damage;
+        playerAfterHits = applyDamage(playerAfterHits, inDmg);
         // R10: flash the player (rate-limited) + always float a damage number.
         playerAfterHits = {
           ...playerAfterHits,
@@ -310,7 +334,7 @@ export function updateArena(state, actions, dt) {
         newFloaters.push(createFloatingNumber({
           x: playerAfterHits.x,
           y: playerAfterHits.y,
-          amount: proj.damage,
+          amount: inDmg,
         }));
         return { ...proj, dead: true };
       }

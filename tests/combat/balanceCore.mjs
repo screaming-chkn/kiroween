@@ -38,6 +38,7 @@ import {
   ENEMY_STRAFE_SPEED,
 } from '../../src/combat/config.js';
 import { applyHauntPressure } from '../../src/ui/hauntLevel.js';
+import { combatModsFor } from '../../src/combat/loadoutEffects.js';
 
 // ── Tunables for the harness (NOT combat tuning) ───────────────────────────────
 
@@ -205,6 +206,9 @@ export function enumerateLoadouts() {
             powerDraw: t.powerDraw,
             balance: t.balance,
           };
+          // M4.5: only present when FEATURES.loadoutEffects is on.
+          const combatMods = combatModsFor(loadout);
+          if (combatMods) combatTotals.combatMods = combatMods;
 
           const key = `${legs}|${core}|${armR}|${armL}`;
           const label = [
@@ -363,7 +367,9 @@ export function playerPolicy(state, rng, ctx) {
     { x: player.x, y: player.y },
     { x: enemy.x, y: enemy.y },
     enemyVel,
-    PROJECTILE_SPEED,
+    // M4.5: lead with the build's real shot speed (Lancer flies faster); with
+    // no loadout effects projectileSpeedMult is unset and this is unchanged.
+    PROJECTILE_SPEED * (player.projectileSpeedMult ?? 1),
   );
 
   // ── Seeded aim noise (LEVER 2, harness-only) ──────────────────────────────

@@ -895,8 +895,8 @@
   {
     "spec": "10-polish",
     "id": 17,
-    "title": "M5 private Cloudflare Pages preview deployed + real-phone test (R7)",
-    "done": false
+    "title": "M5 private preview build served plain from deploy/site + headless desktop and phone (390x844 touch) passes: full match, 0 console errors, music — the real-device test is pending until the preview is deployed (deploy cancelled for now) (R7)",
+    "done": true
   },
   {
     "spec": "10-polish",
@@ -980,6 +980,42 @@
     "spec": "10-polish",
     "id": 31,
     "title": "M5 Kiro hook: usage-log check on README/KIRO save (R7)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 32,
+    "title": "M4.5 loadoutEffects module (LOADOUT_EFFECTS, combatModsFor) + FEATURES.loadoutEffects flag in config.js (R8)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 33,
+    "title": "M4.5 arena.js applies combatMods when present; main.js + balance harness pass loadoutTotals.combatMods (R8)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 34,
+    "title": "M4.5 garage one-line COMBAT effect text per arm/core part, shown only when the flag is on (R8)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 35,
+    "title": "M4.5 tests: per-effect unit tests + flag-off identical seeded fights in loadoutEffects.test.js (R8)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 36,
+    "title": "M4.5 balance rerun with the flag on, tune numbers only, PLAN.md before/after table (R8)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 37,
+    "title": "M4.5 property-based tests for loadout folding, arena bounds and damage invariants (R8)",
     "done": true
   },
   {

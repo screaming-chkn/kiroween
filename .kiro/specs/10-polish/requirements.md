@@ -101,3 +101,35 @@ licence.
 - The README SHALL describe the 1v1 duel (pitch, controls, Costume Contest fit,
   how Kiro was used, credits) and the MIT licence.
 - A public deploy and the Devpost submission SHALL need the owner's yes.
+
+### R8 Loadout effects (M4.5)
+- The system SHALL give each of the six arm and core parts one combat effect
+  that reuses existing systems (no new art, no new system): one clear upside,
+  and for most parts a stated reload (fire cooldown) or dash cost, so the
+  parts are sidegrades. Tuned table (M4.5 balance pass; the first all-upside
+  draft — 17 dmg, x1.35 speed, +25 HP, x0.8 dash, x0.87 reload, x0.88
+  incoming — pushed LV5 to ~86 % and was replaced):
+  armR-hatchet: shot damage 18, reload x1.32; armR-lancer: projectile speed
+  x1.4, reload x1.04; armL-buckler: +22 max HP, dash cooldown x1.5, reload
+  x1.18; armL-spotter: dash cooldown x0.85, reload x1.08; core-pulse: reload
+  x0.95; core-furnace: projectile speed x1.2, reload x0.97.
+- WHERE a part is equipped and FEATURES.loadoutEffects is on, the garage card
+  for that part SHALL show one line of text that states the real number
+  (for example "COMBAT: shots fly 40% faster, +4% reload").
+- A single flag, FEATURES.loadoutEffects in src/combat/config.js, SHALL gate
+  every effect and every garage line.
+- WHEN FEATURES.loadoutEffects is off, the system SHALL reproduce today's
+  behaviour exactly: the same seeded fights SHALL give identical results
+  (same winner, same duration, same HP at every tick).
+- Each effect SHALL have a unit test, and a test SHALL check that flag-off
+  seeded fights are identical to fights run without combatMods.
+- WHEN the balance matrix runs with the flag on (16 builds x 200 seeds per LV),
+  every LV's win rate SHALL be inside its R6 band (LV1 85-100, LV2 75-95,
+  LV3 65-85, LV4 50-80, LV5 40-60), the median duel length SHALL be 45-120 s at
+  every LV, and no build SHALL differ from its LV mean by more than 15
+  percentage points.
+- WHILE the flag is on, dash-spam SHALL still lose to the reactive
+  tell-reading probe at every LV.
+- Tuning SHALL change numbers only.
+- IF the balance acceptance is not clean by Nov 23, THEN the milestone SHALL be
+  cut and main SHALL stay unchanged.

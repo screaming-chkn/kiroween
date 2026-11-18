@@ -244,3 +244,17 @@ export const PLAYER_START_Y = 450;
 /** Enemy start position (world units). Must not overlap player start. */
 export const ENEMY_START_X = 1000;
 export const ENEMY_START_Y = 450;
+
+// ── Feature flags ─────────────────────────────────────────────────────────────
+
+/**
+ * Feature flags (M4.5, spec 10-polish R8).
+ *
+ * loadoutEffects: arm and core parts carry one combat effect each
+ * (src/combat/loadoutEffects.js) and the garage shows a COMBAT line for it.
+ * Off = exact pre-M4.5 behaviour: no combatMods are built, the arena takes no
+ * new code path, and the garage shows no COMBAT line.
+ */
+export const FEATURES = Object.freeze({
+  loadoutEffects: true,
+});

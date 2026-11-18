@@ -43,6 +43,7 @@ import { defaultLoadout }      from '../data/presets.js';
 import { equip, totals }       from '../mech/loadout.js';
 import { canDeploy }           from '../mech/weight.js';
 import { roleTag, roleTooltip } from '../mech/role.js';
+import { effectTextFor }       from '../combat/loadoutEffects.js';
 import { silhouetteSpec }       from '../mech/silhouette.js';
 
 /**
@@ -358,6 +359,12 @@ export const GARAGE_CSS = `
   font-size: 14px;        /* R8: body text ≥14px, non-italic */
   line-height: 1.35;
   color: #B9C2BA;         /* lighter ash — ≥4.5:1 on panel */
+}
+.hh-option__effect {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;        /* accessibility: text ≥14px */
+  line-height: 1.35;
+  color: var(--color-phosphor, #39FF88); /* flips on possession */
 }
 .hh-option__meta {
   font-family: 'Share Tech Mono', monospace;
@@ -1117,6 +1124,13 @@ export function mountGarage(root, { onDeploy, onSeance } = {}) {
       flavorEl.textContent = part.flavor;
 
       optEl.append(nameEl, metaEl, deltasEl, flavorEl);
+      // M4.5: one COMBAT line per arm/core part, only when the flag is on.
+      const effectText = effectTextFor(part.id);
+      if (effectText) {
+        const effectEl = el('div', { class: 'hh-option__effect' });
+        effectEl.textContent = effectText;
+        optEl.append(effectEl);
+      }
       listbox.append(optEl);
 
       // Events

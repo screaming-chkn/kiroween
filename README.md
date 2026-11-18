@@ -10,6 +10,19 @@ The loop: title → garage → duel → kill moment and end card → REDEPLOY or
 
 In a duel, the bot shows a red windup telegraph before each shot. The tell lasts 450 ms and is a red halo that grows around the bot, with a sound cue. Dash out of the way before the shot lands. Your hits give hit-stop, camera shake and sparks.
 
+**Loadout matters.** Each arm and core has one combat effect, shown as a `COMBAT:` line on its garage card. Most trade an upside for a stated reload or dash cost:
+
+| Part | Garage line |
+|---|---|
+| Hatchet Arm | COMBAT: shots deal 18 (base 14), +32% reload |
+| Lancer Arm | COMBAT: shots fly 40% faster, +4% reload |
+| Buckler Arm | COMBAT: +22 max HP; dash recharge +50%, +18% reload |
+| Spotter Arm | COMBAT: dash recharges 15% faster, +8% reload |
+| Pulse Core | COMBAT: reload 5% faster |
+| Furnace Core | COMBAT: shots fly 20% faster, reload 3% faster |
+
+Legs set speed and weight. Heavier builds get a slower dash. The effects sit behind one flag, `FEATURES.loadoutEffects` in `src/combat/config.js`. With the flag off, the game plays exactly as it did before M4.5, and a golden-fight test checks this.
+
 | Action | Desktop | Phone (portrait) |
 |---|---|---|
 | Move | WASD or arrow keys | Drag the stick on the left half of the screen |
@@ -48,7 +61,15 @@ Each spooky element below has a job:
 
 ## How we used Kiro
 
-**Specs.** `.kiro/specs/01-core-engine` to `08-phone-touch` and `haunted-spec` come from the first phase (Oct 30 – Nov 17). The specs for squad features (radar and relays, squad enemy, salvage) were cut in the 1v1 pivot and are marked as cut. `10-polish` covers milestones M1–M5. The 10-polish spec for M1–M3 was written by hand, outside the Kiro IDE. From M4 on, Kiro (kiro-cli, model Auto, headless, file read and write tools only) wrote the M4 balance spec, steering, hooks and harness, and the M5 steering rewrite, spec reconcile, `build:site` script and README check. Human and agent edits went in separate commits.
+**Specs.** `.kiro/specs/01-core-engine` to `08-phone-touch` and `haunted-spec` come from the first phase (Oct 30 – Nov 17). The specs for squad features (radar and relays, squad enemy, salvage) were cut in the 1v1 pivot and are marked as cut. `10-polish` covers milestones M1–M5. The 10-polish spec for M1–M3 was written by hand, outside the Kiro IDE. From M4 on, Kiro (kiro-cli, model Auto, headless, file read and write tools only) did the following:
+
+- **M4:** the balance spec, steering, hooks and harness.
+- **M5:** the steering rewrite, spec reconcile, `build:site` script and README check.
+- **M4.5 (loadout effects):** the R8 spec, design and tasks, a steering note, the first implementation and a property-based test file.
+
+Human and agent edits went in separate commits. The Kiro IDE was not used. The full per-run log, with commands, prompts, accounts, credits, and what Kiro wrote versus what we edited, is in [KIRO-USAGE.md](KIRO-USAGE.md).
+
+**Property-based tests.** `tests/combat/loadoutEffects.pbt.test.js` was written by Kiro. It uses a hand-rolled seeded generator with no dependencies, and checks loadout folding laws, bounds over every possible loadout, arena HP and dash invariants, damage never healing, shot damage and speed, and flag-off equivalence. It found no bugs when it was added. `tests/mech/pbt.test.js` comes from the first phase.
 
 **Hooks** (`.kiro/hooks/`, all PostFileSave):
 
@@ -69,13 +90,14 @@ The Kiro IDE runs these hooks on save. The headless CLI runs did not trigger the
 - `design-tokens.md`: colours, type, spacing, motion and effect limits.
 - `ui-style.md`: the haunted CRT mood, where every effect must do a job.
 - `possessed-taunts.md`: the 12 enemy taunt lines and how they are shown.
+- `loadout-effects.md`: rules for arm and core effects (one per part, stated cost, flag, tune with the harness).
 
 **The séance view.** `npm run build:seance` builds `public/seance-tasks.json` from every `tasks.md`. The game shows it from the garage SÉANCE button, so it literally shows its own Kiro task list.
 
 **Accounts and credits.** Two Kiro accounts were used, and every run is logged with its account:
 
 - A second, free-tier Kiro account (Google login) ran the first two M4 runs on a Mac mini: 4.81 credits.
-- The original Kiro Pro account (GitHub login) ran every later run on the build box: 1.56 credits for M4 and 6.32 for M5 (steering rewrite and spec reconcile, the `build:site` script with its tests and the README check hook, and this README's first draft).
+- The original Kiro Pro account (GitHub login) ran every later run on the build box: 1.56 credits for M4, 6.32 for M5 (steering rewrite and spec reconcile, the `build:site` script with its tests and the README check hook, and this README's first draft) and 8.51 for M4.5 (loadout-effects spec, steering, implementation draft, property-based tests).
 
 All runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write` with one focused prompt each. No credits were bought.
 
@@ -83,15 +105,17 @@ All runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read
 
 HAUNT LV scales the enemy's health and shot damage. The ramp is tuned with a headless balance matrix, so the numbers below come from simulated duels. The "player" in this table is a scripted bot, not a human. Target bands and the workflow are in `.kiro/steering/balance.md`.
 
-Per HAUNT LV, baseline run (200 seeds × 16 builds per level), from `tests/combat/BALANCE.md`:
+Per HAUNT LV, baseline run with loadout effects on (200 seeds × 16 builds per level), from `tests/combat/BALANCE.md`:
 
-| LV | Scripted player win % | Median duel (s) |
-|---:|---:|---:|
-| 1 | 100.0 | 52.4 |
-| 2 | 93.3 | 64.8 |
-| 3 | 84.6 | 70.5 |
-| 4 | 77.0 | 74.5 |
-| 5 | 47.3 | 73.9 |
+| LV | Scripted player win % | Median duel (s) | Max build gap from mean (pp) |
+|---:|---:|---:|---:|
+| 1 | 100.0 | 56.0 | 0.0 |
+| 2 | 94.6 | 70.0 | 5.1 |
+| 3 | 83.1 | 75.6 | 7.4 |
+| 4 | 74.9 | 80.2 | 7.9 |
+| 5 | 50.2 | 78.4 | 9.2 |
+
+Dash-spamming still loses to reading the tell at every level.
 
 ## Credits
 

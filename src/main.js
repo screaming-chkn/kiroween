@@ -43,6 +43,7 @@ import {
 }                              from './combat/feel.js';
 import { sfxEventsForTick }    from './combat/sfxEvents.js';
 import { createArena, updateArena } from './combat/arena.js';
+import { combatModsFor }       from './combat/loadoutEffects.js';
 import { buildPlayerActions }  from './combat/actions.js';
 import { drawWorld,
   drawEntities,
@@ -231,6 +232,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     ...loadoutTotals,
     speedPenalty: speedPenalty(loadoutTotals.loadPct ?? 0),
   };
+  // M4.5 loadout effects: set only when the flag is on.
+  const combatMods = combatModsFor(loadout);
+  if (combatMods) arenaStats.combatMods = combatMods;
 
   let arenaState = createArena(arenaStats);
   cueMusic('duel');

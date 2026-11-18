@@ -91,3 +91,42 @@ touched.
 
 ## Open questions
 - Font licence and hosting (M3); preview access via the access lead (M5).
+
+## M4.5 loadout effects
+
+Arms and cores get one combat effect each, behind `FEATURES.loadoutEffects` in
+`src/combat/config.js` (R8).
+
+- New pure module `src/combat/loadoutEffects.js` (no DOM, no Canvas, no audio).
+  - `LOADOUT_EFFECTS`: partId -> `{ text, mods }`. `text` is the one-line
+    garage string with the real number. `mods` holds only the fields that part
+    changes.
+    - `armR-hatchet`: `{ shotDamage: 17 }`
+    - `armR-lancer`: `{ projectileSpeedMult: 1.35 }`
+    - `armL-buckler`: `{ maxHpBonus: 25 }`
+    - `armL-spotter`: `{ dashCooldownMult: 0.8 }`
+    - `core-pulse`: `{ fireCooldownMult: 0.87 }`
+    - `core-furnace`: `{ incomingDamageMult: 0.88 }`
+  - `combatModsFor(loadout, enabled)` folds the mods of the equipped parts into
+    one object with identity defaults: `{ shotDamage, projectileSpeedMult,
+    maxHpBonus, dashCooldownMult, fireCooldownMult, incomingDamageMult }`
+    (`shotDamage` defaults to today's 14, mults to 1, bonus to 0). When
+    `enabled` is false it returns null (callers then omit `combatMods`).
+- Wiring.
+  - `src/main.js` and the balance harness (`runFight` in balanceCore.mjs) call
+    `combatModsFor(loadout, FEATURES.loadoutEffects)` and pass the result to
+    `createArena` as `loadoutTotals.combatMods`. With the flag off they set no
+    `combatMods` field.
+  - `src/combat/arena.js` applies `combatMods` only when it is present: player
+    shot damage, projectile speed, max HP (start HP too), dash cooldown, fire
+    cooldown, and the multiplier on enemy shot damage. No field means none of
+    those code paths change, so flag off is identical to today.
+  - `src/ui/garage.js` renders `LOADOUT_EFFECTS[partId].text` as a "COMBAT:"
+    line on the part card only when the flag is on.
+- No new art or HUD. The HP bar already shows the higher max HP.
+- Tests in `tests/combat/loadoutEffects.test.js`: one unit test per effect
+  (through `combatModsFor` and a short arena run), null when disabled, and
+  seeded fights that are identical with the flag off and with no `combatMods`.
+- Balance: rerun with the flag on (`BALANCE_SEEDS=200 npm run test:balance`),
+  tune numbers only, record before/after in PLAN.md. If R8 is not clean by
+  Nov 23, cut the milestone and leave main unchanged.
