@@ -43,7 +43,7 @@ import { defaultLoadout }      from '../data/presets.js';
 import { equip, totals }       from '../mech/loadout.js';
 import { canDeploy }           from '../mech/weight.js';
 import { roleTag, roleTooltip } from '../mech/role.js';
-import { effectTextFor }       from '../combat/loadoutEffects.js';
+import { effectTokensFor }     from '../combat/loadoutEffects.js';
 import { silhouetteSpec }       from '../mech/silhouette.js';
 
 /**
@@ -361,10 +361,28 @@ export const GARAGE_CSS = `
   color: #B9C2BA;         /* lighter ash — ≥4.5:1 on panel */
 }
 .hh-option__effect {
+  /* M4.6: fixed phosphor, like .hh-delta--up. var(--color-phosphor) is a
+     possession slot that the sterile (unpossessed) garage palette repaints
+     steel grey (#C3CBD2), so the COMBAT line read grey outside the séance. */
   font-family: 'Share Tech Mono', monospace;
   font-size: 14px;        /* accessibility: text ≥14px */
-  line-height: 1.35;
-  color: var(--color-phosphor, #39FF88); /* flips on possession */
+  line-height: 1.5;
+  color: #39FF88;         /* phosphor (design-tokens.md) — ≥4.5:1 on panel */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  max-width: 44ch;        /* keeps tokens from running into one long desktop line */
+  margin-top: 2px;
+}
+.hh-option__effect-label {
+  opacity: 0.85;          /* label, not data; still ≥4.5:1 on every option background */
+  letter-spacing: 0.06em;
+}
+.hh-option__effect-token {
+  white-space: nowrap;    /* each effect stays on one line; tokens wrap as units */
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .hh-option__meta {
   font-family: 'Share Tech Mono', monospace;
@@ -1125,10 +1143,20 @@ export function mountGarage(root, { onDeploy, onSeance } = {}) {
 
       optEl.append(nameEl, metaEl, deltasEl, flavorEl);
       // M4.5: one COMBAT line per arm/core part, only when the flag is on.
-      const effectText = effectTextFor(part.id);
-      if (effectText) {
-        const effectEl = el('div', { class: 'hh-option__effect' });
-        effectEl.textContent = effectText;
+      // M4.6: shown as a label plus short wrapping tokens; full line kept for screen readers.
+      const effect = effectTokensFor(part.id);
+      if (effect) {
+        const effectEl = el('div', { class: 'hh-option__effect', role: 'note', 'aria-label': effect.text });
+        if (effect.label) {
+          const labelEl = el('span', { class: 'hh-option__effect-label', 'aria-hidden': 'true' });
+          labelEl.textContent = effect.label;
+          effectEl.append(labelEl);
+        }
+        for (const tok of effect.tokens) {
+          const tokEl = el('span', { class: 'hh-option__effect-token', 'aria-hidden': 'true' });
+          tokEl.textContent = tok;
+          effectEl.append(tokEl);
+        }
         optEl.append(effectEl);
       }
       listbox.append(optEl);

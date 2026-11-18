@@ -125,3 +125,10 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
   - Google/free account: 4.81 credits (M4 runs 1–2).
   - Pro account: 16.39 run-attributed credits (M4 runs 3–4: 1.56; M5 runs 5–7: 6.32; M4.5 runs 8–10: 8.51), and 0.62 of unattributed metering between checks (M4→M5).
   - Total: 21.20 run-attributed credits. No credits were bought, and no plan or settings were changed.
+
+## M4.6: garage COMBAT text polish (2026-11-18, build agent): PR #7
+- **Kiro used: no.** This was a small CSS/markup fix, so Kiro was skipped by design. It used 0 credits, and the account totals are unchanged at 21.20.
+- **Cause of the grey text:** the COMBAT line used `var(--color-phosphor)`, which is a possession-themed slot. The garage normally runs in the sterile (unpossessed) palette from `src/ui/possession.js`, which sets that slot to steel grey (#C3CBD2). It turns green only during the séance. This happened on desktop as well as phone; there was no phone media-query override.
+- **Fix:** the line now uses the fixed phosphor design token (#39FF88), the same way the green stat-delta chips (`.hh-delta--up`) already do.
+- **Layout:** the line now renders as a `COMBAT` label plus short tokens that don't break internally (`effectTokensFor` in `src/combat/loadoutEffects.js`). The tokens wrap within 44ch, and the line-height went from 1.35 to 1.5. Screen readers get the full line through `aria-label`.
+- **Tests:** 5 new tests in `tests/ui/garage.test.js`. The hooks did not fire; their commands were run by hand.

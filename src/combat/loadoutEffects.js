@@ -12,6 +12,7 @@
  *   IDENTITY_MODS                         no-op mods
  *   combatModsFor(loadout, enabled?)      → mods | null
  *   effectTextFor(partId, enabled?)       → string | null
+ *   effectTokensFor(partId, enabled?)     → {label, tokens, text} | null
  */
 
 import { FEATURES, PLAYER_PROJECTILE_DAMAGE } from './config.js';
@@ -96,4 +97,31 @@ export function combatModsFor(loadout, enabled = FEATURES.loadoutEffects) {
 export function effectTextFor(partId, enabled = FEATURES.loadoutEffects) {
   if (!enabled) return null;
   return LOADOUT_EFFECTS[partId]?.text ?? null;
+}
+
+/**
+ * Split a part's COMBAT line into short display tokens for the garage
+ * (M4.6): "COMBAT: shots deal 18 (base 14), +32% reload" →
+ * { label: 'COMBAT', tokens: ['shots deal 18 (base 14)', '+32% reload'] }.
+ * Splits on top-level ',' and ';' only. Null when there is no line.
+ * @param {string} partId
+ * @param {boolean} [enabled]
+ * @returns {{label: string, tokens: string[], text: string} | null}
+ */
+export function effectTokensFor(partId, enabled = FEATURES.loadoutEffects) {
+  const text = effectTextFor(partId, enabled);
+  if (!text) return null;
+  const m = /^([A-Z]+):\s*(.*)$/.exec(text);
+  const label = m ? m[1] : '';
+  const body = m ? m[2] : text;
+  const tokens = [];
+  let depth = 0, cur = '';
+  for (const ch of body) {
+    if (ch === '(') depth++;
+    if (ch === ')') depth = Math.max(0, depth - 1);
+    if ((ch === ',' || ch === ';') && depth === 0) { if (cur.trim()) tokens.push(cur.trim()); cur = ''; continue; }
+    cur += ch;
+  }
+  if (cur.trim()) tokens.push(cur.trim());
+  return { label, tokens, text };
 }

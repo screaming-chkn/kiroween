@@ -11,6 +11,8 @@
  */
 
 import assert from 'node:assert/strict';
+import { LOADOUT_EFFECTS, effectTokensFor } from '../../src/combat/loadoutEffects.js';
+import { STERILE_TOKENS, POSSESSED_TOKENS } from '../../src/ui/possession.js';
 import { formatDelta, statChipLabel, overdrawPenaltyPct, GARAGE_CSS, pickerEmptyHint } from '../../src/ui/garage.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
@@ -261,6 +263,56 @@ test('present silhouette label uses the void colour; séance outline is ghost', 
 test('GARAGE_CSS styles the wireframe depth edge', () => {
   assert.ok(GARAGE_CSS.includes('.hh-sil__edge'));
 });
+});
+
+// ── M4.6: COMBAT line colour + tokens ──────────────────────────────────────
+
+console.log('\nM4.6 — garage COMBAT line\n');
+
+test('COMBAT line is phosphor green in the sterile (unpossessed) garage palette', () => {
+  // Root cause of the grey line: var(--color-phosphor) is steel grey while unpossessed.
+  assert.notEqual(STERILE_TOKENS['--color-phosphor'].toUpperCase(), POSSESSED_TOKENS['--color-phosphor'].toUpperCase());
+  const rule = GARAGE_CSS.match(/\.hh-option__effect \{([^}]*)\}/);
+  assert.ok(rule, '.hh-option__effect rule exists');
+  const color = /(?:^|;|\n)\s*color:\s*([^;]+);/.exec(rule[1]);
+  assert.ok(color, 'effect rule sets a colour');
+  assert.ok(!/var\(--color-phosphor/.test(color[1]), 'must not use the possession-themed phosphor slot');
+  assert.equal(color[1].trim().slice(0, 7).toUpperCase(), POSSESSED_TOKENS['--color-phosphor'].toUpperCase());
+});
+
+test('no phone media query overrides the COMBAT line colour', () => {
+  const phone = GARAGE_CSS.slice(GARAGE_CSS.indexOf('@media (max-width: 700px)'));
+  assert.ok(!/hh-option__effect/.test(phone));
+});
+
+test('COMBAT line wraps as tokens with roomier line-height', () => {
+  const rule = GARAGE_CSS.match(/\.hh-option__effect \{([^}]*)\}/)[1];
+  assert.match(rule, /flex-wrap:\s*wrap/);
+  const lh = Number(/line-height:\s*([\d.]+)/.exec(rule)[1]);
+  assert.ok(lh >= 1.45, `line-height ${lh}`);
+  const tok = GARAGE_CSS.match(/\.hh-option__effect-token \{([^}]*)\}/);
+  assert.ok(tok && /white-space:\s*nowrap/.test(tok[1]));
+});
+
+test('effectTokensFor splits every COMBAT line into short tokens that rebuild the text', () => {
+  for (const [id, eff] of Object.entries(LOADOUT_EFFECTS)) {
+    const t = effectTokensFor(id, true);
+    assert.equal(t.label, 'COMBAT', id);
+    assert.equal(t.text, eff.text, id);
+    assert.ok(t.tokens.length >= 1 && t.tokens.length <= 3, id);
+    for (const tok of t.tokens) {
+      assert.ok(tok.length <= 28, `${id}: "${tok}" too long`);
+      assert.ok(!/^[,;\s]|[,;\s]$/.test(tok), `${id}: "${tok}" untrimmed`);
+    }
+    const norm = s => s.replace(/[,;]\s*/g, '|');
+    assert.equal(norm(eff.text.replace(/^COMBAT:\s*/, '')), t.tokens.join('|'), id);
+  }
+  assert.deepEqual(effectTokensFor('armR-hatchet', true).tokens, ['shots deal 18 (base 14)', '+32% reload']);
+});
+
+test('effectTokensFor is null when the flag is off or the part has no effect', () => {
+  assert.equal(effectTokensFor('armR-hatchet', false), null);
+  assert.equal(effectTokensFor('legs-runner', true), null);
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────
