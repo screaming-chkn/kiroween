@@ -132,3 +132,9 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Fix:** the line now uses the fixed phosphor design token (#39FF88), the same way the green stat-delta chips (`.hh-delta--up`) already do.
 - **Layout:** the line now renders as a `COMBAT` label plus short tokens that don't break internally (`effectTokensFor` in `src/combat/loadoutEffects.js`). The tokens wrap within 44ch, and the line-height went from 1.35 to 1.5. Screen readers get the full line through `aria-label`.
 - **Tests:** 5 new tests in `tests/ui/garage.test.js`. The hooks did not fire; their commands were run by hand.
+
+## M4.7: garage preview fit under 1280 px (2026-11-18, build agent): PR #8
+- **Kiro used: no.** This was a one-line CSS fix, so Kiro was skipped by design. It used 0 credits, and the account totals are unchanged at 21.20.
+- **Cause:** below 1280 px, the preview (`.hh-preview`, a flex column) sits in a short grid row (257 px at 1024×640). The default `flex-shrink: 1` squeezed `.hh-preview__art` down to its 120 px min-height. Meanwhile the SVG inside kept its 220 px height and, being centred, spilled about 50 px past the box at the top and bottom.
+- **Fix:** `.hh-preview__art { flex-shrink: 0; }`. The box now holds the SVG, and the preview column scrolls as it was already set up to (`overflow-y: auto`). No new breakpoint was added.
+- **Tests:** a new CSS-rule test in `tests/ui/garage.test.js`. The hooks did not fire; their commands were run by hand.

@@ -282,6 +282,11 @@ export const GARAGE_CSS = `
   border-left: 1px solid var(--color-panel, #121A15); /* flips on possession */
 }
 .hh-preview__art {
+  /* M4.7: never shrink. .hh-preview is a flex column; below 1280px it sits in
+     a short grid row, so default flex-shrink squeezed this box to its 120px
+     min-height while the SVG kept its 220px height and spilled out of it.
+     Holding the box at its content size lets .hh-preview scroll instead. */
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -315,6 +315,20 @@ test('effectTokensFor is null when the flag is off or the part has no effect', (
   assert.equal(effectTokensFor('legs-runner', true), null);
 });
 
+// ── M4.7: preview art fits its box ──────────────────────────────────────────
+
+console.log('\nM4.7 — garage preview fit\n');
+
+test('preview art box never flex-shrinks below its SVG (no spill under 1280px)', () => {
+  const art = GARAGE_CSS.match(/\.hh-preview__art \{([^}]*)\}/);
+  assert.ok(art, '.hh-preview__art rule exists');
+  assert.match(art[1], /flex-shrink:\s*0/);
+  const prev = GARAGE_CSS.match(/\.hh-preview \{([^}]*)\}/)[1];
+  assert.match(prev, /overflow-y:\s*auto/, 'preview column scrolls instead of clipping');
+  const svg = GARAGE_CSS.match(/\.hh-preview__svg \{([^}]*)\}/)[1];
+  assert.match(svg, /max-height:\s*220px/);
+});
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);
