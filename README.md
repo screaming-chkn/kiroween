@@ -99,6 +99,8 @@ The Kiro IDE runs these hooks on save. The headless CLI runs did not trigger the
 - A second, free-tier Kiro account (Google login) ran the first two M4 runs on a Mac mini: 4.81 credits.
 - The original Kiro Pro account (GitHub login) ran every later run on the build box: 1.56 credits for M4, 6.32 for M5 (steering rewrite and spec reconcile, the `build:site` script with its tests and the README check hook, and this README's first draft) and 8.51 for M4.5 (loadout-effects spec, steering, implementation draft, property-based tests).
 
+Another 0.62 Pro credits were metered between runs and aren't tied to any one run. **Total: 21.82 credits metered** (4.81 + 1.56 + 6.32 + 8.51 + 0.62).
+
 All runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write` with one focused prompt each. No credits were bought.
 
 ## Balance

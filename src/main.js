@@ -54,6 +54,7 @@ import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
 import { screenToWorld, worldToScreen } from './engine/camera.js';
+import { clientToCanvasEl } from './engine/pointer.js';
 import { ENEMY_SHOT_WINDUP_MS } from './combat/config.js';
 import {
   endCardScale, scaleRects, phoneHudScale, phoneHudViewportH, hudPanelRect, phoneHudRect,
@@ -265,7 +266,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   on(canvas, 'keyup',     e => input.onKeyUp(e));
   on(canvas, 'mousedown', e => input.onMouseDown(e));
   on(canvas, 'mouseup',   e => input.onMouseUp(e));
-  on(canvas, 'mousemove', e => input.onMouseMove(e));
+  on(canvas, 'mousemove', e => input.onMouseMove(e, canvas));   // canvas px at any DPR
   canvas.focus();
 
   // ── Pause (M2) + hit-stop + sparks ─────────────────────────────────────────
@@ -568,12 +569,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (e.button !== 0) return;
     if (!cardInteractive(lastMouseDownAt)) return;
 
-    // Translate client coords → canvas pixel coords.
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width  / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const px = (e.clientX - rect.left) * scaleX;
-    const py = (e.clientY - rect.top)  * scaleY;
+    // Translate client coords → canvas pixel coords (shared pointer mapping).
+    const { x: px, y: py } = clientToCanvasEl(e.clientX, e.clientY, canvas);
 
     const hit = buttonAtPoint(px, py);
     if (!hit) return;
@@ -623,12 +620,11 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     pauseBtn = mountPauseButton(document.body, () => setPaused(true));
   }
 
-  /** CSS px → canvas px → world (mirrors actions.js). */
+  /** Client CSS px → canvas px (shared pointer mapping) → world. */
   function touchScreenToWorld(p) {
-    const sx = canvas.clientWidth  > 0 ? canvas.width  / canvas.clientWidth  : 1;
-    const sy = canvas.clientHeight > 0 ? canvas.height / canvas.clientHeight : 1;
+    const c = clientToCanvasEl(p.x, p.y, canvas);
     const { wx, wy } = screenToWorld(
-      p.x * sx, p.y * sy, camera,
+      c.x, c.y, camera,
       renderer.canvas.width, renderer.canvas.height, shakeX, shakeY,
     );
     return { x: wx, y: wy };
@@ -647,7 +643,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       shakeY,
     );
     if (touch) {
-      actions = mergeTouchActions(actions, touch.sample(), touchScreenToWorld);
+      actions = mergeTouchActions(actions, touch.sample(), touchScreenToWorld, arenaState.player);
     }
 
     // Step the arena, then voice whatever happened this tick (M1 SFX).

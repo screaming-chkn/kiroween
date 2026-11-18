@@ -57,6 +57,11 @@ test('every audio and font asset is copied', () => {
   for (const f of want) assert.ok(existsSync(join(out, f)), `missing ${f}`);
 });
 
+test('BUILD.txt names the source commit', () => {
+  const txt = readFileSync(join(out, 'BUILD.txt'), 'utf8');
+  assert.match(txt, /^commit: ([0-9a-f]{40}|unknown)( \(\+ uncommitted changes\))?\nbuilt: \d{4}-\d\d-\d\dT/);
+});
+
 test('_headers and robots.txt are exact', () => {
   assert.equal(readFileSync(join(out, '_headers'), 'utf8'), '/*\n  X-Robots-Tag: noindex, nofollow\n');
   assert.equal(readFileSync(join(out, 'robots.txt'), 'utf8'), 'User-agent: *\nDisallow: /\n');

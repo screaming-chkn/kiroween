@@ -20,6 +20,7 @@ import {
   readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync,
   copyFileSync, rmSync, statSync,
 } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -107,6 +108,26 @@ export function assertSafeOutDir(outDir, repoRoot = REPO_ROOT, home = homedir())
   }
 }
 
+/**
+ * BUILD.txt body: which commit the site was built from, so a video or a bug
+ * report can be matched to source. Pure.
+ * @param {{ sha: string, dirty: boolean, builtAt: string }} info
+ */
+export function buildInfoText({ sha, dirty, builtAt }) {
+  return `commit: ${sha}${dirty ? ' (+ uncommitted changes)' : ''}\nbuilt: ${builtAt}\n`;
+}
+
+/** Read the repo HEAD sha and whether the tree has uncommitted changes. */
+export function gitBuildInfo(repoRoot = REPO_ROOT) {
+  try {
+    const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
+    const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: repoRoot, encoding: 'utf8' }).trim() !== '';
+    return { sha, dirty };
+  } catch {
+    return { sha: 'unknown', dirty: false };
+  }
+}
+
 /** Insert the noindex meta after the viewport meta. Pure. */
 export function addNoindexMeta(html) {
   if (html.includes(NOINDEX_META)) return html;
@@ -165,7 +186,8 @@ export function buildSite(outDir = DEFAULT_OUT) {
     bytes += statSync(dest).size;
   }
 
-  for (const [name, text] of [['_headers', HEADERS_TXT], ['robots.txt', ROBOTS_TXT]]) {
+  const build = buildInfoText({ ...gitBuildInfo(), builtAt: new Date().toISOString() });
+  for (const [name, text] of [['_headers', HEADERS_TXT], ['robots.txt', ROBOTS_TXT], ['BUILD.txt', build]]) {
     const dest = join(out, name);
     writeFileSync(dest, text, 'utf8');
     files += 1;

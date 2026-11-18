@@ -17,6 +17,7 @@ import {
   aimScreenFromDir,
   prefersTouchUi,
   mergeTouchActions,
+  TOUCH_AIM_REACH_WU,
   touchSafeShift,
 } from '../../src/engine/touch.js';
 import { TOUCH_CONTROLS_CSS, dashCooldownFraction } from '../../src/ui/touchControls.js';
@@ -119,9 +120,9 @@ function mk(vp = PHONE) {
   return createTouchController({ getViewport: () => vp });
 }
 
-test('sample shape is {move, fire, dash, aimScreen}', () => {
+test('sample shape is {move, fire, dash, aimScreen, aimDir}', () => {
   const s = mk().sample();
-  assert.deepEqual(Object.keys(s).sort(), ['aimScreen', 'dash', 'fire', 'move']);
+  assert.deepEqual(Object.keys(s).sort(), ['aimDir', 'aimScreen', 'dash', 'fire', 'move']);
   assert.equal(s.move, null);
   assert.equal(s.fire, false);
   assert.equal(s.dash, false);
@@ -313,6 +314,25 @@ test('touch move overrides base move; null falls back', () => {
   const out = mergeTouchActions(base, { ...idle, move: { dx: 0, dy: -1 } }, toWorld);
   assert.deepEqual(out.move, { dx: 0, dy: -1 });
   assert.deepEqual(mergeTouchActions(base, idle, toWorld).move, base.move);
+});
+
+test('M4.8: touch aim is anchored at the tank, not the screen centre', () => {
+  const dir = { x: 0.6, y: -0.8 };
+  const sample = { ...idle, fire: true, aimDir: dir };
+  const tank = { x: 300, y: 500 };
+  const out = mergeTouchActions(base, sample, toWorld, tank);
+  assert.deepEqual(out.aim, { x: 300 + 0.6 * TOUCH_AIM_REACH_WU, y: 500 - 0.8 * TOUCH_AIM_REACH_WU });
+  const ang = Math.atan2(out.aim.y - tank.y, out.aim.x - tank.x);
+  assert.ok(Math.abs(ang - Math.atan2(dir.y, dir.x)) < 1e-12, 'aim angle equals the drag direction');
+});
+
+test('M4.8: without a tank position the screen-point fallback is unchanged', () => {
+  const out = mergeTouchActions(base, { ...idle, fire: true, aimDir: { x: 1, y: 0 } }, toWorld);
+  assert.deepEqual(out.aim, toWorld(idle.aimScreen));
+});
+
+test('M4.8: idle touch with a tank position still leaves mouse aim alone', () => {
+  assert.deepEqual(mergeTouchActions(base, { ...idle, aimDir: { x: 1, y: 0 } }, toWorld, { x: 1, y: 2 }).aim, base.aim);
 });
 
 test('fire and dash are OR-ed', () => {

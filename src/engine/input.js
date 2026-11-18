@@ -35,8 +35,10 @@
  *     .onMouseMove(event)
  *     .isPressed(action)  → boolean
  *     .consume(action)    → 'tap' | 'hold' | null   (clears the completed press)
- *     .aimX, .aimY        — last known mouse canvas coordinates
+ *     .aimX, .aimY        — last known mouse position in canvas backing-store px
  */
+
+import { clientToCanvasEl } from './pointer.js';
 
 // ── Action names ─────────────────────────────────────────────────────────────
 
@@ -202,11 +204,20 @@ export function createInputState() {
     },
 
     /**
-     * Call from a 'mousemove' event listener.
-     * offsetX/Y give canvas-relative coordinates when the listener is on the canvas.
+     * Call from a 'mousemove' event listener, passing the game canvas.
+     * Stores aim in canvas backing-store px (CSS px × devicePixelRatio) via
+     * clientToCanvas(), the same mapping the touch path uses, so aim is
+     * correct at any DPR. Without a canvas (test doubles) offsetX/Y is used.
      * @param {MouseEvent} event
+     * @param {HTMLCanvasElement} [canvas]
      */
-    onMouseMove(event) {
+    onMouseMove(event, canvas) {
+      if (canvas && typeof canvas.getBoundingClientRect === 'function') {
+        const p = clientToCanvasEl(event.clientX, event.clientY, canvas);
+        aimX = p.x;
+        aimY = p.y;
+        return;
+      }
       aimX = event.offsetX;
       aimY = event.offsetY;
     },

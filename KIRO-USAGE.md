@@ -123,18 +123,28 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Hooks:** no IDE save happened, so the hooks did not fire. I ran their commands by hand: `npm test` (850 passed), `npm run build:seance`, `node scripts/check-readme.mjs`, and `node tests/combat/balance.test.js`.
 - **All Kiro use to date:**
   - Google/free account: 4.81 credits (M4 runs 1–2).
-  - Pro account: 16.39 run-attributed credits (M4 runs 3–4: 1.56; M5 runs 5–7: 6.32; M4.5 runs 8–10: 8.51), and 0.62 of unattributed metering between checks (M4→M5).
-  - Total: 21.20 run-attributed credits. No credits were bought, and no plan or settings were changed.
+  - Pro account: **17.01 metered** (224.46 → 241.47). That is 16.39 for runs (M4 runs 3–4: 1.56; M5 runs 5–7: 6.32; M4.5 runs 8–10: 8.51, which already includes the lag inside the M4.5 window) plus 0.62 of metering not tied to any run (0.39 between M4 and M5, and 0.23 after M5).
+  - **Total: 21.82 credits metered** = 4.81 + 1.56 + 6.32 + 8.51 + 0.62. The 21.20 figure used earlier left out the 0.62. No credits were bought, and no plan or settings were changed.
 
 ## M4.6: garage COMBAT text polish (2026-11-18, build agent): PR #7
-- **Kiro used: no.** This was a small CSS/markup fix, so Kiro was skipped by design. It used 0 credits, and the account totals are unchanged at 21.20.
+- **Kiro used: no.** This was a small CSS/markup fix, so Kiro was skipped by design. It used 0 credits, and the account totals are unchanged at 21.82 metered (corrected; see the M4.8 entry).
 - **Cause of the grey text:** the COMBAT line used `var(--color-phosphor)`, which is a possession-themed slot. The garage normally runs in the sterile (unpossessed) palette from `src/ui/possession.js`, which sets that slot to steel grey (#C3CBD2). It turns green only during the séance. This happened on desktop as well as phone; there was no phone media-query override.
 - **Fix:** the line now uses the fixed phosphor design token (#39FF88), the same way the green stat-delta chips (`.hh-delta--up`) already do.
 - **Layout:** the line now renders as a `COMBAT` label plus short tokens that don't break internally (`effectTokensFor` in `src/combat/loadoutEffects.js`). The tokens wrap within 44ch, and the line-height went from 1.35 to 1.5. Screen readers get the full line through `aria-label`.
 - **Tests:** 5 new tests in `tests/ui/garage.test.js`. The hooks did not fire; their commands were run by hand.
 
 ## M4.7: garage preview fit under 1280 px (2026-11-18, build agent): PR #8
-- **Kiro used: no.** This was a one-line CSS fix, so Kiro was skipped by design. It used 0 credits, and the account totals are unchanged at 21.20.
+- **Kiro used: no.** This was a one-line CSS fix, so Kiro was skipped by design. It used 0 credits, and the account totals are unchanged at 21.82 metered (corrected; see the M4.8 entry).
 - **Cause:** below 1280 px, the preview (`.hh-preview`, a flex column) sits in a short grid row (257 px at 1024×640). The default `flex-shrink: 1` squeezed `.hh-preview__art` down to its 120 px min-height. Meanwhile the SVG inside kept its 220 px height and, being centred, spilled about 50 px past the box at the top and bottom.
 - **Fix:** `.hh-preview__art { flex-shrink: 0; }`. The box now holds the SVG, and the preview column scrolls as it was already set up to (`overflow-y: auto`). No new breakpoint was added.
 - **Tests:** a new CSS-rule test in `tests/ui/garage.test.js`. The hooks did not fire; their commands were run by hand.
+
+## M4.8: mouse aim at any DPR, phone aim anchor, BUILD.txt (2026-11-18, build agent): PR #9
+- **Kiro used: no.** This was a small input fix, so Kiro was skipped by design. It used 0 credits.
+- **Credits correction:** the all-time total is **21.82 credits metered** = Google 4.81 + Pro 17.01. The Pro part is M4 1.56 + M5 6.32 + M4.5 8.51 + 0.62 not tied to any run. Earlier entries said 21.20, which left out the 0.62.
+- **Mouse aim cause:** `input.js` stored `offsetX/Y` (CSS px), but `buildPlayerActions` → `screenToWorld` works in canvas backing-store px (CSS px × devicePixelRatio). At DPR 1.5 or 2, aim pointed toward the top-left. The touch path already scaled correctly.
+- **Mouse aim fix:** a single `clientToCanvas()` in `src/engine/pointer.js` (rect + canvas.width/rect.width) is now used by mouse aim, touch aim and end-card clicks. Tests cover DPR 1, 1.5 and 2.
+- **Phone aim cause:** the FIRE drag is a virtual stick (direction only), which is intended. But the direction was applied around the screen centre, and the phone camera leads toward the enemy, so the tank sits off-centre. That bent the aim by up to about 50°.
+- **Phone aim fix:** the aim is now anchored at the tank.
+- **BUILD.txt:** `build:site` now writes `BUILD.txt` with the source commit.
+- **Hooks:** none fired; their commands were run by hand.

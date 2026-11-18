@@ -16,8 +16,10 @@
  *     down → aim direction = that drag direction.
  *   • Else if the move stick is active → aim direction = move direction.
  *   • Else keep the last aim direction (initially right, {1,0}).
- *   aimScreen = viewport centre + dir * 0.35 * min(vpW, vpH), always non-null,
- *   in CSS px. mergeTouchActions() converts it to world space.
+ *   mergeTouchActions() turns aimDir into a world point ahead of the player's
+ *   tank (so the camera's lead offset can't bend it). aimScreen = viewport
+ *   centre + dir * 0.35 * min(vpW, vpH) stays as the fallback when no tank
+ *   position is passed.
  *
  * No hex or game-state effect may ever disable input (steering rule): this
  * module never checks or applies any such flag.
@@ -325,6 +327,7 @@ export function createTouchController(opts = {}) {
    *   fire: boolean,
    *   dash: boolean,
    *   aimScreen: { x: number, y: number },
+   *   aimDir: { x: number, y: number },   // unit aim direction (virtual stick)
    * }}
    */
   function sample() {
@@ -356,7 +359,7 @@ export function createTouchController(opts = {}) {
     }
     const aimScreen = aimScreenFromDir(lastAimDir, width, height);
 
-    return { move, fire, dash, aimScreen };
+    return { move, fire, dash, aimScreen, aimDir: { x: lastAimDir.x, y: lastAimDir.y } };
   }
 
   /** @returns {{ originX, originY, curX, curY, radius } | null} stick visual. */
@@ -419,14 +422,29 @@ export function prefersTouchUi({ maxTouchPoints = 0, matchMediaCoarse = false, w
  * @param {{ move: any, aim: any, fire: boolean, dash: boolean }} baseActions
  * @param {{ move: any, fire: boolean, dash: boolean, aimScreen: {x:number,y:number} }} touchSample
  * @param {(p: {x:number,y:number}) => {x:number,y:number}} screenToWorldFn
+ * @param {{x:number,y:number}|null} [origin]  Player tank world position; aim is anchored here.
  */
-export function mergeTouchActions(baseActions, touchSample, screenToWorldFn) {
+export function mergeTouchActions(baseActions, touchSample, screenToWorldFn, origin = null) {
   const touchAiming = !!(touchSample.move || touchSample.fire);
+  let aim = baseActions.aim;
+  if (touchAiming) {
+    // M4.8: the FIRE drag is a virtual stick (direction only, by design), but
+    // the direction must start at the player's tank. The phone camera leads
+    // toward the enemy, so the tank is off screen-centre and a point around
+    // the centre bent the aim. Anchor at the tank when its position is known.
+    aim = origin && touchSample.aimDir
+      ? { x: origin.x + touchSample.aimDir.x * TOUCH_AIM_REACH_WU,
+          y: origin.y + touchSample.aimDir.y * TOUCH_AIM_REACH_WU }
+      : screenToWorldFn(touchSample.aimScreen);
+  }
   return {
     ...baseActions,
     move: touchSample.move ? touchSample.move : baseActions.move,
     fire: !!(baseActions.fire || touchSample.fire),
     dash: !!(baseActions.dash || touchSample.dash),
-    aim: touchAiming ? screenToWorldFn(touchSample.aimScreen) : baseActions.aim,
+    aim,
   };
 }
+
+/** How far ahead of the tank (world units) a touch aim point is placed. Only the angle matters. */
+export const TOUCH_AIM_REACH_WU = 200;
