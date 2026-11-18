@@ -797,6 +797,114 @@
     "done": true
   },
   {
+    "spec": "10-polish",
+    "id": 1,
+    "title": "M1 synthesized Web Audio SFX: 8 voices on the SFX bus, throttle + 6-voice cap (R1)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 2,
+    "title": "M1 sfxEventsForTick state-diff mapping + sfx tests (R1)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 3,
+    "title": "M1 first-gesture AudioContext unlock (iOS) + UI click on DOM buttons (R1)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 4,
+    "title": "M2 SFX only once the AudioContext is running (fixes the dropped early shots) (R1)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 5,
+    "title": "M2 hit-stop 60 ms on enemy hits, 40 ms on player hurt, kill moment kept at 200 ms (R2)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 6,
+    "title": "M2 impact-scaled, capped camera shake; near zero under reduced motion (R2)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 7,
+    "title": "M2 impact sparks from a fixed 48-slot pool; kill burst (R2)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 8,
+    "title": "M2 firing screen nudge against the aim (R2)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 9,
+    "title": "M2 dash tap shorter than one tick no longer lost (R2)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 10,
+    "title": "M2 title screen: CRT logo, pitch, pulsing DEPLOY prompt, fog + scanlines (R3)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 11,
+    "title": "M2 pause: Esc / P, phone pause button, tab hidden; sim truly frozen (R4)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 12,
+    "title": "M2 pause overlay: resume, SFX + music volume, mute, quit to garage; settings persisted (R4)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 13,
+    "title": "M2 tests: feel.test.js (pause, hit-stop, shake, sparks, dash) + settings.test.js (R2, R4)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 14,
+    "title": "M3 self-host the CRT fonts with fallback (R5)",
+    "done": false
+  },
+  {
+    "spec": "10-polish",
+    "id": 15,
+    "title": "M3 compress the music bed under 2 MB (R5)",
+    "done": false
+  },
+  {
+    "spec": "10-polish",
+    "id": 16,
+    "title": "M4 balance sim per HAUNT LV + tuning pass (R6)",
+    "done": false
+  },
+  {
+    "spec": "10-polish",
+    "id": 17,
+    "title": "M5 private Cloudflare Pages preview + real-phone test (R7)",
+    "done": false
+  },
+  {
+    "spec": "10-polish",
+    "id": 18,
+    "title": "M5 README + steering rewritten for the 1v1 duel (R7)",
+    "done": false
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",

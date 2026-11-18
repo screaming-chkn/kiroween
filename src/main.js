@@ -31,7 +31,14 @@ import { mountGarage }         from './ui/garage.js';
 import { syncTankFx }          from './ui/tankFx.js';
 import { mountSeance }         from './ui/seance.js';
 import { injectPossessionCSS } from './ui/possession.js';
-import { playMusicBed, installAudioGestures, playSfx, SFX } from './engine/audio.js';
+import { playMusicBed, installAudioGestures, playSfx, SFX, setBusVolume, BUSES } from './engine/audio.js';
+import { loadSettings, saveSettings, busLevels } from './engine/settings.js';
+import { mountTitle }          from './ui/title.js';
+import { mountPauseMenu, mountPauseButton } from './ui/pauseMenu.js';
+import {
+  gateTick, addHitStop, HITSTOP_HIT_MS, HITSTOP_HURT_MS, traumaForImpact,
+  impactsForTick, createSparks, spawnSparks, stepSparks, drawSparks,
+}                              from './combat/feel.js';
 import { sfxEventsForTick }    from './combat/sfxEvents.js';
 import { createArena, updateArena } from './combat/arena.js';
 import { buildPlayerActions }  from './combat/actions.js';
@@ -88,6 +95,15 @@ function loadSpecStamp() {
     .catch(() => { specStampText = null; });
 }
 
+// ── Audio settings (M2): SFX / music volume + mute, persisted ──────────────
+let settings = loadSettings();
+function applySettings(next) {
+  settings = saveSettings(next);
+  const lv = busLevels(settings);
+  setBusVolume(BUSES.SFX, lv.sfx);
+  setBusVolume(BUSES.MUSIC, lv.music);
+}
+
 // ── Canvas / loading ─────────────────────────────────────────────────────────
 
 const canvas  = /** @type {HTMLCanvasElement} */ (document.getElementById('game-canvas'));
@@ -125,6 +141,7 @@ function boot() {
 
   // First gesture unlocks Web Audio (iOS); DOM buttons get a UI click.
   installAudioGestures(document);
+  applySettings(settings);
 
   // Detect reduced-motion preference.
   const prefersReduced =
@@ -132,7 +149,33 @@ function boot() {
       ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
       : false;
 
-  showGarage(renderer, prefersReduced);
+  showTitle(renderer, prefersReduced);
+}
+
+// ── Title phase (M2) ─────────────────────────────────────────────────────────
+
+function isTouchUi() {
+  const coarse = typeof window.matchMedia === 'function'
+    ? window.matchMedia('(pointer: coarse)').matches
+    : false;
+  return prefersTouchUi({
+    maxTouchPoints: navigator.maxTouchPoints,
+    matchMediaCoarse: coarse,
+    width: window.innerWidth,
+  });
+}
+
+function showTitle(renderer, reducedMotion) {
+  mountTitle(appRoot, {
+    touchUi: isTouchUi(),
+    hauntLv: readHauntLevel(),
+    onStart() {
+      // Same gesture already unlocked Web Audio (installAudioGestures).
+      playMusicBed();
+      playSfx(SFX.UI_CLICK);
+      showGarage(renderer, reducedMotion);
+    },
+  });
 }
 
 // ── Garage phase ─────────────────────────────────────────────────────────────
@@ -204,13 +247,23 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
   // ── Input ──────────────────────────────────────────────────────────────────
   const input = createInputState();
+  // Every listener this match adds goes through `on` so cleanup() drops them
+  // all at once (they used to pile up across REDEPLOYs).
+  const listeners = new AbortController();
+  const on = (target, ev, fn) => target.addEventListener(ev, fn, { signal: listeners.signal });
 
-  canvas.addEventListener('keydown',   e => input.onKeyDown(e));
-  canvas.addEventListener('keyup',     e => input.onKeyUp(e));
-  canvas.addEventListener('mousedown', e => input.onMouseDown(e));
-  canvas.addEventListener('mouseup',   e => input.onMouseUp(e));
-  canvas.addEventListener('mousemove', e => input.onMouseMove(e));
+  on(canvas, 'keydown',   e => input.onKeyDown(e));
+  on(canvas, 'keyup',     e => input.onKeyUp(e));
+  on(canvas, 'mousedown', e => input.onMouseDown(e));
+  on(canvas, 'mouseup',   e => input.onMouseUp(e));
+  on(canvas, 'mousemove', e => input.onMouseMove(e));
   canvas.focus();
+
+  // ── Pause (M2) + hit-stop + sparks ─────────────────────────────────────────
+  let paused = false;
+  let pauseMenu = null;
+  let hitStopMs = 0;
+  const sparks = createSparks();
 
   // ── Camera ─────────────────────────────────────────────────────────────────
   // Zoom to fit the whole arena into the viewport (1280×800 reference).
@@ -258,8 +311,6 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   let kickX = 0;
   let kickY = 0;
 
-  // Track previous player HP to detect hits (for camera trauma).
-  let prevPlayerHp = arenaState.player.hp;
 
   // ── Renderer registration ──────────────────────────────────────────────────
   // Clear any callbacks from a previous arena session.
@@ -275,6 +326,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawDashAfterimages(ctx, afterimages));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => { syncTankFx(st); });
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawSparks(ctx, sparks));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => {
     if (killMomentPhase() === 'shatter') {
       drawKillShatter(ctx, getKillSnapshot(), killMomentT01(performance.now()));
@@ -458,7 +510,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   function onCanvasMouseDown() {
     lastMouseDownAt = performance.now();
   }
-  canvas.addEventListener('mousedown', onCanvasMouseDown);
+  on(canvas, 'mousedown', onCanvasMouseDown);
 
   /** True when the card is up and the grace guard allows interaction. */
   function cardInteractive(mouseDownTs) {
@@ -517,15 +569,45 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     pendingAction = hit.id;
   }
 
-  canvas.addEventListener('keydown', onCardKeyDown);
-  canvas.addEventListener('click',   onCardClick);
+  on(canvas, 'keydown', onCardKeyDown);
+  on(canvas, 'click',   onCardClick);
+
+  // ── Pause: Esc / P, the phone button, or the tab going hidden ─────────────
+  function setPaused(want) {
+    if (want === paused) return;
+    if (want && arenaState.phase !== 'playing') return;   // not mid kill moment / card
+    paused = want;
+    input.reset();
+    if (paused) {
+      pauseMenu = mountPauseMenu(appRoot, {
+        settings,
+        onChange: applySettings,
+        onPreview: () => playSfx(SFX.PLAYER_SHOT),
+        onResume: () => setPaused(false),
+        onQuit: () => { setPaused(false); pendingAction = 'garage'; },
+      });
+    } else {
+      if (pauseMenu) { pauseMenu.destroy(); pauseMenu = null; }
+      canvas.focus();
+    }
+  }
+  on(window, 'keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+      if (arenaState.phase !== 'playing') return;
+      e.preventDefault();
+      setPaused(!paused);
+    }
+  });
+  on(document, 'visibilitychange', () => { if (document.hidden) setPaused(true); });
 
   // ── Touch controls (phones/tablets only) ───────────────────────────────────
   let touch = null;
+  let pauseBtn = null;
   if (touchUi) {
     touch = mountTouchControls(document.body, {
       getViewport: () => ({ width: window.innerWidth, height: window.innerHeight }),
     });
+    pauseBtn = mountPauseButton(document.body, () => setPaused(true));
   }
 
   /** CSS px → canvas px → world (mirrors actions.js). */
@@ -537,6 +619,115 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       renderer.canvas.width, renderer.canvas.height, shakeX, shakeY,
     );
     return { x: wx, y: wy };
+  }
+
+  /** One fixed sim step: input → arena → SFX + M2 feel. */
+  function stepSim(dt) {
+    const vpW = renderer.canvas.width;
+    const vpH = renderer.canvas.height;
+    let actions = buildPlayerActions(
+      input,
+      camera,
+      vpW,
+      vpH,
+      shakeX,
+      shakeY,
+    );
+    if (touch) {
+      actions = mergeTouchActions(actions, touch.sample(), touchScreenToWorld);
+    }
+
+    // Step the arena, then voice whatever happened this tick (M1 SFX).
+    const prevState = arenaState;
+    arenaState = updateArena(arenaState, actions, dt);
+    const sfxEvents = sfxEventsForTick(prevState, arenaState);
+    for (const name of sfxEvents) playSfx(name);
+    pushAfterimage(afterimages, arenaState.player);
+
+    // M2 feel: sparks at the impact point, hit-stop, shake scaled by hit.
+    const ended = arenaState.phase !== 'playing';
+    for (const hit of impactsForTick(prevState, arenaState)) {
+      const onEnemy = hit.target === 'enemy';
+      spawnSparks(sparks, {
+        x: hit.x, y: hit.y, angle: hit.angle,
+        count: reducedMotion ? 4 : (onEnemy ? 9 : 7), hot: !onEnemy,
+      });
+      if (!ended) {
+        hitStopMs = addHitStop(hitStopMs, onEnemy ? HITSTOP_HIT_MS : HITSTOP_HURT_MS);
+        camera = addTrauma(camera, traumaForImpact(onEnemy ? 'hit' : 'hurt', hit.damage, reducedMotion));
+      }
+      // R10 player screen kick on hit — 2–4 px, OFF under reduced motion.
+      if (!onEnemy) {
+        const kick = playerKickAmount(reducedMotion);
+        if (kick > 0) {
+          const dir = Math.random() * Math.PI * 2;
+          kickX = Math.cos(dir) * kick;
+          kickY = Math.sin(dir) * kick;
+        }
+      }
+    }
+    if (ended) {
+      const dead = arenaState.phase === 'win' ? arenaState.enemy : arenaState.player;
+      spawnSparks(sparks, {
+        x: dead.x, y: dead.y, angle: 0, spread: Math.PI, speed: 420,
+        count: reducedMotion ? 8 : 28, hot: arenaState.phase === 'win',
+      });
+      camera = addTrauma(camera, traumaForImpact('kill', 0, reducedMotion));
+    }
+    // Firing recoil: a 1.5 px screen nudge against the aim (off when reduced).
+    if (!reducedMotion && sfxEvents.includes('playerShot')) {
+      const a = arenaState.player.angle ?? 0;
+      kickX -= Math.cos(a) * 1.5;
+      kickY -= Math.sin(a) * 1.5;
+    }
+
+    // Taunt on the enemy's windup edge (0 → >0).
+    const windupNow = arenaState.enemy.windupRemainingMs ?? 0;
+    if (prevWindup <= 0 && windupNow > 0) tauntMachine.onWindup(performance.now());
+    prevWindup = windupNow;
+
+    // Playing → win/lose: start the kill moment (the early return above
+    // freezes combat for the hit-stop). The restart grace starts later, with
+    // the end card (see the non-playing branch above).
+    if (arenaState.phase !== 'playing') {
+      const killNow = performance.now();
+      beginKillMoment({
+        phase: arenaState.phase, enemy: arenaState.enemy, nowMs: killNow, reducedMotion,
+      });
+      if (arenaState.phase === 'win') {
+        advanceHaunt = true;
+        tauntMachine.onDeath(killNow);
+      }
+      if (touch) touch.setActive(false);
+    }
+
+  }
+
+  /** Per-tick presentation: sparks, kick decay, camera follow + shake. */
+  function stepPresentation(dt) {
+    const vpW = renderer.canvas.width;
+    const vpH = renderer.canvas.height;
+    stepSparks(sparks, dt);
+    // Decay the kick toward zero so it reads as a single punch (~120 ms).
+    const kickDecay = Math.max(0, 1 - dt * 8);
+    kickX *= kickDecay;
+    kickY *= kickDecay;
+
+    // Camera: pin to arena centre when arena fits the viewport; follow +
+    // clamp when the arena is larger than the viewport (R11).
+    const cameraResult = updateCamera(
+      camera,
+      phonePortrait
+        ? phoneFollowPoint(arenaState.player, arenaState.enemy, camera.zoom, vpW, vpH)
+        : arenaState.player,
+      dt,
+      arenaState.arena,
+      vpW,
+      vpH,
+    );
+    camera = cameraResult.camera;
+    shakeX = cameraResult.shakeX;
+    shakeY = cameraResult.shakeY;
   }
 
   // ── Loop ───────────────────────────────────────────────────────────────────
@@ -561,93 +752,25 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         return;
       }
 
-      // Once the match is decided, stop updating but keep rendering.
+      // Pause freezes everything (sim, hit-stop timer, camera, sparks).
+      const gate = gateTick({ paused, hitStopMs }, dt * 1000);
+      hitStopMs = gate.hitStopMs;
+      if (gate.paused) return;
+
+      // Once the match is decided, stop the sim but keep sparks + shake alive.
       if (arenaState.phase !== 'playing') {
         if (touch) touch.setActive(false);
         // The restart grace starts together with the end card, not the kill moment.
         if (phaseEndedAtMs === 0 && shouldDrawEndCard()) {
           phaseEndedAtMs = performance.now();
         }
+        stepPresentation(dt);
         return;
       }
 
-      // Build player actions from current input + camera.
-      const vpW = renderer.canvas.width;
-      const vpH = renderer.canvas.height;
-
-      let actions = buildPlayerActions(
-        input,
-        camera,
-        vpW,
-        vpH,
-        shakeX,
-        shakeY,
-      );
-      if (touch) {
-        actions = mergeTouchActions(actions, touch.sample(), touchScreenToWorld);
-      }
-
-      // Step the arena, then voice whatever happened this tick (M1 SFX).
-      const prevState = arenaState;
-      arenaState = updateArena(arenaState, actions, dt);
-      for (const name of sfxEventsForTick(prevState, arenaState)) playSfx(name);
-      pushAfterimage(afterimages, arenaState.player);
-
-      // Taunt on the enemy's windup edge (0 → >0).
-      const windupNow = arenaState.enemy.windupRemainingMs ?? 0;
-      if (prevWindup <= 0 && windupNow > 0) tauntMachine.onWindup(performance.now());
-      prevWindup = windupNow;
-
-      // Playing → win/lose: start the kill moment (the early return above
-      // freezes combat for the hit-stop). The restart grace starts later, with
-      // the end card (see the non-playing branch above).
-      if (arenaState.phase !== 'playing') {
-        const killNow = performance.now();
-        beginKillMoment({
-          phase: arenaState.phase, enemy: arenaState.enemy, nowMs: killNow, reducedMotion,
-        });
-        if (arenaState.phase === 'win') {
-          advanceHaunt = true;
-          tauntMachine.onDeath(killNow);
-        }
-        if (touch) touch.setActive(false);
-      }
-
-      // R10 player screen kick on hit — 2–4 px, OFF under reduced motion.
-      // We keep a small camera trauma too so the shake system stays coherent,
-      // but the kick itself is the primary, reduced-motion-gated cue.
-      if (arenaState.player.hp < prevPlayerHp) {
-        const kick = playerKickAmount(reducedMotion);
-        if (kick > 0) {
-          // Random direction so repeated hits don't push the same way.
-          const dir = Math.random() * Math.PI * 2;
-          kickX = Math.cos(dir) * kick;
-          kickY = Math.sin(dir) * kick;
-          camera = addTrauma(camera, 0.35);
-        }
-      }
-      prevPlayerHp = arenaState.player.hp;
-
-      // Decay the kick toward zero so it reads as a single punch (~120 ms).
-      const kickDecay = Math.max(0, 1 - dt * 8);
-      kickX *= kickDecay;
-      kickY *= kickDecay;
-
-      // Camera: pin to arena centre when arena fits the viewport; follow +
-      // clamp when the arena is larger than the viewport (R11).
-      const cameraResult = updateCamera(
-        camera,
-        phonePortrait
-          ? phoneFollowPoint(arenaState.player, arenaState.enemy, camera.zoom, vpW, vpH)
-          : arenaState.player,
-        dt,
-        arenaState.arena,
-        vpW,
-        vpH,
-      );
-      camera = cameraResult.camera;
-      shakeX = cameraResult.shakeX;
-      shakeY = cameraResult.shakeY;
+      // Hit-stop freezes the sim; camera shake + sparks keep moving.
+      if (gate.step) stepSim(dt);
+      stepPresentation(dt);
     },
 
     render(_alpha) {
@@ -666,19 +789,13 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
   // ── Cleanup helper ─────────────────────────────────────────────────────────
   function cleanup() {
-    canvas.removeEventListener('keydown',   onCardKeyDown);
-    canvas.removeEventListener('click',     onCardClick);
-    canvas.removeEventListener('mousedown', onCanvasMouseDown);
+    listeners.abort();
+    if (pauseMenu) { pauseMenu.destroy(); pauseMenu = null; }
+    if (pauseBtn) { pauseBtn.destroy(); pauseBtn = null; }
     if (touch) { touch.destroy(); touch = null; }
     resetKillMoment();
     tauntMachine.reset();
     if (insetProbe) { insetProbe.remove(); insetProbe = null; }
-    // Input listeners are re-added on the next startArena; remove the old ones
-    // by a simple pattern: we defined them as inline arrows, so we need to
-    // stash references.  For simplicity we rely on the fact that showGarage
-    // doesn't use keyboard events from the canvas, and startArena always
-    // re-attaches fresh listeners — acceptable for this prototype.
-    // Future: use AbortController to group all listeners.
     renderer.callbacks[LAYERS.WORLD].length   = 0;
     renderer.callbacks[LAYERS.ENTITY].length  = 0;
     renderer.callbacks[LAYERS.HUD].length     = 0;

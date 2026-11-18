@@ -71,9 +71,11 @@ export function buildPlayerActions(inputState, camera, vpW, vpH, shakeX = 0, sha
   const fire = inputState.isPressed(ACTIONS.FIRE_PRIMARY);
 
   // ── Dash (Shift) ────────────────────────────────────────────────────────────
-  // True while Shift is held; arena.js applies a 100 ms input buffer so a
-  // slightly-early press still fires the dash the instant the cooldown clears.
-  const dash = inputState.isPressed(ACTIONS.DASH);
+  // True while Shift is held, or for one tick after a quick tap that went down
+  // and up between two ticks (otherwise it was lost). arena.js applies a
+  // 100 ms buffer so a slightly-early press fires when the cooldown clears.
+  const dash = inputState.isPressed(ACTIONS.DASH) ||
+    (typeof inputState.consume === 'function' && inputState.consume(ACTIONS.DASH) === 'tap');
 
   return { move, aim, fire, dash };
 }

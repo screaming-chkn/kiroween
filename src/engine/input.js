@@ -221,6 +221,12 @@ export function createInputState() {
       return heldAt.has(action);
     },
 
+    /** Drop held keys + pending presses (e.g. after pause steals focus). */
+    reset() {
+      heldAt.clear();
+      pending.clear();
+    },
+
     /**
      * Consume and return a completed press result for the given action.
      * Returns null if no completed press is waiting.

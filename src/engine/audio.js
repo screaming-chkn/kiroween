@@ -9,7 +9,7 @@
  * Design goals:
  *   - Minimal surface: setBusVolume / getBusVolume / playMusicBed /
  *     stopMusicBed / unlockAudio / installAudioGestures / playSfx. SFX are synthesised with Web
- *     Audio (no sample files); the SFX bus volume persists to localStorage.
+ *     Audio (no sample files). Persistence lives in engine/settings.js.
  *   - Node-safe: the volume math (clampVolume) and bus identity (BUSES,
  *     isBus) are pure and importable under Node for tests. No browser globals
  *     are touched at import time.
@@ -105,7 +105,6 @@ export function setBusVolume(bus, v) {
   }
   if (bus === BUSES.SFX) {
     if (sfxGain) sfxGain.gain.value = vol;
-    try { storage()?.setItem(SFX_VOLUME_KEY, String(vol)); } catch { /* ignore */ }
   }
   return vol;
 }
@@ -202,9 +201,6 @@ export const SFX_THROTTLE_MS = Object.freeze({
   uiClick:    60,
 });
 
-/** Persisted SFX bus volume key (no settings UI yet; M2 adds one). */
-export const SFX_VOLUME_KEY = 'hh.sfxVolume';
-
 /**
  * Pure throttle gate. Returns true (and stamps `last[name]`) when `name` may
  * play at `nowMs`; false when it played less than its throttle window ago.
@@ -262,18 +258,6 @@ const voiceEnds = [];
 let actx = null;      // AudioContext, created on the first user gesture
 let sfxGain = null;   // SFX bus gain node
 let noiseBuf = null;  // 1 s of white noise, shared by noisy voices
-
-function storage() {
-  try { return globalThis.localStorage ?? null; } catch { return null; }
-}
-
-/** Restore the persisted SFX volume (browser only; silent on failure). */
-function loadSfxVolume() {
-  try {
-    const raw = storage()?.getItem(SFX_VOLUME_KEY);
-    if (raw !== null && raw !== undefined) busVolume[BUSES.SFX] = clampVolume(raw);
-  } catch { /* storage blocked — keep default */ }
-}
 
 function audioCtxCtor() {
   if (typeof window === 'undefined') return null;
@@ -470,7 +454,10 @@ function debugLog(name, played) {
  */
 export function playSfx(name) {
   let played = false;
-  if (actx && sfxGain && RECIPES[name] && busVolume[BUSES.SFX] > 0 &&
+  // Only once the context is actually running: while it is still suspended
+  // (iOS, first frames after the unlock) currentTime is frozen, which used to
+  // stamp the throttle + fill the voice cap and drop the first shots.
+  if (actx && sfxGain && actx.state === 'running' && RECIPES[name] && busVolume[BUSES.SFX] > 0 &&
       sfxThrottleGate(sfxLast, name, actx.currentTime * 1000) &&
       voiceCapGate(voiceEnds, actx.currentTime, SFX_DURATION_S[name])) {
     try {
@@ -481,6 +468,3 @@ export function playSfx(name) {
   debugLog(name, played);
   return played;
 }
-
-// Browser-only: restore persisted SFX volume at load (Node has no storage here).
-if (typeof window !== 'undefined') loadSfxVolume();
