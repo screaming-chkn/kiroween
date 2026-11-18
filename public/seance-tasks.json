@@ -877,14 +877,14 @@
   {
     "spec": "10-polish",
     "id": 14,
-    "title": "M3 self-host the CRT fonts with fallback (R5)",
-    "done": false
+    "title": "M3 self-host the CRT fonts (VT323, Share Tech Mono, IBM Plex Mono, Rajdhani 600; OFL) with swap + preload; canvas waits for them (R5)",
+    "done": true
   },
   {
     "spec": "10-polish",
     "id": 15,
-    "title": "M3 compress the music bed under 2 MB (R5)",
-    "done": false
+    "title": "M3 music: drop the 17 MB WAV; original OGG loops + stings with MP3 fallback, lazy-loaded after the first gesture (R5)",
+    "done": true
   },
   {
     "spec": "10-polish",
@@ -903,6 +903,30 @@
     "id": 18,
     "title": "M5 README + steering rewritten for the 1v1 duel (R7)",
     "done": false
+  },
+  {
+    "spec": "10-polish",
+    "id": 19,
+    "title": "M3 sample-exact Web Audio loops, 300 ms garage ↔ duel crossfade, title/victory/defeat stings on the music bus (R5)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 20,
+    "title": "M3 MP3 fallback loops only the musical length (LOOP_LENGTH_S), offset by the measured lead padding (R5)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 21,
+    "title": "M3 tests: music.test.js (format, loop points, padding, transitions, assets, fonts) (R5)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 22,
+    "title": "M3 phone pause menu hides the ESC / P hint (R4)",
+    "done": true
   },
   {
     "spec": "haunted-spec",

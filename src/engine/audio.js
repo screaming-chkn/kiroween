@@ -3,22 +3,19 @@
  *
  * Three independent channels ("buses"): music, SFX and static. Each carries a
  * volume in [0, 1]. Nothing plays until a user gesture (no autoplay): the
- * loopable music bed is started from the first Deploy / user gesture via
- * playMusicBed().
+ * first tap / click / key unlocks one shared AudioContext with an SFX gain
+ * node and a music gain node.
  *
  * Design goals:
- *   - Minimal surface: setBusVolume / getBusVolume / playMusicBed /
- *     stopMusicBed / unlockAudio / installAudioGestures / playSfx. SFX are synthesised with Web
- *     Audio (no sample files). Persistence lives in engine/settings.js.
+ *   - Minimal surface: setBusVolume / getBusVolume / unlockAudio /
+ *     installAudioGestures / audioGraph / playSfx. SFX are synthesised with
+ *     Web Audio (no sample files). Music lives in engine/music.js; settings
+ *     persistence in engine/settings.js.
  *   - Node-safe: the volume math (clampVolume) and bus identity (BUSES,
  *     isBus) are pure and importable under Node for tests. No browser globals
  *     are touched at import time.
- *   - Graceful degradation: if neither Web Audio nor HTMLAudioElement is
- *     available (e.g. under Node), playback calls become safe no-ops and the
- *     bus volumes still update so settings UI keeps working.
- *
- * Music bed asset is referenced by a RELATIVE path only (never an absolute
- * machine path) so it resolves correctly on Cloudflare Pages.
+ *   - Graceful degradation: without Web Audio (e.g. under Node) playback calls
+ *     are safe no-ops and the bus volumes still update.
  *
  * ES modules only; no external dependencies.
  */
@@ -57,11 +54,6 @@ export function clampVolume(v) {
   return n;
 }
 
-// ── Music bed asset (relative path only) ─────────────────────────────────────
-
-/** Loopable music bed. Relative so it resolves on the deployed site. */
-export const MUSIC_BED_SRC = 'assets/audio/haunt-hound-loop.wav';
-
 // ── Bus state ─────────────────────────────────────────────────────────────────
 
 /** Per-bus volumes. Default music/sfx audible, static subtle. */
@@ -71,25 +63,11 @@ const busVolume = {
   [BUSES.STATIC]: 0.3,
 };
 
-/** Lazily-created HTMLAudioElement for the looping music bed, or null. */
-let musicEl = null;
-
-/** Whether a user gesture has started the music bed. */
-let musicStarted = false;
-
-// ── Environment probe ─────────────────────────────────────────────────────────
-
-/** True when an HTMLAudioElement can be constructed (browser only). */
-function audioAvailable() {
-  return typeof document !== 'undefined' &&
-    typeof document.createElement === 'function';
-}
-
 // ── Public: volume controls ───────────────────────────────────────────────────
 
 /**
  * Set a bus volume. Clamps to [0, 1]; unknown buses are ignored.
- * Applies live to the music bed element if it exists.
+ * Applies live to the SFX / music gain nodes once audio is unlocked.
  *
  * @param {string} bus  one of BUSES.*
  * @param {number} v    target volume
@@ -100,9 +78,7 @@ export function setBusVolume(bus, v) {
   if (!isBus(bus)) return getBusVolume(BUSES.MUSIC);
   const vol = clampVolume(v);
   busVolume[bus] = vol;
-  if (bus === BUSES.MUSIC && musicEl) {
-    musicEl.volume = vol;
-  }
+  if (bus === BUSES.MUSIC && musicGain) musicGain.gain.value = vol;
   if (bus === BUSES.SFX) {
     if (sfxGain) sfxGain.gain.value = vol;
   }
@@ -118,54 +94,6 @@ export function setBusVolume(bus, v) {
 export function getBusVolume(bus) {
   if (!isBus(bus)) return 0;
   return busVolume[bus];
-}
-
-// ── Public: music bed ──────────────────────────────────────────────────────────
-
-/**
- * Start the looping music bed. Safe to call from a user gesture (Deploy).
- * No-op when audio is unavailable (e.g. Node) or already started.
- *
- * @returns {boolean} true if playback was (re)started, false otherwise.
- */
-export function playMusicBed() {
-  if (!audioAvailable()) return false;
-
-  if (!musicEl) {
-    musicEl = document.createElement('audio');
-    musicEl.src    = MUSIC_BED_SRC;
-    musicEl.loop   = true;
-    musicEl.volume = busVolume[BUSES.MUSIC];
-    musicEl.preload = 'auto';
-  }
-
-  // Resume from wherever it is; play() is a gesture-safe promise in browsers.
-  const p = musicEl.play();
-  if (p && typeof p.catch === 'function') {
-    // Swallow autoplay-policy rejections so callers never see an error.
-    p.catch(() => {});
-  }
-  musicStarted = true;
-  return true;
-}
-
-/**
- * Stop the music bed and rewind to the start. No-op if never started.
- */
-export function stopMusicBed() {
-  if (!musicEl) return;
-  if (typeof musicEl.pause === 'function') musicEl.pause();
-  try {
-    musicEl.currentTime = 0;
-  } catch {
-    // Some engines throw if media isn't seekable yet — ignore.
-  }
-  musicStarted = false;
-}
-
-/** True once the music bed has been started by a user gesture. */
-export function isMusicStarted() {
-  return musicStarted;
 }
 
 // ── Public: SFX (Web Audio synth) ──────────────────────────────────────────────
@@ -257,6 +185,7 @@ const sfxLast = {};
 const voiceEnds = [];
 let actx = null;      // AudioContext, created on the first user gesture
 let sfxGain = null;   // SFX bus gain node
+let musicGain = null; // music bus gain node (engine/music.js plays into it)
 let noiseBuf = null;  // 1 s of white noise, shared by noisy voices
 
 function audioCtxCtor() {
@@ -279,6 +208,9 @@ export function unlockAudio() {
       sfxGain = actx.createGain();
       sfxGain.gain.value = busVolume[BUSES.SFX];
       sfxGain.connect(actx.destination);
+      musicGain = actx.createGain();
+      musicGain.gain.value = busVolume[BUSES.MUSIC];
+      musicGain.connect(actx.destination);
       const len = Math.floor(actx.sampleRate);
       noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
       const d = noiseBuf.getChannelData(0);
@@ -407,6 +339,14 @@ const RECIPES = {
     tone(t, { type: 'triangle', f0: 1500, f1: 1100, peak: 0.06, attack: 0.002, decay: 0.03 });
   },
 };
+
+/**
+ * The unlocked AudioContext and music bus node, or nulls before the first
+ * gesture / without Web Audio. Used by engine/music.js.
+ */
+export function audioGraph() {
+  return { ctx: actx, music: musicGain };
+}
 
 /**
  * Wire the first user gesture (tap, click or key) on `target` to

@@ -7,7 +7,7 @@
  *   node tests/engine/audio.test.js
  *
  * Only the Node-safe surface is exercised here: volume clamping and bus
- * identity. The playback functions (playMusicBed / playSfx) degrade to safe
+ * identity. The playback functions (playSfx; music lives in tests/engine/music.test.js) degrade to safe
  * no-ops under Node, so we assert that degradation instead of audio output.
  *
  * Uses only Node's built-in assert module and ES module import.
@@ -21,9 +21,6 @@ import {
   clampVolume,
   setBusVolume,
   getBusVolume,
-  MUSIC_BED_SRC,
-  playMusicBed,
-  stopMusicBed,
   playSfx,
 } from '../../src/engine/audio.js';
 
@@ -131,21 +128,10 @@ test('unknown bus: setBusVolume is ignored, getBusVolume reports 0', () => {
   assert.equal(getBusVolume('voice'), 0);
 });
 
-// ── asset path ────────────────────────────────────────────────────────────────
-
-test('music bed src is a relative path (never absolute)', () => {
-  assert.equal(MUSIC_BED_SRC, 'assets/audio/haunt-hound-loop.wav');
-  assert.ok(!MUSIC_BED_SRC.startsWith('/'),      'must not start with /');
-  assert.ok(!/^[A-Za-z]:[\\/]/.test(MUSIC_BED_SRC), 'must not be a drive path');
-  assert.ok(!MUSIC_BED_SRC.includes('://'),      'must not be a URL');
-});
-
 // ── graceful degradation under Node ───────────────────────────────────────────
 
 test('playback helpers are safe no-ops with no AudioContext (Node)', () => {
   // No `document` in Node → these must not throw and must report "did nothing".
-  assert.equal(playMusicBed(), false);
-  assert.doesNotThrow(() => stopMusicBed());
   assert.equal(playSfx('shoot'), false);
 });
 

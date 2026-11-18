@@ -47,7 +47,7 @@ export function mountPauseButton(root, onPress) {
  * @param {{settings:{sfx:number,music:number,muted:boolean},
  *          onChange:Function, onResume:Function, onQuit:Function, onPreview?:Function}} o
  */
-export function mountPauseMenu(root, { settings, onChange, onResume, onQuit, onPreview }) {
+export function mountPauseMenu(root, { settings, onChange, onResume, onQuit, onPreview, touchUi = false }) {
   injectCss();
   let s = { ...settings };
   const el = document.createElement('div');
@@ -63,7 +63,7 @@ export function mountPauseMenu(root, { settings, onChange, onResume, onQuit, onP
       <label>MUSIC <input type="range" class="hh-music" min="0" max="100" step="5" aria-label="Music volume"></label>
       <button type="button" class="hh-mute" aria-pressed="false"></button>
       <button type="button" class="hh-quit">QUIT TO GARAGE</button>
-      <p class="hh-hint">ESC / P to resume</p>
+      ${touchUi ? '' : '<p class="hh-hint">ESC / P to resume</p>'}
     </div>`;
   const $ = (c) => el.querySelector(c);
   const sfx = $('.hh-sfx');

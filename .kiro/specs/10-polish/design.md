@@ -19,6 +19,14 @@ src/ui/*, engine/audio.js).
   projectile; a 48-slot spark pool drawn as one path per colour.
 - `src/engine/settings.js` — `{sfx, music, muted}` in `hh.settings`;
   `busLevels` applies mute without losing slider values.
+- `src/engine/music.js` (M3) — `chooseMusicFormat`, `loopPoints`,
+  `leadingSilenceS`, `musicTransition` are pure; `LOOP_LENGTH_S` holds the
+  musical loop lengths (garage 76.8 s, duel 75.0 s). `cueMusic(scene)` fetches +
+  decodes once, loops with AudioBufferSourceNode, crossfades per-loop gains
+  into audio.js's music gain node.
+- `src/engine/fonts.js` (M3) — `loadGameFonts()` waits (capped 2.5 s) for the
+  canvas faces before the arena's first draw; @font-face + preload in
+  index.html, woff2 + OFL licences in assets/fonts/.
 - `src/ui/title.js`, `src/ui/pauseMenu.js` — DOM overlays in the existing
   phosphor palette. z-order: touch pads 40 < pause button 45 < pause menu 60 <
   garage 100.

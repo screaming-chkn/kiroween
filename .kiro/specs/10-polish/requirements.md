@@ -48,7 +48,12 @@ licence.
 ### R5 Fonts + music (M3)
 - The CRT fonts named in the design tokens SHALL load (self-hosted, licence
   allowing redistribution) with a monospace fallback.
-- The music bed SHALL be compressed small enough for phones (target < 2 MB).
+- The music SHALL be the crew's original loops + stings, compressed for phones
+  (OGG, MP3 fallback), loaded only after the first gesture, never blocking
+  first paint.
+- Loops SHALL be gapless; garage ↔ duel SHALL crossfade (~300 ms); victory /
+  defeat stings SHALL play at the end card. All music SHALL use the music bus
+  (volume + mute).
 
 ### R6 Balance pass (M4)
 - A headless balance sim SHALL report win rates per HAUNT LV; HAUNT LV 1 SHALL

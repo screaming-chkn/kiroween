@@ -31,7 +31,9 @@ import { mountGarage }         from './ui/garage.js';
 import { syncTankFx }          from './ui/tankFx.js';
 import { mountSeance }         from './ui/seance.js';
 import { injectPossessionCSS } from './ui/possession.js';
-import { playMusicBed, installAudioGestures, playSfx, SFX, setBusVolume, BUSES } from './engine/audio.js';
+import { installAudioGestures, playSfx, SFX, setBusVolume, BUSES } from './engine/audio.js';
+import { cueMusic }           from './engine/music.js';
+import { loadGameFonts }      from './engine/fonts.js';
 import { loadSettings, saveSettings, busLevels } from './engine/settings.js';
 import { mountTitle }          from './ui/title.js';
 import { mountPauseMenu, mountPauseButton } from './ui/pauseMenu.js';
@@ -137,6 +139,7 @@ function boot() {
   }
 
   if (loading) loading.hidden = true;
+  loadGameFonts();   // start fetching the self-hosted faces right away
   canvas.focus();
 
   // First gesture unlocks Web Audio (iOS); DOM buttons get a UI click.
@@ -170,8 +173,9 @@ function showTitle(renderer, reducedMotion) {
     touchUi: isTouchUi(),
     hauntLv: readHauntLevel(),
     onStart() {
-      // Same gesture already unlocked Web Audio (installAudioGestures).
-      playMusicBed();
+      // Same gesture already unlocked Web Audio (installAudioGestures):
+      // title sting, then the garage loop fades in under it.
+      cueMusic('title-go');
       playSfx(SFX.UI_CLICK);
       showGarage(renderer, reducedMotion);
     },
@@ -191,14 +195,14 @@ function showGarage(renderer, reducedMotion) {
   const ctx = renderer.ctx;
   ctx.fillStyle = '#0A0D0B';
   ctx.fillRect(0, 0, renderer.canvas.width, renderer.canvas.height);
+  cueMusic('garage');
 
   const garage = mountGarage(appRoot, {
     onDeploy(loadout, loadoutTotals) {
-      // First user gesture → start the looping music bed (no autoplay before
-      // this point; honors the music bus volume). Safe no-op if unavailable.
-      playMusicBed();
       garage.destroy();
-      startArena(renderer, loadout, loadoutTotals, reducedMotion);
+      // Canvas text must not first-draw in the fallback face (usually
+      // already loaded by now; capped wait inside loadGameFonts).
+      loadGameFonts().then(() => startArena(renderer, loadout, loadoutTotals, reducedMotion));
     },
     onSeance() {
       // Open the séance terminal overlay. mountSeance possesses the page on
@@ -229,6 +233,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   };
 
   let arenaState = createArena(arenaStats);
+  cueMusic('duel');
 
   // Difficulty ramp (HAUNT LV): applied at spawn, outside createArena math.
   if (advanceHaunt) { bumpHauntLevel(); advanceHaunt = false; }
@@ -480,7 +485,10 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
     // End card — only once the kill moment has finished.
     if (!cardUp) { endCardButtons = null; return; }
-    if (cardShownAtMs === 0) cardShownAtMs = nowMs;
+    if (cardShownAtMs === 0) {
+      cardShownAtMs = nowMs;
+      cueMusic(st.phase === 'win' ? 'win' : 'lose');
+    }
     const restartReady = canRestart(phaseEndedAtMs, nowMs, null);
     const cardOpts = { shownAtMs: cardShownAtMs, nowMs, specStamp: specStampText };
     if (touchUi) {
@@ -583,6 +591,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         settings,
         onChange: applySettings,
         onPreview: () => playSfx(SFX.PLAYER_SHOT),
+        touchUi,
         onResume: () => setPaused(false),
         onQuit: () => { setPaused(false); pendingAction = 'garage'; },
       });
