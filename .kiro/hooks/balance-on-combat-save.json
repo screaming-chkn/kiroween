@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Balance check on combat config save",
+      "description": "Run the balance test suite whenever a combat config number file is saved.",
+      "trigger": "PostFileSave",
+      "matcher": "(src/combat/config\\.js|src/ui/hauntLevel\\.js)$",
+      "action": { "type": "command", "command": "node tests/combat/balance.test.js" },
+      "timeout": 120
+    }
+  ]
+}

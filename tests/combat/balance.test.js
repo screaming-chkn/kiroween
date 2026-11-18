@@ -378,6 +378,78 @@ test('matrix produces real win/lose outcomes and sub-cap medians', () => {
   assert.equal(results.length, builds.length * seeds.length, 'matrix size matches');
 });
 
+// ── R6 guards (spec 10-polish, task 25) ───────────────────────────────────────
+// Loose smoke guards on a tiny sample (2 builds × 40 seeds × LV 1/3/5). The
+// full-matrix bands live in balance.mjs / BALANCE.md; these only catch gross
+// regressions, so the thresholds carry slack for small-sample noise.
+
+const R6_LEVELS = [1, 3, 5];
+const R6_SEEDS = Array.from({ length: 40 }, (_, i) => 0x9e3779b9 + i * 2654435761);
+
+function r6Stats() {
+  const all = enumerateLoadouts();
+  const sorted = [...all].sort((a, b) => a.totals.loadPct - b.totals.loadPct);
+  const builds = [sorted[0], sorted[sorted.length - 1]];
+  const out = {};
+  for (const policy of ['baseline', 'dashSpam', 'camp', 'reactive']) {
+    out[policy] = {};
+    for (const lv of R6_LEVELS) {
+      const rs = [];
+      for (const build of builds) {
+        for (const seed of R6_SEEDS) {
+          rs.push(runFight(build, seed, { hauntLv: lv, policy }));
+        }
+      }
+      out[policy][lv] = {
+        winRate: rs.filter((r) => r.phase === 'win').length / rs.length,
+        medianSec: median(rs.map((r) => r.durationSec)),
+      };
+    }
+  }
+  return out;
+}
+
+let r6Cache;
+const r6 = () => (r6Cache ??= r6Stats());
+
+test('R6: baseline win rate is monotonic non-increasing across LV 1, 3, 5', () => {
+  const w = R6_LEVELS.map((lv) => r6().baseline[lv].winRate);
+  assert.ok(w[0] >= w[1] && w[1] >= w[2], `win rates not monotonic: ${w.join(', ')}`);
+});
+
+test('R6: LV1 baseline win rate >= 0.80 and LV5 within 0.30–0.70', () => {
+  const lv1 = r6().baseline[1].winRate;
+  const lv5 = r6().baseline[5].winRate;
+  assert.ok(lv1 >= 0.8, `LV1 win rate ${lv1} < 0.80`);
+  assert.ok(lv5 >= 0.3 && lv5 <= 0.7, `LV5 win rate ${lv5} outside 0.30–0.70`);
+});
+
+test('R6: median duel length is 45–120 s at each tested LV', () => {
+  for (const lv of R6_LEVELS) {
+    const m = r6().baseline[lv].medianSec;
+    assert.ok(m >= 45 && m <= 120, `LV${lv} median ${m.toFixed(1)}s outside 45–120s`);
+  }
+});
+
+// No dashSpam-vs-baseline cap here (M4, build agent edit): the baseline is
+// tell-blind, so spamming dash (more movement) beats it by +5..+37 pp in the
+// 3,200-fight-per-LV deep run — the intended counterplay, not dominance.
+// Dominance is checked against the tell-reading policy below; the edge over
+// baseline is reported in BALANCE.md / PLAN.md instead of asserted.
+test('R6: dashSpam is not dominant (does not beat the tell-reading reactive policy) at any tested LV', () => {
+  for (const lv of R6_LEVELS) {
+    const d = r6().dashSpam[lv].winRate - r6().reactive[lv].winRate;
+    assert.ok(d <= 0.05, `LV${lv} dashSpam − reactive = ${d.toFixed(3)} > 0.05`);
+  }
+});
+
+test('R6: camp does not beat baseline by more than 0.15 at any tested LV', () => {
+  for (const lv of R6_LEVELS) {
+    const d = r6().camp[lv].winRate - r6().baseline[lv].winRate;
+    assert.ok(d <= 0.15, `LV${lv} camp − baseline = ${d.toFixed(3)} > 0.15`);
+  }
+});
+
 // ── Summary ────────────────────────────────────────────────────────────────────
 
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);

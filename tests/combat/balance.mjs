@@ -24,8 +24,10 @@ import { fileURLToPath } from 'node:url';
 import {
   enumerateLoadouts,
   runMatrix,
+  runLevelMatrix,
   aggregate,
   buildReport,
+  median,
   DEFAULT_MAX_SECONDS,
 } from './balanceCore.mjs';
 
@@ -82,3 +84,77 @@ for (const b of flagged) {
   );
 }
 console.log('');
+
+// ── Per-level matrix (baseline + probes) ───────────────────────────────────────
+console.log('  Running per-LV matrix (baseline, dashSpam, camp, reactive)…');
+const policies = ['baseline', 'dashSpam', 'camp', 'reactive'];
+// Per-LV section uses its own seed list (not the ~200-fight list above).
+// Default 48 seeds (~1 min). Per-build deviation at 48 seeds is mostly
+// sampling noise (±7 pp per build), so the committed BALANCE.md comes from
+// BALANCE_SEEDS=200 npm run test:balance (~7 min).
+const lvSeedCount = Math.max(1, Number(process.env.BALANCE_SEEDS) || 48);
+const lvSeeds = Array.from({ length: lvSeedCount }, (_, i) => 0x9e3779b9 + i * 2654435761);
+const levelMatrices = {};
+for (const pol of policies) {
+  levelMatrices[pol] = runLevelMatrix({ seeds: lvSeeds, policy: pol, maxSeconds: DEFAULT_MAX_SECONDS });
+}
+
+// Helper: count timeouts across all builds at one level entry.
+function countTimeouts(lvEntry) {
+  return lvEntry.builds.reduce((s, b) => s + b.timeouts, 0);
+}
+
+// ── Per HAUNT LV (baseline) table ─────────────────────────────────────────────
+const baselineLevels = levelMatrices['baseline'];
+
+const lvLines = [];
+lvLines.push(`## Per HAUNT LV (baseline, ${lvSeedCount} seeds × ${builds.length} builds per LV)`);
+lvLines.push('');
+lvLines.push('| LV | Win rate % | Median s | Max build dev pp | Timeouts |');
+lvLines.push('|---:|---:|---:|---:|---:|');
+for (const lv of baselineLevels) {
+  lvLines.push(
+    `| ${lv.level} | ${(lv.winRate * 100).toFixed(1)} | ${lv.medianDurationSec.toFixed(1)} ` +
+    `| ${(lv.maxBuildDeviation * 100).toFixed(1)} | ${countTimeouts(lv)} |`,
+  );
+}
+lvLines.push('');
+
+// ── Strategy probes table ──────────────────────────────────────────────────────
+const probeLines = [];
+probeLines.push('## Strategy probes');
+probeLines.push('');
+probeLines.push('| LV | baseline % | dashSpam % | camp % | reactive % | dashSpam − baseline pp | camp − baseline pp | dashSpam − reactive pp |');
+probeLines.push('|---:|---:|---:|---:|---:|---:|---:|---:|');
+
+const signed = (x) => (x >= 0 ? '+' : '') + x.toFixed(1);
+const levels = baselineLevels.map((e) => e.level);
+for (const level of levels) {
+  const pcts = {};
+  for (const pol of policies) {
+    const entry = levelMatrices[pol].find((e) => e.level === level);
+    pcts[pol] = entry ? entry.winRate * 100 : 0;
+  }
+  probeLines.push(
+    `| ${level} | ${pcts['baseline'].toFixed(1)} | ${pcts['dashSpam'].toFixed(1)} ` +
+    `| ${pcts['camp'].toFixed(1)} | ${pcts['reactive'].toFixed(1)} ` +
+    `| ${signed(pcts['dashSpam'] - pcts['baseline'])} ` +
+    `| ${signed(pcts['camp'] - pcts['baseline'])} ` +
+    `| ${signed(pcts['dashSpam'] - pcts['reactive'])} |`,
+  );
+}
+probeLines.push('');
+
+// ── Append tables to BALANCE.md ───────────────────────────────────────────────
+const appendMd = '\n' + lvLines.join('\n') + probeLines.join('\n');
+for (const target of targets) {
+  try {
+    writeFileSync(target, report + appendMd, 'utf8');
+  } catch (err) {
+    console.error(`  ✗ failed to append tables to ${target}: ${err.message}`);
+  }
+}
+
+// ── Print tables to console ───────────────────────────────────────────────────
+console.log('\n' + lvLines.join('\n'));
+console.log(probeLines.join('\n'));

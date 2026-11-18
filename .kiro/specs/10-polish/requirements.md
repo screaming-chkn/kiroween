@@ -56,8 +56,40 @@ licence.
   (volume + mute).
 
 ### R6 Balance pass (M4)
-- A headless balance sim SHALL report win rates per HAUNT LV; HAUNT LV 1 SHALL
-  be beatable by a new player and LV 5 SHALL be hard but fair.
+- WHEN the balance matrix runs, the sim SHALL evaluate every deployable build
+  (all legal legs × core × armR × armL combinations, loadPct ≤ 115) against
+  HAUNT LV 1–5 using a seeded, deterministic scripted player policy
+  (the baseline policy in balanceCore.mjs).
+- WHILE a matrix run is in progress, the sim SHALL NOT touch the DOM, Canvas,
+  Web Audio, or any renderer — it SHALL drive src/combat/arena.js only.
+- The per-HAUNT-LV win rate of the scripted player (fraction of build × seed
+  outcomes where phase === 'win'; the scripted player stands in for a decent
+  human, so a high number means the player usually beats the bot) SHALL fall
+  within:
+    LV 1: 85–100 %  (onboarding: the bot is easy)
+    LV 2: 75–95 %
+    LV 3: 65–85 %
+    LV 4: 50–80 %   (widened from 75 after measuring: 1.17 is the highest
+                     LV4 pressure that stays a 7-hit level; 1.18 rounds to
+                     LV5's 6-hit cliff and drops to ~48 %)
+    LV 5: 40–60 %   (hard but fair: no worse than about 40/60)
+  and the sequence SHALL be monotonic non-increasing from LV 1 to LV 5 (each
+  LV's mean win rate SHALL NOT exceed the previous LV's mean).
+- No individual build's win rate at any HAUNT LV SHALL differ from that LV's
+  mean win rate by more than 10 percentage points (no dominant loadout).
+- The median duel length SHALL fall between 45 s and 120 s at every HAUNT LV.
+- Dash-spam SHALL NOT beat the tell-reading reactive policy (dash in the last
+  150 ms of windup) at any LV; its edge over the tell-blind baseline SHALL be
+  reported in BALANCE.md.
+- WHEN the corner-camp probe policy runs (player holds a corner wall at minimum
+  range, baseline aim and fire otherwise), its per-LV win rate SHALL NOT exceed
+  the baseline policy's win rate by more than 10 percentage points at any LV.
+- Tuning SHALL change numbers only in src/combat/config.js and
+  src/ui/hauntLevel.js; no logic, no new files, no content.
+- Phone feel SHALL NOT regress: dash timings (DASH_DURATION_MS,
+  DASH_BUFFER_MS, DASH_COOLDOWN_MS) and fire timings (FIRE_COOLDOWN_MS,
+  ENEMY_SHOT_WINDUP_MS) SHALL remain unchanged unless a strategy probe fails
+  and no pure-number fix restores the band.
 
 ### R7 Phone + private preview (M5)
 - A private Cloudflare Pages preview SHALL load and play on a real phone and

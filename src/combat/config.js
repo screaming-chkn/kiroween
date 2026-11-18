@@ -200,7 +200,10 @@ export const DASH_BUFFER_MS = 100;
  * Weight class is derived from the loadout `loadPct` (02-mech-builder weight
  * curve):
  *   • light : loadPct ≤ 80          → penalty-free band          → 2500 ms
- *   • mid   : 80 < loadPct ≤ 100    → first speed-penalty band    → 3500 ms
+ *   • mid   : 80 < loadPct ≤ 100    → first speed-penalty band    → 3000 ms
+ *     (M4 balance, R6: was 3500. At HAUNT LV5 the Runner + Furnace builds,
+ *     the only deployable mid builds, sat ~15 pp under the light builds; the
+ *     lighter penalty brings the 16-build spread back inside 10 pp.)
  *   • heavy : loadPct > 100         → heavy / overweight band      → 4500 ms
  *
  * The thresholds mirror weight.js (SOFT_LOW = 80, SOFT_HIGH = 100) so the dash
@@ -208,7 +211,7 @@ export const DASH_BUFFER_MS = 100;
  */
 export const DASH_COOLDOWN_MS = Object.freeze({
   light: 2500,
-  mid:   3500,
+  mid:   3000,
   heavy: 4500,
 });
 

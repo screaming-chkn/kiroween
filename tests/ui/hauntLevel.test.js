@@ -17,9 +17,9 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} !~ ${b}`);
 
 test('hauntPressure ramp and cap', () => {
   near(hauntPressure(1), 0.8);
-  near(hauntPressure(2), 0.9);
-  near(hauntPressure(3), 1.0);
-  near(hauntPressure(4), 1.1);
+  near(hauntPressure(2), 1.0);
+  near(hauntPressure(3), 1.1);
+  near(hauntPressure(4), 1.17);
   near(hauntPressure(5), 1.2);
   near(hauntPressure(9), 1.2);
   assert.equal(MAX_HAUNT_LEVEL, 5);
@@ -68,12 +68,14 @@ test('applyHauntPressure scales hp, maxHp, shotDamage on a copy', () => {
   assert.equal(a.x, 1);
   assert.equal(e.hp, 1500); assert.equal(e.shotDamage, undefined);
   const b = applyHauntPressure(e, 3, { baseHp: 1500, baseDamage: 20 });
-  assert.equal(b.hp, 1500); assert.equal(b.shotDamage, 20);
+  assert.equal(b.hp, 1650); assert.equal(b.shotDamage, 22);
   const c = applyHauntPressure(e, 5, { baseHp: 1500, baseDamage: 20 });
   assert.equal(c.hp, 1800); assert.equal(c.shotDamage, 24);
   const d = applyHauntPressure(e, 2);   // defaults 1500 / 20
-  assert.equal(d.hp, 1350); assert.equal(d.shotDamage, 18);
-  assert.equal(applyHauntPressure(e, 4, { baseHp: 1500, baseDamage: 20 }).shotDamage, 22);
+  assert.equal(d.hp, 1500); assert.equal(d.shotDamage, 20);
+  assert.equal(applyHauntPressure(e, 4, { baseHp: 1500, baseDamage: 20 }).shotDamage, 23);
+  // R6: LV4 must stay a 7-hit level (23 dmg vs 140 HP); 24 is LV5's 6-hit cliff.
+  assert.equal(applyHauntPressure(e, 4).shotDamage < 24, true);
 });
 
 test('hauntAdvancesOn: level goes up only after a win', () => {

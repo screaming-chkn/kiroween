@@ -889,8 +889,8 @@
   {
     "spec": "10-polish",
     "id": 16,
-    "title": "M4 balance sim per HAUNT LV + tuning pass (R6)",
-    "done": false
+    "title": "M4 balance matrix per HAUNT LV + strategy probes in balanceCore (R6)",
+    "done": true
   },
   {
     "spec": "10-polish",
@@ -926,6 +926,30 @@
     "spec": "10-polish",
     "id": 22,
     "title": "M3 phone pause menu hides the ESC / P hint (R4)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 23,
+    "title": "M4 per-LV report: balance.mjs writes tests/combat/BALANCE.md with the per-LV summary table and the probe table (R6)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 24,
+    "title": "M4 tune config.js and hauntPressure numbers to hit the R6 bands; record before/after table in PLAN.md (R6)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 25,
+    "title": "M4 balance.test.js: CI guard that asserts the R6 win-rate bands and duel-length range on a fixed seed set (R6)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 26,
+    "title": "M4 Kiro hooks: seance-on-spec-save rebuilds the seance on tasks.md change; balance-on-combat-save runs balance.test.js on config.js/hauntLevel.js save (R6)",
     "done": true
   },
   {

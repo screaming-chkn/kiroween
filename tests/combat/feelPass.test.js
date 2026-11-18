@@ -149,9 +149,9 @@ test('dash config: duration 220 ms, 3× speed, 100 ms buffer', () => {
   assert.equal(DASH_BUFFER_MS, 100);
 });
 
-test('dash cooldown bands: light 2.5 s / mid 3.5 s / heavy 4.5 s', () => {
+test('dash cooldown bands: light 2.5 s / mid 3.0 s (M4) / heavy 4.5 s', () => {
   assert.equal(DASH_COOLDOWN_MS.light, 2500);
-  assert.equal(DASH_COOLDOWN_MS.mid,   3500);
+  assert.equal(DASH_COOLDOWN_MS.mid,   3000);
   assert.equal(DASH_COOLDOWN_MS.heavy, 4500);
 });
 
@@ -165,7 +165,7 @@ test('dashWeightClass maps loadPct → light/mid/heavy at 80/100 boundaries', ()
 
 test('dashCooldownForLoad returns the band cooldown', () => {
   assert.equal(dashCooldownForLoad(50),  2500);  // light
-  assert.equal(dashCooldownForLoad(95),  3500);  // mid
+  assert.equal(dashCooldownForLoad(95),  3000);  // mid
   assert.equal(dashCooldownForLoad(112), 4500);  // heavy
 });
 

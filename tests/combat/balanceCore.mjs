@@ -37,6 +37,7 @@ import {
   PROJECTILE_SPEED,
   ENEMY_STRAFE_SPEED,
 } from '../../src/combat/config.js';
+import { applyHauntPressure } from '../../src/ui/hauntLevel.js';
 
 // ── Tunables for the harness (NOT combat tuning) ───────────────────────────────
 
@@ -481,6 +482,83 @@ export function playerPolicy(state, rng, ctx) {
   };
 }
 
+// ── Policy wrapper ─────────────────────────────────────────────────────────────
+
+/**
+ * How far inside the arena walls the camp-corner target sits (world units).
+ * Keeps the mech visibly inside the playfield.
+ */
+const MECH_CORNER_MARGIN = 60;
+
+/**
+ * 'reactive' policy dash window (ms): the player dashes only while the enemy's
+ * shot windup has 0 < windupRemainingMs <= this value, i.e. it reads the tell
+ * and dodges at the last moment. Harness-only, NOT combat tuning.
+ */
+export const REACTIVE_DASH_WINDOW_MS = 150;
+
+/**
+ * Dispatch a tick's actions for the requested policy.
+ *
+ * All four policies call playerPolicy (and consume the same seeded RNG draws
+ * per tick) so a given (build, seed) produces an identical RNG stream regardless
+ * of policy — meaning per-level seeds stay comparable across policies.
+ *
+ * 'baseline'  — playerPolicy as-is.
+ * 'dashSpam'  — baseline, but dash overridden to true every tick.
+ * 'camp'      — baseline aim/fire/lapse RNG consumed identically, but movement
+ *   replaced: the player walks toward the arena corner nearest their starting
+ *   position and stands still (move {dx:0,dy:0}) once within 20 wu of it.
+ * 'reactive'  — baseline, but dash is true exactly when the enemy windup has
+ *   0 < windupRemainingMs <= REACTIVE_DASH_WINDOW_MS (reads the tell).
+ *
+ * @param {'baseline'|'dashSpam'|'camp'|'reactive'} policy
+ * @param {object} state
+ * @param {() => number} rng
+ * @param {object} ctx  - persistent scratch (same shape as playerPolicy expects)
+ * @returns {{ move:{dx:number,dy:number}, aim:{x:number,y:number}, fire:boolean, dash:boolean }}
+ */
+export function policyActions(policy, state, rng, ctx) {
+  const base = playerPolicy(state, rng, ctx);
+
+  if (policy === 'baseline') return base;
+
+  if (policy === 'dashSpam') {
+    return { ...base, dash: true };
+  }
+
+  if (policy === 'reactive') {
+    const w = state.enemy.windupRemainingMs;
+    return { ...base, dash: w > 0 && w <= REACTIVE_DASH_WINDOW_MS };
+  }
+
+  if (policy === 'camp') {
+    // The camp corner is MECH_CORNER_MARGIN inside the wall closest to player
+    // start (200, 450 in a 1200×900 arena → top-left quadrant → corner (60,60)).
+    const cornerX = MECH_CORNER_MARGIN;
+    const cornerY = MECH_CORNER_MARGIN;
+
+    const { player } = state;
+    const toCx = cornerX - player.x;
+    const toCy = cornerY - player.y;
+    const dist = Math.hypot(toCx, toCy);
+
+    let move;
+    if (dist <= 20) {
+      move = { dx: 0, dy: 0 };
+    } else {
+      // Unit vector toward corner — the arena clamps positions, so just walk
+      // straight at it; magnitude doesn't need to be 1 (arena normalises).
+      move = { dx: toCx / dist, dy: toCy / dist };
+    }
+
+    return { ...base, move };
+  }
+
+  // Unknown policy: fall back to baseline.
+  return base;
+}
+
 // ── runFight ───────────────────────────────────────────────────────────────────
 
 /**
@@ -488,7 +566,7 @@ export function playerPolicy(state, rng, ctx) {
  *
  * @param {{ totals:object }} build
  * @param {number} seed
- * @param {{ maxSeconds?:number }} [opts]
+ * @param {{ maxSeconds?:number, hauntLv?:number, policy?:'baseline'|'dashSpam'|'camp'|'reactive' }} [opts]
  * @returns {{
  *   phase:'win'|'lose'|'timeout',
  *   elapsedMs:number,
@@ -501,25 +579,25 @@ export function playerPolicy(state, rng, ctx) {
 export function runFight(build, seed, opts = {}) {
   const maxSeconds = opts.maxSeconds ?? DEFAULT_MAX_SECONDS;
   const maxTicks = Math.ceil(maxSeconds / FIXED_DT);
+  const policy = opts.policy ?? 'baseline';
 
   const rng = mulberry32(seed);
   let state = createArena(build.totals, {});
 
+  // Apply haunt pressure only when a numeric hauntLv is explicitly passed
+  // (default 1 kept here matches live difficulty; callers that omit hauntLv
+  // get unchanged behaviour).
+  if (typeof opts.hauntLv === 'number') {
+    state = { ...state, enemy: applyHauntPressure(state.enemy, opts.hauntLv) };
+  }
+
   let tick = 0;
-  // Last tick's enemy position, so the policy can estimate enemy velocity by
-  // finite difference and lead its shots. Undefined on tick 0 (the policy
-  // falls back to the known perpendicular-strafe assumption there).
   let prevEnemy;
-  // Persistent policy scratch state carried across ticks. The sticky policy
-  // lapse (LEVER mix retune 11/5b) stores its remaining-ticks + kind here so a
-  // lapse holds for its whole ~0.5 s window instead of a single tick. We mutate
-  // the same object each tick (updating tick/prevEnemy/dt) so the lapse fields
-  // playerPolicy writes back survive into the next call.
   const ctx = { tick: 0, prevEnemy: undefined, dt: FIXED_DT };
   while (state.phase === 'playing' && tick < maxTicks) {
     ctx.tick = tick;
     ctx.prevEnemy = prevEnemy;
-    const actions = playerPolicy(state, rng, ctx);
+    const actions = policyActions(policy, state, rng, ctx);
     prevEnemy = { x: state.enemy.x, y: state.enemy.y };
     state = updateArena(state, actions, FIXED_DT);
     tick++;
@@ -559,6 +637,59 @@ export function runMatrix(cfg) {
   }
 
   return { builds, results };
+}
+
+// ── runLevelMatrix ─────────────────────────────────────────────────────────────
+
+/**
+ * Run builds × seeds for each haunt level (and policy), returning per-level
+ * aggregates. Replaces the flat runMatrix for balance work.
+ *
+ * @param {{
+ *   seeds: number[],
+ *   levels?: number[],
+ *   policy?: 'baseline'|'dashSpam'|'camp'|'reactive',
+ *   maxSeconds?: number,
+ * }} cfg
+ * @returns {Array<{
+ *   level: number,
+ *   policy: string,
+ *   builds: ReturnType<typeof aggregate>,
+ *   winRate: number,
+ *   medianDurationSec: number,
+ *   maxBuildDeviation: number,
+ * }>}
+ */
+export function runLevelMatrix({ seeds, levels = [1, 2, 3, 4, 5], policy = 'baseline', maxSeconds } = {}) {
+  const builds = enumerateLoadouts();
+  const out = [];
+
+  for (const level of levels) {
+    const results = [];
+
+    for (const build of builds) {
+      for (const seed of seeds) {
+        const r = runFight(build, seed, { hauntLv: level, policy, maxSeconds });
+        results.push({ build, ...r });
+      }
+    }
+
+    const buildStats = aggregate(results);
+
+    // Level-wide win rate and median duration (across all fights, all builds).
+    const allWins = results.filter((r) => r.phase === 'win').length;
+    const winRate = results.length > 0 ? allWins / results.length : 0;
+    const medianDurationSec = median(results.map((r) => r.durationSec));
+
+    // Max |build.winRate − level winRate| in percentage points.
+    const maxBuildDeviation = buildStats.length > 0
+      ? Math.max(...buildStats.map((b) => Math.abs(b.winRate - winRate)))
+      : 0;
+
+    out.push({ level, policy, builds: buildStats, winRate, medianDurationSec, maxBuildDeviation });
+  }
+
+  return out;
 }
 
 // ── Aggregation ────────────────────────────────────────────────────────────────

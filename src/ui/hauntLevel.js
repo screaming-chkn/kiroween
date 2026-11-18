@@ -1,8 +1,8 @@
 /**
  * src/ui/hauntLevel.js — session difficulty ramp ("HAUNT LV n").
  *
- * Applied at spawn from main.js, outside createArena math. LV1 = 0.8× enemy
- * HP and shot damage, +0.1× per level, capped at 1.2× (LV5+).
+ * Applied at spawn from main.js, outside createArena math. Each LV scales enemy
+ * HP and shot damage by HAUNT_PRESSURE[lv − 1] (M4 balance, R6).
  *
  * Persistence: sessionStorage key 'hh-haunt-lv', with an in-memory fallback
  * when sessionStorage is missing or throws (Node tests, private modes).
@@ -30,11 +30,18 @@ function clampLevel(n) {
   return Math.max(MIN_HAUNT_LEVEL, Math.min(MAX_HAUNT_LEVEL, v));
 }
 
-/** HP / damage multiplier: 0.8, 0.9, 1.0, 1.1, 1.2 (cap). */
+/**
+ * HP / damage multiplier per HAUNT LV (index 0 = LV1). M4 balance (R6), tuned
+ * against the seeded headless matrix (tests/combat/balance.mjs, PLAN.md):
+ * LV2–LV4 were too easy (100 / 91 / 79 % scripted-player wins), so they move
+ * up; LV1 (onboarding) and LV5 (cap) are unchanged. Shot damage rounds to
+ * 16 / 20 / 22 / 23 / 24, i.e. 9 / 7 / 7 / 7 / 6 hits to kill a 140 HP mech —
+ * keep LV4 below 1.175 or it rounds to 24 and lands on LV5's 6-hit cliff.
+ */
+export const HAUNT_PRESSURE = Object.freeze([0.8, 1.0, 1.1, 1.17, 1.2]);
+
 export function hauntPressure(level) {
-  const lv = clampLevel(level);
-  // Round to 1 decimal to keep float noise out of Math.round results.
-  return Math.min(1.2, Math.round((0.8 + (lv - 1) * 0.1) * 10) / 10);
+  return HAUNT_PRESSURE[clampLevel(level) - 1];
 }
 
 export function readHauntLevel() {

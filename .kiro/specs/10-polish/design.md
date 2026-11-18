@@ -37,6 +37,40 @@ src/ui/*, engine/audio.js).
   muzzle flash (tankFx), player hit kick, the kill moment (hit-stop → shatter
   → CRT flicker).
 
+## M4 balance
+
+`runFight(build, seed, opts)` gains two new options:
+
+- `opts.hauntLv` (number, 1–5, default 1) — when set, `runFight` calls
+  `applyHauntPressure(enemy, hauntLv)` after `createArena`, exactly as
+  `src/main.js startArena` does, so the headless sim matches live difficulty.
+- `opts.policy` (`'baseline' | 'dashSpam' | 'camp'`, default `'baseline'`) —
+  selects the scripted player policy for the duel. `'dashSpam'` triggers a dash
+  on every available cooldown (baseline aim/fire otherwise); `'camp'` holds the
+  player in a corner at minimum fire range (baseline aim/fire otherwise).
+
+`runLevelMatrix({ seeds, levels, policy })` replaces the flat `runMatrix` for
+balance work. It iterates `levels` × builds × seeds, calls
+`runFight(build, seed, { hauntLv, policy })` for each combination, and returns
+per-LV per-build aggregates (win rate, median duel length, max deviation from LV
+mean) in the same shape as `aggregate()`.
+
+`tests/combat/balance.mjs` (the reporting script) calls `runLevelMatrix` for the
+baseline policy and each probe policy, then writes
+`tests/combat/BALANCE.md` containing:
+- a per-LV summary table (win-rate band, median duration, max build deviation),
+- a probe table (baseline vs dashSpam vs camp win-rate delta per LV).
+
+The `'reactive'` policy is baseline plus a dash only in the last 150 ms of enemy
+windup (`REACTIVE_DASH_WINDOW_MS`). Dash-spam must not beat it at any LV; its edge
+over baseline is reported in BALANCE.md (probe table has reactive % and
+dashSpam − reactive pp columns, per-LV section uses its own 48 seeds).
+
+`tests/combat/balance.test.js` (CI guard) imports `runLevelMatrix`, runs it
+against a small fixed seed set (≥ 20 seeds), and asserts the R6 bands so
+`npm test` catches a regression the moment `config.js` or `hauntLevel.js` is
+touched.
+
 ## Testing
 - Unit: SFX mapping, throttle, voice cap; pause freezes ticks; hit-stop timer;
   shake decay + caps + reduced motion; impact points; spark pool; dash tap;
