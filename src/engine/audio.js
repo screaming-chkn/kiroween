@@ -8,7 +8,8 @@
  *
  * Design goals:
  *   - Minimal surface: setBusVolume / getBusVolume / playMusicBed /
- *     stopMusicBed / playSfx.
+ *     stopMusicBed / unlockAudio / installAudioGestures / playSfx. SFX are synthesised with Web
+ *     Audio (no sample files); the SFX bus volume persists to localStorage.
  *   - Node-safe: the volume math (clampVolume) and bus identity (BUSES,
  *     isBus) are pure and importable under Node for tests. No browser globals
  *     are touched at import time.
@@ -102,6 +103,10 @@ export function setBusVolume(bus, v) {
   if (bus === BUSES.MUSIC && musicEl) {
     musicEl.volume = vol;
   }
+  if (bus === BUSES.SFX) {
+    if (sfxGain) sfxGain.gain.value = vol;
+    try { storage()?.setItem(SFX_VOLUME_KEY, String(vol)); } catch { /* ignore */ }
+  }
   return vol;
 }
 
@@ -164,22 +169,318 @@ export function isMusicStarted() {
   return musicStarted;
 }
 
-// ── Public: SFX (stub) ─────────────────────────────────────────────────────────
+// ── Public: SFX (Web Audio synth) ──────────────────────────────────────────────
+
+/**
+ * Logical SFX ids. Every sound is synthesised on the fly with Web Audio
+ * (oscillators + a shared noise buffer + gain envelopes), so there are no
+ * audio files to load.
+ */
+export const SFX = Object.freeze({
+  PLAYER_SHOT: 'playerShot',
+  ENEMY_SHOT:  'enemyShot',
+  HIT_ENEMY:   'hitEnemy',
+  HIT_PLAYER:  'hitPlayer',
+  DASH:        'dash',
+  WINDUP:      'windup',
+  EXPLODE:     'explode',
+  UI_CLICK:    'uiClick',
+});
+
+/**
+ * Minimum gap (ms) between two plays of the same SFX. Keeps rapid repeats
+ * (300 ms player fire, multi-hit ticks) from stacking into noise.
+ */
+export const SFX_THROTTLE_MS = Object.freeze({
+  playerShot: 90,
+  enemyShot:  90,
+  hitEnemy:   70,
+  hitPlayer:  120,
+  dash:       150,
+  windup:     300,
+  explode:    600,
+  uiClick:    60,
+});
+
+/** Persisted SFX bus volume key (no settings UI yet; M2 adds one). */
+export const SFX_VOLUME_KEY = 'hh.sfxVolume';
+
+/**
+ * Pure throttle gate. Returns true (and stamps `last[name]`) when `name` may
+ * play at `nowMs`; false when it played less than its throttle window ago.
+ *
+ * @param {Object<string, number>} last  mutable map name → last play ms
+ * @param {string} name
+ * @param {number} nowMs
+ * @returns {boolean}
+ */
+export function sfxThrottleGate(last, name, nowMs) {
+  const gap = SFX_THROTTLE_MS[name] ?? 60;
+  const prev = last[name];
+  if (prev !== undefined && nowMs - prev < gap) return false;
+  last[name] = nowMs;
+  return true;
+}
+
+/**
+ * Rough voice length (s) per SFX, used only by the voice cap below.
+ */
+export const SFX_DURATION_S = Object.freeze({
+  playerShot: 0.11,
+  enemyShot:  0.16,
+  hitEnemy:   0.09,
+  hitPlayer:  0.20,
+  dash:       0.21,
+  windup:     0.43,
+  explode:    0.79,
+  uiClick:    0.06,
+});
+
+/** Max SFX sounding at once. Keeps phones from choking on node graphs. */
+export const MAX_SFX_VOICES = 6;
+
+/**
+ * Pure voice-cap gate. `ends` is a mutable array of end times (s) for voices
+ * still sounding. Prunes finished ones; returns true (and records the new
+ * voice) when under `cap`, false when full.
+ *
+ * @param {number[]} ends
+ * @param {number} nowS
+ * @param {number} durS
+ * @param {number} [cap]
+ * @returns {boolean}
+ */
+export function voiceCapGate(ends, nowS, durS, cap = MAX_SFX_VOICES) {
+  for (let i = ends.length - 1; i >= 0; i--) if (ends[i] <= nowS) ends.splice(i, 1);
+  if (ends.length >= cap) return false;
+  ends.push(nowS + durS);
+  return true;
+}
+
+const sfxLast = {};
+const voiceEnds = [];
+let actx = null;      // AudioContext, created on the first user gesture
+let sfxGain = null;   // SFX bus gain node
+let noiseBuf = null;  // 1 s of white noise, shared by noisy voices
+
+function storage() {
+  try { return globalThis.localStorage ?? null; } catch { return null; }
+}
+
+/** Restore the persisted SFX volume (browser only; silent on failure). */
+function loadSfxVolume() {
+  try {
+    const raw = storage()?.getItem(SFX_VOLUME_KEY);
+    if (raw !== null && raw !== undefined) busVolume[BUSES.SFX] = clampVolume(raw);
+  } catch { /* storage blocked — keep default */ }
+}
+
+function audioCtxCtor() {
+  if (typeof window === 'undefined') return null;
+  return window.AudioContext || window.webkitAudioContext || null;
+}
+
+/**
+ * Create / resume the AudioContext. Call from a user gesture (Deploy, first
+ * key or tap). Safe no-op without Web Audio.
+ *
+ * @returns {boolean} true when a context exists.
+ */
+export function unlockAudio() {
+  const Ctor = audioCtxCtor();
+  if (!Ctor) return false;
+  try {
+    if (!actx) {
+      actx = new Ctor();
+      sfxGain = actx.createGain();
+      sfxGain.gain.value = busVolume[BUSES.SFX];
+      sfxGain.connect(actx.destination);
+      const len = Math.floor(actx.sampleRate);
+      noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    // iOS: playing a 1-sample silent buffer inside the gesture unlocks output.
+    try {
+      const b = actx.createBufferSource();
+      b.buffer = actx.createBuffer(1, 1, actx.sampleRate);
+      b.connect(actx.destination);
+      b.start(0);
+    } catch { /* ignore */ }
+    if (actx.state === 'suspended' && typeof actx.resume === 'function') {
+      const p = actx.resume();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    }
+    return true;
+  } catch {
+    actx = null;
+    return false;
+  }
+}
+
+// ── Voice helpers ──
+function env(g, t, peak, attack, decay) {
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+}
+
+function tone(t, { type = 'square', f0, f1, peak, attack = 0.004, decay, lp = 0 }) {
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, t);
+  if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + attack + decay);
+  env(g, t, peak, attack, decay);
+  let node = o;
+  if (lp) {
+    const f = actx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = lp;
+    o.connect(f);
+    node = f;
+  }
+  node.connect(g).connect(sfxGain);
+  o.start(t);
+  o.stop(t + attack + decay + 0.03);
+  return o;
+}
+
+function noise(t, { type = 'bandpass', f0, f1, q = 1, peak, attack = 0.003, decay }) {
+  const s = actx.createBufferSource();
+  s.buffer = noiseBuf;
+  const f = actx.createBiquadFilter();
+  f.type = type;
+  f.Q.value = q;
+  f.frequency.setValueAtTime(f0, t);
+  if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + attack + decay);
+  const g = actx.createGain();
+  env(g, t, peak, attack, decay);
+  s.connect(f).connect(g).connect(sfxGain);
+  s.start(t);
+  s.stop(t + attack + decay + 0.03);
+}
+
+/** Recipes: short, punchy, low-passed "haunted CRT" voices. */
+const RECIPES = {
+  // Clipped phosphor zap, falling pitch.
+  playerShot(t) {
+    tone(t, { type: 'square', f0: 900, f1: 260, peak: 0.12, decay: 0.07, lp: 2600 });
+  },
+  // Lower, buzzier, darker bolt so it reads as "theirs".
+  enemyShot(t) {
+    tone(t, { type: 'sawtooth', f0: 320, f1: 90, peak: 0.13, decay: 0.12, lp: 1400 });
+  },
+  // Bright tick + crunch: you landed one.
+  hitEnemy(t) {
+    noise(t, { f0: 2400, q: 1.2, peak: 0.16, decay: 0.045 });
+    tone(t, { type: 'triangle', f0: 1400, f1: 700, peak: 0.08, decay: 0.05 });
+  },
+  // Heavy low thud: you got hit.
+  hitPlayer(t) {
+    tone(t, { type: 'sine', f0: 150, f1: 45, peak: 0.35, decay: 0.16 });
+    noise(t, { type: 'lowpass', f0: 900, f1: 200, peak: 0.18, decay: 0.12 });
+  },
+  // Rising airy whoosh.
+  dash(t) {
+    noise(t, { f0: 450, f1: 2600, q: 2, peak: 0.14, attack: 0.02, decay: 0.16 });
+  },
+  // Enemy windup TELL: a warbling two-tone siren that climbs over ~0.4 s and
+  // ends right as the shot leaves (ENEMY_SHOT_WINDUP_MS = 450). The rising
+  // pitch is the cue: dash when it peaks.
+  windup(t) {
+    const dur = 0.4;
+    const o = actx.createOscillator();
+    const lfo = actx.createOscillator();
+    const lfoGain = actx.createGain();
+    const g = actx.createGain();
+    const f = actx.createBiquadFilter();
+    o.type = 'square';
+    o.frequency.setValueAtTime(330, t);
+    o.frequency.exponentialRampToValueAtTime(990, t + dur);
+    lfo.type = 'square';
+    lfo.frequency.setValueAtTime(14, t);
+    lfo.frequency.linearRampToValueAtTime(26, t + dur);
+    lfoGain.gain.value = 60;            // ±60 Hz two-tone warble
+    lfo.connect(lfoGain).connect(o.frequency);
+    f.type = 'lowpass';
+    f.frequency.value = 2200;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.03);
+    g.gain.linearRampToValueAtTime(0.13, t + dur - 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(g).connect(sfxGain);
+    o.start(t); lfo.start(t);
+    o.stop(t + dur + 0.03); lfo.stop(t + dur + 0.03);
+  },
+  // Kill / death: falling filtered noise boom + sub drop.
+  explode(t) {
+    noise(t, { type: 'lowpass', f0: 2400, f1: 120, q: 0.8, peak: 0.35, attack: 0.005, decay: 0.75 });
+    tone(t, { type: 'sine', f0: 110, f1: 30, peak: 0.35, decay: 0.6 });
+  },
+  // Tiny CRT click for garage buttons.
+  uiClick(t) {
+    tone(t, { type: 'triangle', f0: 1500, f1: 1100, peak: 0.06, attack: 0.002, decay: 0.03 });
+  },
+};
+
+/**
+ * Wire the first user gesture (tap, click or key) on `target` to
+ * unlockAudio(), and give every DOM button / option a UI click. Call once at
+ * boot. No-op without addEventListener.
+ *
+ * @param {EventTarget} target  usually document
+ */
+export function installAudioGestures(target) {
+  if (!target || typeof target.addEventListener !== 'function') return;
+  const unlock = () => {
+    if (unlockAudio() && actx.state === 'running') {
+      for (const ev of ['pointerdown', 'touchend', 'keydown']) {
+        target.removeEventListener(ev, unlock, true);
+      }
+    }
+  };
+  for (const ev of ['pointerdown', 'touchend', 'keydown']) {
+    target.addEventListener(ev, unlock, true);
+  }
+  target.addEventListener('click', (e) => {
+    const el = e.target;
+    if (el && typeof el.closest === 'function' &&
+        el.closest('button, [role="button"], [role="option"]')) {
+      playSfx(SFX.UI_CLICK);
+    }
+  });
+}
+
+/** Debug hook: when `globalThis.__HH_SFX_LOG__` is an array, each call is pushed. */
+function debugLog(name, played) {
+  const log = globalThis.__HH_SFX_LOG__;
+  if (Array.isArray(log)) log.push({ name, played, t: Date.now() });
+}
 
 /**
  * Play a one-shot sound effect on the SFX bus.
  *
- * Stub: no sample bank wired yet. Returns whether playback could occur so
- * callers can branch, but does no work beyond honoring the SFX bus volume /
- * availability. Expand with a real sample map later (no ducking / playlists).
+ * Throttled per name (SFX_THROTTLE_MS). Safe no-op (returns false) when Web
+ * Audio is unavailable, the context has not been unlocked by a gesture yet,
+ * the SFX bus is muted, the name is unknown, or it is throttled.
  *
- * @param {string} name  logical SFX id
- * @returns {boolean} true if audio could play, false if muted/unavailable.
+ * @param {string} name  one of SFX.*
+ * @returns {boolean} true if the sound was scheduled.
  */
 export function playSfx(name) {
-  if (!audioAvailable()) return false;
-  if (busVolume[BUSES.SFX] <= 0) return false;
-  // Intentional stub: no sample bank yet. `name` reserved for future map.
-  void name;
-  return true;
+  let played = false;
+  if (actx && sfxGain && RECIPES[name] && busVolume[BUSES.SFX] > 0 &&
+      sfxThrottleGate(sfxLast, name, actx.currentTime * 1000) &&
+      voiceCapGate(voiceEnds, actx.currentTime, SFX_DURATION_S[name])) {
+    try {
+      RECIPES[name](actx.currentTime + 0.005);
+      played = true;
+    } catch { played = false; }
+  }
+  debugLog(name, played);
+  return played;
 }
+
+// Browser-only: restore persisted SFX volume at load (Node has no storage here).
+if (typeof window !== 'undefined') loadSfxVolume();

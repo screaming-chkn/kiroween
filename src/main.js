@@ -31,7 +31,8 @@ import { mountGarage }         from './ui/garage.js';
 import { syncTankFx }          from './ui/tankFx.js';
 import { mountSeance }         from './ui/seance.js';
 import { injectPossessionCSS } from './ui/possession.js';
-import { playMusicBed }        from './engine/audio.js';
+import { playMusicBed, installAudioGestures, playSfx, SFX } from './engine/audio.js';
+import { sfxEventsForTick }    from './combat/sfxEvents.js';
 import { createArena, updateArena } from './combat/arena.js';
 import { buildPlayerActions }  from './combat/actions.js';
 import { drawWorld,
@@ -121,6 +122,9 @@ function boot() {
 
   if (loading) loading.hidden = true;
   canvas.focus();
+
+  // First gesture unlocks Web Audio (iOS); DOM buttons get a UI click.
+  installAudioGestures(document);
 
   // Detect reduced-motion preference.
   const prefersReduced =
@@ -542,6 +546,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       if (pendingAction) {
         const action = pendingAction;
         pendingAction = null;
+        playSfx(SFX.UI_CLICK);
         loop.stop();
         cleanup();
         if (action === 'retry') {
@@ -582,8 +587,10 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         actions = mergeTouchActions(actions, touch.sample(), touchScreenToWorld);
       }
 
-      // Step the arena.
+      // Step the arena, then voice whatever happened this tick (M1 SFX).
+      const prevState = arenaState;
       arenaState = updateArena(arenaState, actions, dt);
+      for (const name of sfxEventsForTick(prevState, arenaState)) playSfx(name);
       pushAfterimage(afterimages, arenaState.player);
 
       // Taunt on the enemy's windup edge (0 → >0).
