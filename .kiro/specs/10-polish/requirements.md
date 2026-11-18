@@ -94,4 +94,10 @@ licence.
 ### R7 Phone + private preview (M5)
 - A private Cloudflare Pages preview SHALL load and play on a real phone and
   desktop with no console errors.
+- WHEN `npm run build:site` runs, the system SHALL write a static preview of
+  the game to deploy/site/ (index.html, src, assets, public).
+- The preview SHALL carry a `_headers` file with `X-Robots-Tag: noindex` and a
+  robots.txt that disallows all crawlers.
+- The README SHALL describe the 1v1 duel (pitch, controls, Costume Contest fit,
+  how Kiro was used, credits) and the MIT licence.
 - A public deploy and the Devpost submission SHALL need the owner's yes.

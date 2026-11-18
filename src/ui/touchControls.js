@@ -205,7 +205,11 @@ export function mountTouchControls(root, { getViewport }) {
     controller.onPointerCancel(e);
     layout();
   }
-  function stopTouch(e) { e.preventDefault(); }
+  // Only cancel touches the browser says are cancelable: calling
+  // preventDefault on a non-cancelable touchmove (scroll already in progress)
+  // does nothing and logs a console intervention warning. touch-action: none
+  // on the overlay already stops the scroll/zoom (M5 headless phone pass).
+  function stopTouch(e) { if (e.cancelable) e.preventDefault(); }
 
   overlay.addEventListener('pointerdown', down);
   overlay.addEventListener('pointermove', move);

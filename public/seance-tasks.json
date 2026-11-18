@@ -101,7 +101,7 @@
   {
     "spec": "02-mech-builder",
     "id": 9,
-    "title": "Hex part display (R7)",
+    "title": "Hex part display (R7) — CUT (1v1 pivot)",
     "done": false
   },
   {
@@ -487,109 +487,109 @@
   {
     "spec": "04-radar-relays",
     "id": 1,
-    "title": "Visibility grid from relays + player (R1)",
+    "title": "Visibility grid from relays + player (R1) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "04-radar-relays",
     "id": 2,
-    "title": "Relay capture step with Scout ×2 and contest reset (R2)",
+    "title": "Relay capture step with Scout ×2 and contest reset (R2) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "04-radar-relays",
     "id": 3,
-    "title": "Static layer + damage spike/decay + No-static fallback (R1)",
+    "title": "Static layer + damage spike/decay + No-static fallback (R1) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "04-radar-relays",
     "id": 4,
-    "title": "Ping generation with seeded fakes for Liar's Eye (R3)",
+    "title": "Ping generation with seeded fakes for Liar's Eye (R3) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "04-radar-relays",
     "id": 5,
-    "title": "Radar draw with colorblind shapes; Space pulse reveal (R3)",
+    "title": "Radar draw with colorblind shapes; Space pulse reveal (R3) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "04-radar-relays",
     "id": 6,
-    "title": "Footstep/whisper cues + visual equivalents; Loud Bones (R4)",
+    "title": "Footstep/whisper cues + visual equivalents; Loud Bones (R4) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "04-radar-relays",
     "id": 7,
-    "title": "Static Surge at 5:00 (R5)",
+    "title": "Static Surge at 5:00 (R5) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "04-radar-relays",
     "id": 8,
-    "title": "PBT: fake ratio, visibility monotonic (R3, R1)",
+    "title": "PBT: fake ratio, visibility monotonic (R3, R1) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "05-enemy-ai",
     "id": 1,
-    "title": "Enemy spawn + squad state (R1)",
+    "title": "Enemy spawn + squad state (R1) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "05-enemy-ai",
     "id": 2,
-    "title": "Pursue / aim / fire behaviour within range (R1)",
-    "done": false
+    "title": "Pursue / aim / fire behaviour within range (R1) — shipped as the 1v1 duel bot",
+    "done": true
   },
   {
     "spec": "05-enemy-ai",
     "id": 3,
-    "title": "Tunable accuracy + reaction for a fair starter match (R3)",
-    "done": false
+    "title": "Tunable accuracy + reaction for a fair starter match (R3) — shipped as the 1v1 duel bot",
+    "done": true
   },
   {
     "spec": "05-enemy-ai",
     "id": 4,
-    "title": "SI wingmen + F tap/hold orders — DEFERRED (R2)",
+    "title": "SI wingmen + F tap/hold orders — DEFERRED (R2) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "05-enemy-ai",
     "id": 5,
-    "title": "Pure-function tests for targeting + cooldown math (R1)",
-    "done": false
+    "title": "Pure-function tests for targeting + cooldown math (R1) — shipped as the 1v1 duel bot",
+    "done": true
   },
   {
     "spec": "06-cursed-salvage",
     "id": 1,
-    "title": "Salvage offer: pick 1 of 3 after a match (R1)",
+    "title": "Salvage offer: pick 1 of 3 after a match (R1) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "06-cursed-salvage",
     "id": 2,
-    "title": "Persist the chosen part to the garage loadout (R1)",
+    "title": "Persist the chosen part to the garage loadout (R1) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "06-cursed-salvage",
     "id": 3,
-    "title": "Cursed part text tag (never colour alone) (R2)",
+    "title": "Cursed part text tag (never colour alone) (R2) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "06-cursed-salvage",
     "id": 4,
-    "title": "Hex rules (Liar's Eye / Hungry Core / Loud Bones) — DEFERRED (R3)",
+    "title": "Hex rules (Liar's Eye / Hungry Core / Loud Bones) — DEFERRED (R3) — CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "06-cursed-salvage",
     "id": 5,
-    "title": "Pure-function tests for offer generation + hex rules (R1, R3)",
+    "title": "Pure-function tests for offer generation + hex rules (R1, R3) — CUT (1v1 pivot)",
     "done": false
   },
   {
@@ -607,25 +607,25 @@
   {
     "spec": "07-ui-crt",
     "id": 3,
-    "title": "Title screen + menu framing (R1)",
-    "done": false
+    "title": "Title screen + menu framing (R1) — shipped in 10-polish M2",
+    "done": true
   },
   {
     "spec": "07-ui-crt",
     "id": 4,
-    "title": "Settings panel: static, shake, no-static, reduced motion, colorblind, volume (R1)",
+    "title": "Settings panel: static, shake, no-static, reduced motion, colorblind, volume (R1) — volume + mute shipped in the 10-polish M2 pause menu; reduced motion follows prefers-reduced-motion; static / shake / no-static / colorblind sliders CUT (1v1 pivot)",
     "done": false
   },
   {
     "spec": "07-ui-crt",
     "id": 5,
-    "title": "Pause menu reachable from a match (R1)",
-    "done": false
+    "title": "Pause menu reachable from a match (R1) — shipped in 10-polish M2",
+    "done": true
   },
   {
     "spec": "07-ui-crt",
     "id": 6,
-    "title": "Possession static-burst / 1.2 s wipe animation — DEFERRED (R2)",
+    "title": "Possession static-burst / 1.2 s wipe animation — DEFERRED (R2) — CUT (1v1 pivot)",
     "done": false
   },
   {
@@ -895,14 +895,14 @@
   {
     "spec": "10-polish",
     "id": 17,
-    "title": "M5 private Cloudflare Pages preview + real-phone test (R7)",
+    "title": "M5 private Cloudflare Pages preview deployed + real-phone test (R7)",
     "done": false
   },
   {
     "spec": "10-polish",
     "id": 18,
     "title": "M5 README + steering rewritten for the 1v1 duel (R7)",
-    "done": false
+    "done": true
   },
   {
     "spec": "10-polish",
@@ -950,6 +950,36 @@
     "spec": "10-polish",
     "id": 26,
     "title": "M4 Kiro hooks: seance-on-spec-save rebuilds the seance on tasks.md change; balance-on-combat-save runs balance.test.js on config.js/hauntLevel.js save (R6)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 27,
+    "title": "M5 `npm run build:site` writes a static preview to deploy/site/ with _headers noindex + robots.txt Disallow (R7)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 28,
+    "title": "M5 headless desktop + phone pass served from deploy/site: 0 console errors, full match, music (R7)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 29,
+    "title": "M5 README rewritten for the 1v1 pitch, controls, Costume Contest fit, How we used Kiro, credits, MIT (R7)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 30,
+    "title": "M5 steering product/tech/structure rewritten for the shipped duel (R7)",
+    "done": true
+  },
+  {
+    "spec": "10-polish",
+    "id": 31,
+    "title": "M5 Kiro hook: usage-log check on README/KIRO save (R7)",
     "done": true
   },
   {

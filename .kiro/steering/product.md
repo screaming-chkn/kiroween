@@ -2,9 +2,10 @@
 inclusion: always
 ---
 # Product
-- HAUNT//HOUND: single-player browser mech squad tactics. Garage (build from parts) → Deploy (5–7 min match, hard cap 8, Static Surge at minute 5) → Salvage (pick 1 of 3, some cursed) → Garage. Meta: a local Haunted Front sector map.
-- First-ever run: 3-minute starter match with a preset mech. A match starts in under 30 seconds.
-- Spooky effects must do real work: static hides enemies, radar ghost pings are scouting info, sound tells real from fake.
-- Player plus 2 SI wingmen vs an enemy squad. Wingman orders on F: tap = Follow, hold = Hold/Capture.
-- Hexes (MVP): Liar's Eye, Hungry Core, Loud Bones. No hex ever takes input away.
-- Copy: say "SI" or "wingmen", never "AI". Never name the reference game. No copyrighted music or third-party assets.
+- HAUNT//HOUND: a 1v1 possessed-tank duel in the browser, shown through a haunted CRT cockpit. You build a tank, then fight one possessed enemy tank.
+- Loop: Title → Garage (legs, core, two arm slots; weight and power; SÉANCE button opens the build-ledger terminal from `public/seance-tasks.json`) → Duel arena → kill moment + end card → REDEPLOY or GARAGE.
+- Duel: the bot shows a red windup telegraph before each shot. Dash to dodge. Hits give hit-stop, camera shake and sparks.
+- HAUNT LV 1–5 rises only on a win. The ramp is tuned by the headless balance matrix (`.kiro/steering/balance.md`).
+- Controls: desktop WASD/arrows move, mouse aims, hold left mouse to fire, Shift dashes, Esc or P pauses. Phone (portrait): left-half drag stick, FIRE button bottom-right (drag to aim), DASH button left of FIRE, on-screen pause button.
+- Cut in the 1v1 pivot (not in the game): radar and relays, SI wingmen, squad enemy AI, salvage and hexes, sector map, Static Surge, second map.
+- Copy: never name the reference game. No copyrighted music, fonts or third-party assets. Player-facing text says "possessed" or "the bot", never "AI".

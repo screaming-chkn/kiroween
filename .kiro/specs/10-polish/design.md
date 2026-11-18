@@ -71,6 +71,17 @@ against a small fixed seed set (≥ 20 seeds), and asserts the R6 bands so
 `npm test` catches a regression the moment `config.js` or `hauntLevel.js` is
 touched.
 
+## M5 ship
+
+- `npm run build:site` (script under scripts/) copies the static game into
+  deploy/site/ and writes `_headers` (`/*` → `X-Robots-Tag: noindex`) and
+  `robots.txt` (`User-agent: *` / `Disallow: /`). No bundler, no dependencies.
+- Hosting is a private Cloudflare Pages preview. Public deploy waits for the
+  owner's yes.
+- Verification: headless desktop (1280x800) and phone (390x844) runs served
+  from deploy/site, then a real-phone test.
+- README and the steering files describe the shipped duel.
+
 ## Testing
 - Unit: SFX mapping, throttle, voice cap; pause freezes ticks; hit-stop timer;
   shake decay + caps + reduced motion; impact points; spark pool; dash tap;
