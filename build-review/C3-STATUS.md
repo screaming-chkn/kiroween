@@ -3,7 +3,7 @@
 Hold lifted by the owner via BotKing at 11:14 AM PT. Branch `feat/hud-c` **not merged**. Main stays `925696d`.
 
 ## WIP tip
-After C3b HUD commit (see git log on feat/hud-c). Worktree: feature branch only.
+Tip: `47c7948` (C3b HUD). Worktree: feature branch only.
 
 ## Done on branch (C3b — this resume)
 - **Below the line:** meters + labels + frames + bars use `METER_LINE_GAP` (6 CSS px) under the arena green line (`arenaTopLineSy` + `meterTopInset`). Taunt gap ≥6 from main.
