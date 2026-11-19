@@ -111,6 +111,34 @@ Pure helpers over a plain state `{ active, grabbed, spawned, x, y }`:
 - `screenHpTopReserve` feeds the tell caption position so the DASH caption sits
   below the meters.
 
+## C3 update (below the line, top strip, Orbitron)
+- `screenHpMeters.js`: `METER_FONT` is `Orbitron, "Share Tech Mono", monospace`.
+  New pure helpers: `arenaTopLineSy(camera, vpW, vpH, shakeX, shakeY, arenaCx)`
+  (line bottom y in canvas px), `meterTopInset(lineBottom, scale)` (line + 6 px
+  scaled), `cornerVGeometry` (group boxes incl. label), `meterSideReserve`.
+  Labels are "HP" / "HOUND" drawn under each bar (`textBaseline: top`), so no
+  pixel of a group is above `topInset`. `opts.scale` scales bar, font and insets.
+- `topBarHud.js` (new): `formatFightClock(ms)`, `topBarCells(state, opts)`
+  (text + colour per cell, order `TOP_BAR_ORDER`), `topBarLayout(vpW, scale,
+  { insetTop, pauseReserve })` (one row on desktop, two rows under 720 CSS px),
+  `topBarHeight`, `drawTopBarHud(ctx, state, vpW, lineBottom, opts)` which clips
+  to the strip so it cannot reach the line. Constants:
+  `TOP_BAR_HP_PLAYER_COLOR` #39FF88, `TOP_BAR_HP_HOUND_COLOR` #FF4D5E.
+- `main.js`: one `lineBottomPx` = max(arena line bottom, strip bottom). Meters
+  use `meterTopInset(lineBottom, hudScale)`; the taunt uses `gap: 6` and
+  `sidePad = meterSideReserve(...)`; the tell caption sits `lineBottom + 36`
+  CSS px. The strip replaces the old corner / bottom-left `drawFixedHUD` call
+  (kept in `combatRenderer.js` for tests). `phoneFrame` topPx is the strip
+  bottom + 8 px. Desktop `fitZoom` reserves 2 x 40 px so the line clears the
+  strip.
+- `possessedTaunts.js`: taunt font is Orbitron; lines that still do not fit at
+  the 14 px floor wrap (up to 3 lines).
+- `pauseMenu.js`: `.hh-pause-btn` is 36 px at the top-right of the strip.
+- `fonts.js` waits for Orbitron 400/500/700; `index.html` declares and preloads
+  them. `drawHauntLevel` uses Orbitron.
+- Tests: `tests/combat/screenHpMeters.test.js` (line helper, ≥6 px, Orbitron),
+  `tests/combat/hud.test.js` (clock, cell order, colours, layout).
+
 ## Budgets and safety
 - No per-frame allocation is added by the meters. The ghost perk is one small
   object, replaced only on spawn and grab.

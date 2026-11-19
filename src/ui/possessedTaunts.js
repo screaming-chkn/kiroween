@@ -227,33 +227,70 @@ export function drawPossessedTaunt(ctx, line, pos) {
   const scale = pos.scale > 0 ? pos.scale : 1;
   const px = Math.max(14, Math.round(14 * scale));
   ctx.save();
-  ctx.font = `${px}px "Share Tech Mono", monospace`;
+  ctx.font = `${px}px ${TAUNT_FONT}`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  const fullW = typeof ctx.measureText === 'function'
-    ? (ctx.measureText(line.text)?.width ?? line.text.length * px * 0.6)
-    : line.text.length * px * 0.6;
+  const hasMeasure = typeof ctx.measureText === 'function';
+  let drawPx = px;
+  const measure = (t) => (hasMeasure
+    ? (ctx.measureText(t)?.width ?? t.length * drawPx * 0.6)
+    : t.length * drawPx * 0.6);
+  const fullW = measure(line.text);
   const viewW = ctx.canvas?.width ?? Infinity;
   const side = Number.isFinite(pos.sidePad) ? pos.sidePad : 56 * scale;
   const margin = Math.max(8 * scale, side);
-  let x = pos.x - fullW / 2;
-  if (Number.isFinite(viewW)) x = Math.min(x, viewW - margin - fullW);
-  x = Math.max(margin, x);
-  // If the full line still won't fit between the meters, shrink once (floor 14px).
-  let drawPx = px;
   const usable = Number.isFinite(viewW) ? viewW - 2 * margin : Infinity;
+  // Too wide: shrink once (floor = 14 CSS px), then wrap if it still will not fit.
   if (fullW > usable && usable > 0) {
-    drawPx = Math.max(14, Math.floor(px * usable / fullW));
-    ctx.font = `${drawPx}px "Share Tech Mono", monospace`;
+    drawPx = Math.max(px, Math.floor(px * usable / fullW));
+    ctx.font = `${drawPx}px ${TAUNT_FONT}`;
   }
-  const y = Math.max(drawPx + 8 * scale, pos.y);
+  const lines = (usable > 0 && hasMeasure && measure(line.text) > usable)
+    ? wrapLines(line.text, usable, measure, 3)
+    : [{ start: 0, text: line.text }];
+  const lineH = Math.round(drawPx * 1.25);
+  const y0 = Math.max(drawPx + 8 * scale, pos.y);
   const fill = line.color || tauntColor(line.speaker);
   ctx.globalAlpha = Math.max(0, Math.min(1, line.alpha));
   ctx.lineWidth = 1;
   ctx.lineJoin = 'round';
   ctx.strokeStyle = '#0A0D0B';
-  ctx.strokeText(line.typed, x, y);
   ctx.fillStyle = fill;
-  ctx.fillText(line.typed, x, y);
+  lines.forEach((ln, i) => {
+    const shown = line.typed.slice(ln.start, ln.start + ln.text.length);
+    if (!shown) return;
+    const w = lines.length === 1 ? fullW : measure(ln.text);
+    let x = pos.x - w / 2;
+    if (Number.isFinite(viewW)) x = Math.min(x, viewW - margin - w);
+    x = Math.max(margin, x);
+    const y = y0 + i * lineH;
+    ctx.strokeText(shown, x, y);
+    ctx.fillText(shown, x, y);
+  });
   ctx.restore();
+}
+
+/** Canvas font stack for taunts (Orbitron, self-hosted OFL). */
+export const TAUNT_FONT = 'Orbitron, "Share Tech Mono", monospace';
+
+/** Greedy word wrap of `text` into at most `maxLines`; returns [{start,text}]. */
+function wrapLines(text, maxW, measure, maxLines) {
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  let curStart = 0;
+  let pos = 0;
+  for (const w of words) {
+    const next = cur ? `${cur} ${w}` : w;
+    if (cur && measure(next) > maxW && lines.length < maxLines - 1) {
+      lines.push({ start: curStart, text: cur });
+      cur = w;
+      curStart = pos;
+    } else {
+      cur = next;
+    }
+    pos += w.length + 1;
+  }
+  lines.push({ start: curStart, text: cur });
+  return lines;
 }

@@ -107,16 +107,20 @@ test('music runtime is a safe no-op before unlock (Node)', async () => {
 test('fonts: canvas faces are self-hosted with OFL licences and preloaded', () => {
   const html = readFileSync('index.html', 'utf8');
   for (const [face, file] of [['VT323', 'vt323-400'], ['Share Tech Mono', 'share-tech-mono-400'],
-    ['IBM Plex Mono', 'ibm-plex-mono-400'], ['Rajdhani', 'rajdhani-600']]) {
+    ['IBM Plex Mono', 'ibm-plex-mono-400'], ['Rajdhani', 'rajdhani-600'],
+    ['Orbitron', 'orbitron-400'], ['Orbitron', 'orbitron-500'], ['Orbitron', 'orbitron-700']]) {
     assert.ok(existsSync(`assets/fonts/${file}.woff2`), file);
     assert.ok(html.includes(`font-family: '${face}'`), `@font-face ${face}`);
   }
-  for (const lic of ['VT323', 'ShareTechMono', 'IBMPlexMono', 'Rajdhani']) {
+  for (const lic of ['VT323', 'ShareTechMono', 'IBMPlexMono', 'Rajdhani', 'Orbitron']) {
     assert.match(readFileSync(`assets/fonts/OFL-${lic}.txt`, 'utf8'), /SIL Open Font License/);
   }
-  assert.equal((html.match(/font-display: swap/g) || []).length, 4);
+  // 4 legacy faces + Orbitron 400/500/700
+  assert.equal((html.match(/font-display: swap/g) || []).length, 7);
   assert.ok(html.includes('rel="preload" href="assets/fonts/vt323-400.woff2"'));
+  assert.ok(html.includes('rel="preload" href="assets/fonts/orbitron-500.woff2"'));
   assert.ok(CANVAS_FONTS.some(f => f.includes('VT323')) && CANVAS_FONTS.some(f => f.includes('Share Tech Mono')));
+  assert.ok(CANVAS_FONTS.some(f => f.includes('Orbitron')));
 });
 
 test('loadGameFonts waits for every canvas face, then fonts.ready', async () => {

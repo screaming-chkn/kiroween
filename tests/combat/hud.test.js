@@ -20,6 +20,10 @@ import {
   stutterRingFraction,
   STUTTER_RING_STEPS,
 } from '../../src/combat/hud.js';
+import {
+  formatFightClock, topBarCells, topBarLayout, topBarHeight, isNarrowTopBar,
+  TOP_BAR_ORDER, TOP_BAR_HP_PLAYER_COLOR, TOP_BAR_HP_HOUND_COLOR, TOP_BAR_FONT, TOP_BAR,
+} from '../../src/combat/topBarHud.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
 
@@ -227,6 +231,93 @@ test('result is always within [0, 1] and clamps out-of-range input', () => {
   assert.ok(approxEq(stutterRingFraction(1.5, true), 1));
   assert.ok(approxEq(stutterRingFraction(-0.5, true), 0));
   assert.ok(approxEq(stutterRingFraction(NaN, false), 0));
+});
+
+// ── Top strip (HUD C3) ───────────────────────────────────────────────────────
+
+console.log('\nsrc/combat/topBarHud.js\n');
+
+test('formatFightClock: zero-padded MM:SS counting up', () => {
+  assert.equal(formatFightClock(0), '00:00');
+  assert.equal(formatFightClock(999), '00:00');
+  assert.equal(formatFightClock(1000), '00:01');
+  assert.equal(formatFightClock(65000), '01:05');
+  assert.equal(formatFightClock(600000), '10:00');
+  assert.equal(formatFightClock(NaN), '00:00');
+  assert.equal(formatFightClock(-5), '00:00');
+  assert.equal(formatFightClock(undefined), '00:00');
+});
+
+const FIGHT = {
+  elapsedMs: 83000,
+  player: { hp: 77, maxHp: 140, energy: 50, maxEnergy: 80, powerBalance: 2, fireCooldown: 0 },
+  enemy: { hp: 272, maxHp: 440 },
+};
+
+test('topBarCells: all cells in order, HP green / HOUND red, timer text', () => {
+  const cells = topBarCells(FIGHT, { hauntLv: 3 });
+  assert.deepEqual(cells.map(c => c.id), [...TOP_BAR_ORDER]);
+  assert.deepEqual([...TOP_BAR_ORDER], ['hp', 'en', 'power', 'ready', 'timer', 'hound', 'lv']);
+  const by = Object.fromEntries(cells.map(c => [c.id, c]));
+  assert.equal(TOP_BAR_HP_PLAYER_COLOR, '#39FF88');
+  assert.equal(TOP_BAR_HP_HOUND_COLOR, '#FF4D5E');
+  assert.equal(by.hp.color, TOP_BAR_HP_PLAYER_COLOR);
+  assert.equal(by.hound.color, TOP_BAR_HP_HOUND_COLOR);
+  assert.ok(by.hp.text.includes('77/140'), by.hp.text);
+  assert.ok(by.hound.text.includes('272/440'), by.hound.text);
+  assert.ok(by.en.text.includes('50/80'), by.en.text);
+  assert.equal(by.timer.text, '01:23');
+  assert.equal(by.power.text, 'POWER OK');
+  assert.equal(by.lv.text, 'HAUNT LV 3');
+  assert.equal(by.ready.text, 'READY');
+});
+
+test('topBarCells: stutter and reload read as words, not colour alone', () => {
+  const s = topBarCells({ ...FIGHT, player: { ...FIGHT.player, powerBalance: -3, fireCooldown: 150 } });
+  const by = Object.fromEntries(s.map(c => [c.id, c]));
+  assert.ok(by.power.text.includes('STUTTER'));
+  assert.equal(by.power.stutter, true);
+  assert.equal(by.ready.text, 'RELOAD');
+});
+
+test('topBarCells: narrow drops prefixes so phone cells fit', () => {
+  const by = Object.fromEntries(topBarCells(FIGHT, { hauntLv: 2, narrow: true }).map(c => [c.id, c]));
+  assert.equal(by.hp.text, '77/140');
+  assert.equal(by.hound.text, '272/440');
+  assert.equal(by.lv.text, 'LV 2');
+});
+
+test('topBarLayout: desktop is one row, order left to right, timer centred', () => {
+  const L = topBarLayout(1280, 1);
+  assert.equal(L.narrow, false);
+  assert.equal(L.rows.length, 1);
+  assert.deepEqual(L.cells.map(c => c.id), [...TOP_BAR_ORDER]);
+  for (let i = 1; i < L.cells.length; i++) {
+    assert.ok(L.cells[i].x >= L.cells[i - 1].x + L.cells[i - 1].w, `cell ${L.cells[i].id} overlaps`);
+  }
+  const t = L.cells.find(c => c.id === 'timer');
+  assert.ok(approxEq(t.x + t.w / 2, 640, 1e-6));
+  assert.equal(L.h, TOP_BAR.rowH);
+  for (const c of L.cells) assert.ok(c.x >= 0 && c.x + c.w <= 1280);
+});
+
+test('topBarLayout: phone is two rows, clears the pause button, includes safe inset', () => {
+  assert.equal(isNarrowTopBar(390, 1), true);
+  const L = topBarLayout(390 * 3, 3, { insetTop: 10, pauseReserve: TOP_BAR.pauseReserve });
+  assert.equal(L.narrow, true);
+  assert.equal(L.rows.length, 2);
+  assert.equal(L.h, (10 + TOP_BAR.narrowRow0H + TOP_BAR.narrowRow1H) * 3);
+  assert.equal(topBarHeight(390 * 3, 3, { insetTop: 10, pauseReserve: TOP_BAR.pauseReserve }), L.h);
+  const hound = L.cells.find(c => c.id === 'hound');
+  assert.ok(hound.x + hound.w <= (390 - TOP_BAR.pauseReserve) * 3 + 1e-6, 'HOUND HP clear of pause');
+  const t = L.cells.find(c => c.id === 'timer');
+  assert.ok(approxEq(t.x + t.w / 2, 390 * 3 / 2, 1e-6));
+  assert.deepEqual(L.cells.map(c => c.id), [...TOP_BAR_ORDER]);
+});
+
+test('top strip font is Orbitron; strip text is at least 14px', () => {
+  assert.ok(TOP_BAR_FONT.startsWith('Orbitron'));
+  assert.ok(TOP_BAR.fontPx >= 14);
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

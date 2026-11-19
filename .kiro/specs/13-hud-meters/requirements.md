@@ -22,8 +22,8 @@ Canvas 2D.
   arena field of view), not at the very top edge of the screen. They SHALL stay
   clear of the mechs, the red windup tell, the DASH caption and the touch and
   desktop controls.
-- Labels SHALL read "HP {cur}/{max}" for the player and "HOUND {cur}/{max}" for
-  the enemy.
+- Labels SHALL read "HP" for the player and "HOUND" for the enemy (C3: the
+  numbers moved to the top strip, see R9).
 - Module `src/combat/screenHpMeters.js` SHALL export `SCREEN_HP_LAYOUT`
   (`'corner-v'`), `drawScreenHpMeters`, `screenHpTopReserve` and
   `meterFillColor`.
@@ -31,8 +31,8 @@ Canvas 2D.
 ### R2 Meter colour and digital look
 - The meter fill SHALL be orange (#FF8A3D) WHILE hp/maxHp is above 0.25.
 - WHEN hp/maxHp is 0.25 or less, the fill SHALL turn red (#FF4D5E).
-- Labels and numbers SHALL use the self-hosted VT323 (OFL) face, falling back to
-  "Share Tech Mono", then monospace. Text SHALL be at least 16 px.
+- Labels and numbers SHALL use the self-hosted Orbitron (OFL) face, falling back to
+  "Share Tech Mono", then monospace. Text SHALL be at least 14 px.
 - Meter frames SHALL be dotted phosphor (#39FF88) to match the wireframe
   blueprint UI. Colour is never the only signal: the fill height and the
   numeric label carry the same value.
@@ -85,6 +85,39 @@ Canvas 2D.
   SHALL stay stable (no ghost state, same seeded results).
 - Live `startArena` wiring MAY pass `enableGhostPerk: true`. The balance harness
   and unit tests that omit it keep the old behaviour.
+
+### R8 Below the line, above the line (C3)
+- The green line is the bottom edge of the arena's top border in screen space
+  (`arenaTopLineSy`, world y 0 plus the 2 wu stroke). It is not the old phone
+  HUD panel.
+- Everything in each meter group (bar, dotted frame, fill, label text) and the
+  in-fight taunt glyph box SHALL have its top edge at least 6 CSS px below the
+  line's bottom edge (scaled by the overlay's hudScale / dpr). The group label
+  sits under its bar, never above it. `main.js` sets
+  `topInset = meterTopInset(lineBottom, scale)` and the taunt uses
+  `tauntUnderLineY({ lineBottom, scale, gap: 6 })`.
+- Meter labels read "HP" and "HOUND". The numbers live in the top strip.
+- The taunt keeps clear of the meter groups (`meterSideReserve`) and wraps to a
+  second line instead of dropping under 14 px.
+- The tell caption sits 36 CSS px under the line, below the taunt row.
+
+### R9 Top strip above the line (C3)
+- During a live fight a full-width strip (`src/combat/topBarHud.js`,
+  `drawTopBarHud`) is drawn above the green line on desktop and phone. Cells,
+  left to right: player HP numbers (phosphor #39FF88), EN, POWER (ember pulse on
+  STUTTER), READY (cooldown ring plus the word READY or RELOAD), a centred fight
+  timer, HOUND HP numbers (blood #FF4D5E), HAUNT LV. No radar cell: 1v1 has none.
+- The timer is `formatFightClock(state.elapsedMs)`, zero-padded MM:SS counting
+  up from 00:00.
+- Cells have dotted blueprint frames and even spacing. Phones in portrait use
+  two rows (HP, timer, HOUND; then EN, POWER, READY, LV) and the safe-area
+  inset. The DOM `.hh-pause-btn` sits in the strip's top-right corner and the
+  cells keep clear of it.
+- Desktop reserves the strip band in the fit zoom (arena stays centred, zoom
+  drops about 5% at 1280x800). Phone `phoneFrame` uses the strip bottom as its
+  top band.
+- HUD readouts (strip, meters, taunt, HAUNT LV) use Orbitron (self-hosted, SIL
+  OFL, `assets/fonts/orbitron-*.woff2`). VT323 stays for title, garage and séance.
 
 ### R7 Tests and readability
 - Unit tests SHALL cover: `meterFillColor` thresholds, the corner-v layout

@@ -1,31 +1,30 @@
-# C3 STATUS — HOLD (2026-11-19 ~10:12 AM PT)
+# C3 STATUS — HOLD LIFTED (2026-11-19 11:14 AM PT)
 
-owner hold until ~2:15 PM PT (BotKing resume). Branch `feat/hud-c` **not merged**. Main stays `925696d`.
+Hold lifted by the owner via BotKing at 11:14 AM PT. Branch `feat/hud-c` **not merged**. Main stays `925696d`.
 
 ## WIP tip
-Tip at hold: `b0b65fb` (includes C3-STATUS + KIRO-USAGE hold note). Worktree: repo feature branch only.
+After C3b HUD commit (see git log on feat/hud-c). Worktree: feature branch only.
 
-## Done (on branch)
-- **C / C2 gameplay HUD** (already on branch before C3): corner vertical meters under arena line; orange→red @ ≤25%; ghost perk (player-only, ~12s, +10% maxHp heal); top stats panel without HP; taunts centered under line in speaker color (HOUND red); damage pops kept.
-- **Kiro Run A:** `.kiro/specs/13-hud-meters/` (requirements / design / tasks) authored via kiro-cli v3 Auto — commit `337f1ae`.
-- **Orbitron (SIL OFL)** self-hosted under `assets/fonts/` (`orbitron-400/500/700.woff2` + `OFL-Orbitron.txt`) — commit `8fb9cac`. Not wired into HUD draw yet.
-- **Séance rebuild** dirty at hold time (spec added) — committed with this hold if present.
-- **Proof prompts:** `deploy/kiro-proof/hud-c/runA-*`, `runC3-*` (on build box).
+## Done on branch (C3b — this resume)
+- **Below the line:** meters + labels + frames + bars use `METER_LINE_GAP` (6 CSS px) under the arena green line (`arenaTopLineSy` + `meterTopInset`). Taunt gap ≥6 from main.
+- **Top bar ABOVE the line:** `src/combat/topBarHud.js` — player HP green left, HOUND HP red right, centered MM:SS (`formatFightClock`), EN / POWER / READY / LV; pause DOM button reserved. Narrow phone uses two rows.
+- **Orbitron OFL** wired: index.html @font-face + preload, fonts.js CANVAS_FONTS, meters, top bar, taunts, haunt LV draw.
+- **Ghost perk** still opt-in; orange→red at ≤25% kept.
+- **Spec** `.kiro/specs/13-hud-meters/` updated for C3; séance rebuilt.
+- **Tests:** npm test green (970 pass).
+- **KIRO-USAGE:** C3b section logged (263.02 → 277.11 Pro credits).
+- **Proof:** `deploy/kiro-proof/hud-c/runC3b-*` on the build box.
 
-## Left (open C3 spec — do in Kiro first when resumed)
-1. **Below the line (hard):** EVERYTHING in each meter group (label, numbers, frame, bar) strictly below the green divider; label top ≥ **6 px** (phone) below line bottom. Same gap for taunt. No touch/cross. Player top-left of arena, HOUND top-right. **y-check** on every phone PNG before reply.
-2. **Top bar redesign:** spaced cool strip above the line — player HP (green left), HOUND HP (red right), centered **MM:SS** fight timer from 00:00, plus EN / POWER / radar / LV / pause. Drop/merge if crowded. VT323 out for these readouts.
-3. **Font:** wire **Orbitron** (OFL, already on disk) to top bar numbers/timer, meter labels, taunt. Readable on phone. Do **not** use/trace/copy Tesla lettering.
-4. **Mech art:** both tanks ~10–20% bigger, more angular wireframe (bevel/chamfer hull, faceted turret, sharper barrel/antenna); keep hitbox/feel; quick LV1 harness sanity (cold ~1/3, learned ~2/3, ~30s); don't crowd meters/taunt.
-5. **Deliverable when resumed:** `build-review/shots-hud-c3/` (phone orange/red/ghost/hound-taunt + desktop twins), y-measurements, KIRO-USAGE.md entry for C3 runs, still **no merge** until owner picks.
+## Still open (not in C3b)
+1. Bigger angular tanks (~10–20%) + LV1 harness sanity check.
+2. Landscape phone option.
+3. Sever Wall on LV3+ only.
+4. Screenshots (`build-review/shots-hud-c3/`), two-bot playtest (harness + Eggbot v2), one revision, shots to BotKing.
+5. No merge until owner picks.
 
-## Kiro standing rule (owner 10:07 AM PT)
-Prefer `kiro-cli` v3 Auto + `--trust-workspace` + file tools for specs / steering / hooks / implementation. Build agent: screenshots, merges, identity grep, site rebuild, BotKing handoffs. Log every run in `KIRO-USAGE.md`.
-
-## Credits snapshot at hold
-Kiro Pro (GitHub login): ~263 / 877 used (~30%). C3 implementation run was interrupted mid-edit (hold). Run A (spec) completed earlier this morning — meter exact credits in KIRO-USAGE when C3 section is written on resume.
+## Kiro standing rule
+Prefer `kiro-cli` v3 Auto + `--trust-workspace` + file tools. Build agent: screenshots, merges, identity grep, site rebuild, BotKing handoffs. Log every run in `KIRO-USAGE.md`.
 
 ## Do not
 - Merge to main
 - Public deploy / spend
-- Resume C3 until BotKing says so (~2:15 PM PT)

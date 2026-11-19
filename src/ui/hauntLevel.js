@@ -140,7 +140,7 @@ export function drawHauntLevel(ctx, level, pos) {
   const scale = pos.scale > 0 ? pos.scale : 1;
   const text = formatHauntLabel(level);
   ctx.save();
-  ctx.font = `${Math.round(14 * scale)}px "Share Tech Mono", monospace`;
+  ctx.font = `${Math.round(14 * scale)}px Orbitron, "Share Tech Mono", monospace`;
   ctx.textAlign = pos.align ?? 'right';
   ctx.textBaseline = 'top';
   ctx.lineWidth = 1;

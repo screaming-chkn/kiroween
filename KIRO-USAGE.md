@@ -246,3 +246,29 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Credits:** Pro read ~263.02 / 877 at hold (~30%). Exact per-run deltas to be finalized when C3 resumes.
 - **Open:** below-line ≥6px y-check, top bar dual HP + MM:SS, Orbitron HUD wire-up, bigger angular tanks + LV1 sanity, shots-hud-c3/, full KIRO-USAGE C3 section. Status: `build-review/C3-STATUS.md`.
 - **Standing rule (owner 10:07 AM PT):** prefer Kiro for remaining Kiroween build work until submit.
+
+## HUD C3 resume (2026-11-19 ~11:18–11:30 AM PT, build agent) — branch feat/hud-c, NOT merged
+- **Hold lifted** 11:14 AM PT by the owner via BotKing. Resume from tip `e6e43de`.
+- **Run id:** C3b.
+- **Command** (from worktree root):
+  `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat runC3b-prompt.txt)"`
+  Prompt/transcript on the build box: `deploy/kiro-proof/hud-c/runC3b-prompt.txt`, `runC3b-transcript.txt`. Usage checks: `/usage` before and after.
+- **Credits (Pro, GitHub login):** 263.02 → 277.11 of 877 (**14.09** for C3b). About 600 left; resets 2026-12-01. No credits bought, no plan change, no IDE.
+- **What Kiro authored (file tools only; several shell attempts denied as intended):**
+  - New `src/combat/topBarHud.js` (formatFightClock, topBarCells/layout/draw, Orbitron, HP green/red, MM:SS).
+  - `src/combat/screenHpMeters.js`: arenaTopLineSy, meterTopInset, METER_LINE_GAP=6, METER_FONT→Orbitron, labels under bars.
+  - `src/ui/possessedTaunts.js`: Orbitron TAUNT_FONT, wrap; main passes gap ≥6.
+  - `src/ui/hauntLevel.js`: Orbitron for drawHauntLevel (HAUNT_LEVELS numbers untouched).
+  - `src/ui/pauseMenu.js`: pause button CSS for the top strip.
+  - `src/engine/fonts.js`: Orbitron 400/500/700 in CANVAS_FONTS.
+  - `src/main.js`: top strip during playing; meters under line via meterTopInset; phoneFrame clears strip.
+  - `index.html`: Orbitron @font-face + preload.
+  - Tests: `tests/combat/hud.test.js`, `tests/combat/screenHpMeters.test.js`.
+  - Spec: `.kiro/specs/13-hud-meters/` requirements/design/tasks for C3.
+- **What the build agent finished by hand:**
+  - Fonts test: expect 7 `font-display: swap` faces and Orbitron OFL/preload (was hard-coded to 4).
+  - `arenaTopLineSy`: return 0 when camera.x/y/zoom is non-finite (Kiro's NaN-x case still yielded a finite sy).
+  - `npm test` green; `npm run build:seance` (215 tasks, 195 done).
+- **Not in this commit (still open):** bigger angular tanks + LV1 check, landscape phone option, Sever Wall on LV3+, screenshots / two-bot playtest.
+- **Tests:** `npm test` **970** passed, 0 failed.
+- **Do not merge** until BotKing / owner pick. Main stays `925696d`.

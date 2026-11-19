@@ -11,6 +11,9 @@ export const CANVAS_FONTS = Object.freeze([
   '20px "VT323"',
   '16px "Share Tech Mono"',
   'bold 16px "Share Tech Mono"',
+  '400 16px "Orbitron"',
+  '500 16px "Orbitron"',
+  '700 16px "Orbitron"',
 ]);
 
 export const FONT_WAIT_MS = 2500;

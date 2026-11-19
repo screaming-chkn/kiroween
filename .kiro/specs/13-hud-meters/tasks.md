@@ -10,3 +10,4 @@
 - [x] 8. Unit tests for meters + ghost perk (R7)
 - [ ] 9. Steering + save hook for HUD meters / ghost (fileMatch + test subset) — open; next Kiro run
 - [ ] 10. Readability shot pack (desktop + phone: orange, red-zone, ghost, HOUND taunt) confirmed against R1–R5 — open until merge pick
+- [x] 11. HUD C3: meters and taunt strictly ≥6px under the green line, top strip above it (HP green/red, EN, POWER, READY, MM:SS timer, HAUNT LV), Orbitron HUD face (R8, R9); shots for 390x844 and 1280x800 still go through task 10

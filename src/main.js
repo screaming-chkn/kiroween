@@ -47,9 +47,11 @@ import { combatModsFor }       from './combat/loadoutEffects.js';
 import { buildPlayerActions }  from './combat/actions.js';
 import { drawWorld,
   drawEntities,
-  drawFixedHUD,
 }                              from './combat/combatRenderer.js';
-import { drawScreenHpMeters, screenHpTopReserve, SCREEN_HP_LAYOUT } from './combat/screenHpMeters.js';
+import {
+  drawScreenHpMeters, SCREEN_HP_LAYOUT, arenaTopLineSy, meterTopInset, meterSideReserve,
+} from './combat/screenHpMeters.js';
+import { drawTopBarHud, topBarHeight, TOP_BAR } from './combat/topBarHud.js';
 import { drawGhostPerk } from './combat/ghostPerk.js';
 import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
@@ -58,8 +60,8 @@ import { screenToWorld, worldToScreen } from './engine/camera.js';
 import { clientToCanvasEl } from './engine/pointer.js';
 import { ENEMY_SHOT_WINDUP_MS } from './combat/config.js';
 import {
-  endCardScale, scaleRects, phoneHudScale, phoneHudViewportH, hudPanelRect, phoneHudRect,
-  circleOverlapsRect, drawWindupGlow, HUD_UNDER_ALPHA,
+  endCardScale, scaleRects,
+  drawWindupGlow,
   unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 }                              from './ui/phoneCombatUi.js';
@@ -79,7 +81,7 @@ import {
   tauntUnderLineY,
 }                              from './ui/possessedTaunts.js';
 import {
-  readHauntLevel, setHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel, MAX_HAUNT_LEVEL,
+  readHauntLevel, setHauntLevel, bumpHauntLevel, applyHauntPressure, MAX_HAUNT_LEVEL,
 }                              from './ui/hauntLevel.js';
 import { createTellCaption, drawTellCaption } from './ui/tellCaption.js';
 import { applyLevelParam } from './ui/levelParam.js';
@@ -331,9 +333,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   // Landscape phones fit the middle strip so the arena clears the control gutters
   // and the top-left HUD panel.
   const landscapeTouch = touchUi && (canvas.clientWidth || 0) > (canvas.clientHeight || 0);
+  // Desktop reserves the top strip band above and below so the arena's green
+  // line clears the top HUD strip (arena stays centred, zoom drops ~5%).
+  const stripReserve = 2 * (TOP_BAR.rowH + 4) * (touchUi ? vpW0 / (canvas.clientWidth || vpW0) : 1);
   const fitZoom = (landscapeTouch
-    ? Math.min(landscapeStripW(vpW0, vpW0 / (canvas.clientWidth || vpW0), LANDSCAPE_GUTTER_FRAC) / aw, vpH0 / ah)
-    : Math.min(vpW0 / aw, vpH0 / ah)) * 0.95;
+    ? Math.min(landscapeStripW(vpW0, vpW0 / (canvas.clientWidth || vpW0), LANDSCAPE_GUTTER_FRAC) / aw, (vpH0 - stripReserve) / ah)
+    : Math.min(vpW0 / aw, (vpH0 - (touchUi ? 0 : stripReserve)) / ah)) * (touchUi ? 0.95 : 1);
   // Portrait phone: zoom in so the mech is readable, and bias toward the enemy.
   const phonePortrait = isPortraitTouch({
     touchUi,
@@ -400,69 +405,39 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   // (drawScreenHpMeters on OVERLAY). Legacy drawHUD/drawCompactHp remain for unit tests.
   registerLayer(renderer, LAYERS.HUD,     (_ctx, _st) => {});
 
-  // Fixed bottom-left combat HUD (R9) — screen space, so it lives on the
-  // OVERLAY layer (drawn without the world transform) ahead of the end card.
-  let hudOffscreen = null;   // lazily created (desktop fade-under only)
+  // Top strip (HP / EN / POWER / READY / timer / HOUND / LV) sits ABOVE the
+  // arena's green line; the HP meters and the taunt sit strictly BELOW it.
+  // One scale for all of it: canvas px per CSS px (dpr on touch, 1 on desktop).
+  const hudScale = touchUi ? uiDpr : 1;
+  const stripOpts = () => ({
+    scale: hudScale, hauntLv,
+    insetTop: phonePortrait ? insetTop : 0,
+    pauseReserve: touchUi ? TOP_BAR.pauseReserve : 0,
+  });
+  const stripBottomPx = (vpW) => topBarHeight(vpW, hudScale, stripOpts());
+  /** Bottom edge of the green line (canvas px); never above the strip bottom. */
+  const lineBottomPx = (vpW, vpH) => Math.max(
+    arenaTopLineSy(camera, vpW, vpH, shakeX + kickX, shakeY + kickY, aw / 2),
+    stripBottomPx(vpW),
+  );
+  const meterGeomOpts = () => ({
+    scale: hudScale, leftInset: 10 * hudScale, rightInset: 10 * hudScale,
+  });
+
   registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
     // Hide the live HUD once the end card is up so the panel is clean (it stays
     // through the kill moment so the HUD doesn't blink out mid-hit-stop).
     if (st.phase !== 'playing' && shouldDrawEndCard()) return;
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
-    const s = touchUi ? phoneHudScale(uiDpr) : 1;
-    const sp = worldToScreen(st.player.x, st.player.y, camera, vpW, vpH,
-      shakeX + kickX, shakeY + kickY);
-    const rect = touchUi ? phoneHudRect(s) : hudPanelRect(vpH);
-    if (circleOverlapsRect(sp.sx, sp.sy, 30 * camera.zoom, rect)) {
-      if (!hudOffscreen) hudOffscreen = document.createElement('canvas');
-      if (hudOffscreen.width !== vpW || hudOffscreen.height !== vpH) {
-        hudOffscreen.width = vpW;
-        hudOffscreen.height = vpH;
-      }
-      const octx = hudOffscreen.getContext('2d');
-      octx.clearRect(0, 0, vpW, vpH);
-      if (touchUi) {
-        octx.save();
-        octx.scale(s, s);
-        drawFixedHUD(octx, st, vpW / s, phoneHudViewportH());
-        octx.restore();
-      } else {
-        drawFixedHUD(octx, st, vpW, vpH);
-      }
-      ctx.save();
-      ctx.globalAlpha = HUD_UNDER_ALPHA;
-      ctx.drawImage(hudOffscreen, 0, 0);
-      ctx.restore();
-    } else if (touchUi) {
-      ctx.save();
-      ctx.scale(s, s);
-      drawFixedHUD(ctx, st, vpW / s, phoneHudViewportH());
-      ctx.restore();
-    } else {
-      drawFixedHUD(ctx, st, vpW, vpH);
-    }
+    drawTopBarHud(ctx, st, vpW, stripBottomPx(vpW), stripOpts());
 
-    // Fixed edge/top HP meters — away from the mechs (layout per SCREEN_HP_LAYOUT).
-    // Units are canvas px (OVERLAY has no world transform).
-    const hudR = phonePortrait ? phoneHudRect(s) : null;
-    // Layout C: short vertical meters just under the green HUD / top strip,
-    // inside the arena view (not the very top of the screen).
-    const meterOpts = {
-      bottomInset: phonePortrait ? 170 * s : 150,
-      leftInset: 10 * (touchUi ? s : 1),
-      rightInset: 10 * (touchUi ? s : 1),
-      sidePad: (phonePortrait ? 12 : 20) * (touchUi ? s : 1),
-      topInset: phonePortrait ? 12 * s : 28,
-    };
-    if (hudR) {
-      // Sit just under the green-bordered phone HUD panel (hug the corners).
-      meterOpts.topInset = hudR.y + hudR.h + 3 * s;
-    } else {
-      // Desktop: just under the arena's top green border (world y = 0).
-      const topBorder = worldToScreen(0, 0, camera, vpW, vpH, shakeX + kickX, shakeY + kickY);
-      if (Number.isFinite(topBorder.sy)) meterOpts.topInset = topBorder.sy + 3;
-    }
-    drawScreenHpMeters(ctx, st, vpW, vpH, meterOpts);
+    // Corner-v HP meters, everything >= 6 CSS px under the green line.
+    const lineBottom = lineBottomPx(vpW, vpH);
+    drawScreenHpMeters(ctx, st, vpW, vpH, {
+      ...meterGeomOpts(),
+      topInset: meterTopInset(lineBottom, hudScale),
+    });
   });
 
   // Phone-only enemy edge arrow (draw-only). Safe-area insets read once.
@@ -488,8 +463,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const vpH = renderer.canvas.height;
     const sp = worldToScreen(st.enemy.x, st.enemy.y, camera, vpW, vpH,
       shakeX + kickX, shakeY + kickY);
-    const r = phoneHudRect(phoneHudScale(uiDpr));
-    const hud = { x: r.x / uiDpr, y: r.y / uiDpr, w: r.w / uiDpr, h: r.h / uiDpr };
+    const hud = { x: 0, y: 0, w: cssW, h: stripBottomPx(vpW) / uiDpr };
     const TL = touchLayoutFor(cssW, cssH);
     const bottomLimit = Math.min(
       TL.fire.cyFrac * cssH - TL.fire.rFrac * Math.min(cssW, cssH),
@@ -512,52 +486,37 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
     const nowMs = performance.now();
-    const hudScale = touchUi ? uiDpr : 1;
 
     // CRT flicker after the shatter (opacity-capped inside drawKillFlicker).
     if (killMomentPhase() === 'flicker') {
       drawKillFlicker(ctx, vpW, vpH, killMomentT01(nowMs));
     }
 
-    // HAUNT LV label: top-right, clear of the top-left phone HUD and the pads.
-    drawHauntLevel(ctx, hauntLv, {
-      x: vpW - 8 * hudScale, y: (8 + insetTop) * hudScale, align: 'right', scale: hudScale,
-    });
+    // HAUNT LV now lives in the top strip (drawTopBarHud).
 
     const cardUp = shouldDrawEndCard();
 
-    // One-time tell caption (first windup ever), under the HUD row / top meters.
+    // One-time tell caption (first windup ever), under the meters' top and the
+    // taunt line: 36 CSS px below the green line's bottom edge.
+    const lineBottom = lineBottomPx(vpW, vpH);
     if (!cardUp) {
-      const hr = phonePortrait ? phoneHudRect(phoneHudScale(uiDpr)) : null;
-      const meterReserve = screenHpTopReserve() ;
-      const capTop = hr
-        ? (hr.y + hr.h) / hudScale + 8 + meterReserve
-        : 32 + insetTop + meterReserve;
+      const capTop = lineBottom / hudScale + 36;
       drawTellCaption(ctx, tellCaption.current(nowMs), { x: vpW / 2, y: capTop * hudScale, scale: hudScale });
     }
 
-    // Possessed taunt. In-fight (layout C): centered just under the green line,
-    // coloured to the speaking tank. End card: near the top so the veil
-    // doesn't swallow the death line.
+    // Possessed taunt. In-fight (layout C): centered strictly under the green
+    // line (>= 6 CSS px), clear of the corner meters, coloured to the speaker.
+    // End card: near the top so the veil doesn't swallow the death line.
     const taunt = tauntMachine.current();
     let afterCard = null;
     if (taunt) {
       let tx = vpW / 2;
       let ty;
-      const sidePad = 56 * hudScale; // clear of corner meters
+      const sidePad = meterSideReserve(vpW, vpH, meterGeomOpts()); // clear of corner meters
       if (cardUp) {
         ty = (56 + insetTop) * hudScale;
       } else {
-        const hudR = phonePortrait ? phoneHudRect(phoneHudScale(uiDpr)) : null;
-        let lineBottom;
-        if (hudR) {
-          lineBottom = hudR.y + hudR.h;
-        } else {
-          const topBorder = worldToScreen(0, 0, camera, vpW, vpH,
-            shakeX + kickX, shakeY + kickY);
-          lineBottom = Number.isFinite(topBorder.sy) ? topBorder.sy : 28;
-        }
-        ty = tauntUnderLineY({ lineBottom, scale: hudScale, gap: 4 });
+        ty = tauntUnderLineY({ lineBottom, scale: hudScale, gap: 6 });
       }
       if (!cardUp) drawPossessedTaunt(ctx, taunt, { x: tx, y: ty, scale: hudScale, sidePad });
       else afterCard = { x: tx, y: ty, scale: hudScale, sidePad };
@@ -824,7 +783,6 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (phonePortrait) {
       const cssW = canvas.clientWidth || window.innerWidth;
       const cssH = canvas.clientHeight || window.innerHeight;
-      const hudR = phoneHudRect(phoneHudScale(uiDpr));
       const L = touchLayoutFor(cssW, cssH);
       const topControlPx = (L.fire.cyFrac * cssH - L.fire.rFrac * Math.min(cssW, cssH)) * uiDpr;
       const f = phoneFrame({
@@ -834,7 +792,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         maxZoom: startZoom,
         vpW,
         vpH,
-        topPx: hudR.y + hudR.h + 8 * uiDpr,
+        topPx: stripBottomPx(vpW) + 8 * uiDpr,
         bottomPx: vpH - topControlPx,
         marginY: 110,   // the enemy's compact HP label sits ~92 wu above it
       });

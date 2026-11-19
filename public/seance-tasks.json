@@ -1235,6 +1235,12 @@
     "done": false
   },
   {
+    "spec": "13-hud-meters",
+    "id": 11,
+    "title": "HUD C3: meters and taunt strictly ≥6px under the green line, top strip above it (HP green/red, EN, POWER, READY, MM:SS timer, HAUNT LV), Orbitron HUD face (R8, R9); shots for 390x844 and 1280x800 still go through task 10",
+    "done": true
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",
