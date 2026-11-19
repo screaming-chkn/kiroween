@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {
   TAUNTS, WINDUP_COOLDOWN_MS, tauntBaselineY, ENEMY_LABEL_TOP_WU, specTauntLine as specLineForFix, DEMO_SPAWN, DEMO_DEATH, isDemoTaunts, pickTaunt,
   createTauntMachine, drawPossessedTaunt, specTauntLine,
-  tauntUnderLineY, tauntAboveLineY, tauntSpeaker, tauntColor, TAUNT_COLOR_HOUND, TAUNT_COLOR_PLAYER,
+  tauntUnderLineY, tauntAboveLineY, TAUNT_ABOVE_GAP, tauntSpeaker, tauntColor, TAUNT_COLOR_HOUND, TAUNT_COLOR_PLAYER,
 } from '../../src/ui/possessedTaunts.js';
 
 let passed = 0;
@@ -256,7 +256,7 @@ test('drawPossessedTaunt: balanced, >=14px font, clamps on 390 wide', () => {
     canvas: { width: 390 },
     save() { log.saves++; }, restore() { log.restores++; },
     measureText: (t) => ({ width: t.length * 9 }),
-    fillText(t, x) { log.x.push(x); }, strokeText() {},
+    fillText(t, x) { log.x.push(x); }, strokeText() {}, fillRect() {},
   };
   const ctx = new Proxy(target, { set(t, p, v) { t[p] = v; if (p === 'font') log.font = v; return true; } });
   const text = PLAYER_DEATH[0];
@@ -334,6 +334,8 @@ test('tauntAboveLineY sits just above the green field top', () => {
   assert.equal(y, 94);
   const y2 = tauntAboveLineY({ lineTop: 200, scale: 2, gap: 6 });
   assert.equal(y2, 200 - 12);
+  assert.equal(TAUNT_ABOVE_GAP, 10);
+  assert.equal(tauntAboveLineY({ lineTop: 100, scale: 1 }), 90);
 });
 
 
@@ -343,7 +345,7 @@ test('drawPossessedTaunt uses HOUND red fill', () => {
     canvas: { width: 390 },
     save() {}, restore() {},
     measureText: (t) => ({ width: t.length * 9 }),
-    fillText() {}, strokeText() {},
+    fillText() {}, strokeText() {}, fillRect() {},
   };
   const ctx = new Proxy(target, { set(t, p, v) { t[p] = v; if (p === 'fillStyle') fills.push(v); return true; } });
   drawPossessedTaunt(ctx, { text: 'x', typed: 'x', alpha: 1, speaker: 'hound', color: TAUNT_COLOR_HOUND }, { x: 195, y: 80 });

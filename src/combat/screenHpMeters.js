@@ -136,13 +136,16 @@ export function sideOutGeometry(vpW, vpH, opts = {}) {
   const s = opts.scale > 0 ? opts.scale : 1;
   const gap = (opts.gapCss ?? METER_FIELD_GAP) * s;
   const top = Math.max(8 * s, opts.topInset ?? 12);
-  // Compact (landscape): short bar so the group stays above the stick zone.
-  const thick = Math.max(10, Math.min(14, Math.round((vpW / s) * 0.012))) * s;
-  const h = (opts.compact ? 48 : Math.max(72, Math.min(130, Math.round((vpH / s) * 0.15)))) * s;
-  const fontPx = 14 * s;
+  // Compact (landscape C5b): thicker bar + larger HP digits; stay above stick yFrac 0.25.
+  const thick = (opts.compact
+    ? Math.max(14, Math.min(18, Math.round((vpW / s) * 0.016)))
+    : Math.max(10, Math.min(14, Math.round((vpW / s) * 0.012)))) * s;
+  const h = (opts.compact ? 56 : Math.max(72, Math.min(130, Math.round((vpH / s) * 0.15)))) * s;
+  const fontPx = (opts.compact ? 14 : 14) * s;       // mech name
+  const hpFontPx = (opts.compact ? 18 : 14) * s;     // cur/max — larger on landscape
   const gapX = 4 * s;
   // Labels sit BESIDE the bar (outward), so group height ≈ bar height.
-  const labelW = Math.max(4 * fontPx, 7.2 * fontPx); // fits "P1 · RUSTBIT"
+  const labelW = Math.max(4 * fontPx, 7.2 * fontPx, 4.2 * hpFontPx); // name or HP
   const groupW = thick + gapX + labelW;
   const gh = h;
   const arenaLeft = Number.isFinite(opts.arenaLeft) ? opts.arenaLeft : vpW * 0.2;
@@ -171,7 +174,7 @@ export function sideOutGeometry(vpW, vpH, opts = {}) {
   };
 
   return {
-    top, thick, h, fontPx, gap: gapX, scale: s, layout: 'side-out',
+    top, thick, h, fontPx, hpFontPx, gap: gapX, scale: s, layout: 'side-out',
     fieldGap: gap, arenaLeft, arenaRight,
     player, enemy,
   };
@@ -208,8 +211,9 @@ function drawSideOutGroup(ctx, g, box, pct, name, hpText, nameColor) {
   fillBar(ctx, box.barX, box.y, g.thick, g.h, pct);
   const lx = box.labelX;
   const align = box.labelAlign || 'left';
+  const hpPx = g.hpFontPx || g.fontPx;
   drawColoredLabel(ctx, name, lx, box.y, align, g.fontPx, nameColor);
-  drawColoredLabel(ctx, hpText, lx, box.y + g.fontPx * 1.2, align, g.fontPx, C.bone);
+  drawColoredLabel(ctx, hpText, lx, box.y + g.fontPx * 1.25, align, hpPx, C.bone);
 }
 
 function drawCornerV(ctx, state, vpW, vpH, opts) {
@@ -244,10 +248,11 @@ function strokeDottedRect(ctx, x, y, w, h) {
 function fillBar(ctx, x, y, w, h, pct) {
   ctx.fillStyle = C.track;
   ctx.fillRect(x, y, w, h);
+  const inset = w >= 14 ? 2 : 1;
   const fillH = h * pct;
   const fillY = y + h - fillH;
   ctx.fillStyle = meterFillColor(pct);
-  ctx.fillRect(x + 2, fillY + 1, w - 4, Math.max(0, fillH - 2));
+  ctx.fillRect(x + inset, fillY + 1, Math.max(0, w - inset * 2), Math.max(0, fillH - 2));
   strokeDottedRect(ctx, x, y, w, h);
 }
 

@@ -79,7 +79,7 @@ import { SEANCE_DATA_URL }     from './ui/seance.js';
 import { drawEndCardView }     from './ui/endCardView.js';
 import {
   createTauntMachine, isDemoTaunts, drawPossessedTaunt, specTauntLine,
-  tauntUnderLineY, tauntAboveLineY,
+  tauntUnderLineY, tauntAboveLineY, TAUNT_ABOVE_GAP,
 }                              from './ui/possessedTaunts.js';
 import {
   readHauntLevel, setHauntLevel, bumpHauntLevel, applyHauntPressure, MAX_HAUNT_LEVEL,
@@ -468,7 +468,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     // Field-edge probe for shots-hud-c4 (meters outside; taunt above).
     if (st.phase === 'playing') {
       const g = sideOutGeometry(vpW, vpH, meterOpts);
-      const tauntBaseline = tauntAboveLineY({ lineTop, scale: hudScale, gap: 6 });
+      const tauntBaseline = tauntAboveLineY({ lineTop, scale: hudScale, gap: TAUNT_ABOVE_GAP });
       const fontPx = Math.max(14, Math.round(14 * hudScale));
       const tauntTop = Math.max(stripBottomPx(vpW) + 2 * hudScale, tauntBaseline - fontPx);
       const tauntBottom = tauntBaseline; // alphabetic ≈ glyph bottom
@@ -485,7 +485,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         tauntBottom,
         playerGapCss: ((g.arenaLeft ?? meterOpts.arenaLeft) - (g.player.x + g.player.w)) / hudScale,
         enemyGapCss: (g.enemy.x - (g.arenaRight ?? meterOpts.arenaRight)) / hudScale,
-        tauntGapCss: ((g.arenaLeft != null ? lineTop : lineTop) - tauntBottom) / hudScale,
+        tauntGapCss: (lineTop - tauntBottom) / hudScale,
       };
       globalThis.__HH_HUD_FIELD__ = globalThis.__HH_HUD_Y__;
     }
@@ -570,7 +570,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
           arenaTopLineTopSy(camera, vpW, vpH, shakeX + kickX, shakeY + kickY, aw / 2),
           lineBottom,
         );
-        ty = tauntAboveLineY({ lineTop, scale: hudScale, gap: 6 });
+        ty = tauntAboveLineY({ lineTop, scale: hudScale, gap: TAUNT_ABOVE_GAP });
         // Keep clear of the slim top strip.
         const minBase = stripBottomPx(vpW) + 14 * hudScale;
         if (ty < minBase) ty = minBase;

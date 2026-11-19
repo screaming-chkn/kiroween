@@ -8,7 +8,7 @@ import {
   arenaTopLineSy, arenaTopLineTopSy, arenaSideEdges, sideOutGeometry,
   METER_FIELD_GAP, SCREEN_HP_LAYOUT,
 } from '../../src/combat/screenHpMeters.js';
-import { tauntAboveLineY } from '../../src/ui/possessedTaunts.js';
+import { tauntAboveLineY, TAUNT_ABOVE_GAP } from '../../src/ui/possessedTaunts.js';
 import { landscapeStripW } from '../../src/ui/phoneCombatUi.js';
 import { touchLayoutFor, LANDSCAPE_GUTTER_FRAC, stickRadiusPx } from '../../src/engine/touch.js';
 import { playerHudLabel, enemyHudLabel } from '../../src/combat/mechNames.js';
@@ -68,8 +68,9 @@ for (const dpr of [1, 2, 3]) {
     assert.ok(g.enemy.x >= edges.right + METER_FIELD_GAP * dpr - 1e-6,
       `enemy meter outside right: ${g.enemy.x} vs ${edges.right}`);
 
-    const tauntBase = tauntAboveLineY({ lineTop, scale: dpr, gap: 6 });
-    assert.ok(tauntBase <= lineTop - 6 * dpr + 1e-6, 'taunt baseline above line');
+    const tauntBase = tauntAboveLineY({ lineTop, scale: dpr, gap: TAUNT_ABOVE_GAP });
+    assert.ok(tauntBase <= lineTop - TAUNT_ABOVE_GAP * dpr + 1e-6, 'taunt baseline above line');
+    assert.ok(TAUNT_ABOVE_GAP >= 6, 'taunt field gap floor');
 
     // Controls ≥44 CSS px and clear of meters / strip.
     const L = touchLayoutFor(cssW, cssH);

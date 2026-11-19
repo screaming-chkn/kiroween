@@ -220,7 +220,10 @@ export function tauntUnderLineY({ lineBottom, scale = 1, gap = 6 }) {
  * @param {{lineTop:number, scale?:number, gap?:number}} o
  * @returns {number} alphabetic baseline
  */
-export function tauntAboveLineY({ lineTop, scale = 1, gap = 6 }) {
+/** CSS px gap between taunt glyph bottom and green field top (C5b). */
+export const TAUNT_ABOVE_GAP = 10;
+
+export function tauntAboveLineY({ lineTop, scale = 1, gap = TAUNT_ABOVE_GAP }) {
   const s = scale > 0 ? scale : 1;
   const g = (Number.isFinite(gap) ? gap : 6) * s;
   const y0 = Number.isFinite(lineTop) ? lineTop : 0;
@@ -267,11 +270,11 @@ export function drawPossessedTaunt(ctx, line, pos) {
   const lineH = Math.round(drawPx * 1.25);
   const y0 = Math.max(drawPx + 8 * scale, pos.y);
   const fill = line.color || tauntColor(line.speaker);
-  ctx.globalAlpha = Math.max(0, Math.min(1, line.alpha));
-  ctx.lineWidth = 1;
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#0A0D0B';
-  ctx.fillStyle = fill;
+  const alpha = Math.max(0, Math.min(1, line.alpha));
+  // Measure typed block for a dark plate so the line clears the field border/timer.
+  let blockLeft = Infinity;
+  let blockRight = -Infinity;
+  const shownLines = [];
   lines.forEach((ln, i) => {
     const shown = line.typed.slice(ln.start, ln.start + ln.text.length);
     if (!shown) return;
@@ -280,9 +283,28 @@ export function drawPossessedTaunt(ctx, line, pos) {
     if (Number.isFinite(viewW)) x = Math.min(x, viewW - margin - w);
     x = Math.max(margin, x);
     const y = y0 + i * lineH;
-    ctx.strokeText(shown, x, y);
-    ctx.fillText(shown, x, y);
+    shownLines.push({ shown, x, y, w });
+    blockLeft = Math.min(blockLeft, x);
+    blockRight = Math.max(blockRight, x + w);
   });
+  if (shownLines.length) {
+    const padX = 8 * scale;
+    const padY = 4 * scale;
+    const plateTop = y0 - drawPx - padY;
+    const plateH = shownLines.length * lineH + padY * 2 - (lineH - drawPx);
+    ctx.globalAlpha = alpha * 0.82;
+    ctx.fillStyle = '#0A0D0B';
+    ctx.fillRect(blockLeft - padX, plateTop, (blockRight - blockLeft) + padX * 2, plateH);
+  }
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 1;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#0A0D0B';
+  ctx.fillStyle = fill;
+  for (const ln of shownLines) {
+    ctx.strokeText(ln.shown, ln.x, ln.y);
+    ctx.fillText(ln.shown, ln.x, ln.y);
+  }
   ctx.restore();
 }
 
