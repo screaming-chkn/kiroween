@@ -3,7 +3,7 @@
 Hold lifted earlier (11:14 AM PT). Branch `feat/hud-c` **not merged**. Main stays `925696d`.
 
 ## WIP tip
-See latest `feat/hud-c` tip after Sever Wall commit (git log).
+Tip: `1d95b4487196f99d6a22359b654f395ab33c2cef` (Sever Wall). Worktree: feature branch only.
 
 ## Done
 - **C3b HUD:** below-line meters (≥6px), top bar HP green/red + MM:SS + EN/POWER/READY/LV, Orbitron OFL — `47c7948`.
