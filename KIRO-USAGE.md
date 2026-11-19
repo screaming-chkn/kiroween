@@ -332,3 +332,12 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Credits:** 0 for S1/S2.
 - **Shipped:** `TAUNT_ABOVE_GAP=10` + dark plate (`possessedTaunts.js`); compact side-out thicker bar + `hpFontPx` 18 (`screenHpMeters.js`); main.js wiring; tests. Commit `a3128e3` (tip).
 - **Shots:** `build-review/shots-hud-c5b/` FIELD-CHECK PASS (gaps 4/4/10). `npm test` 979 green. No Fire/Dash/gutter/balance/Sever change.
+
+## HOT RUN — HOT-2 hook + touchLayout.pbt (2026-11-19 ~2:00 PM PT) — branch feat/hud-c
+- **Run ids:** HOT2 + HOT2b (micro save).
+- **Proof:** `deploy/kiro-proof/hud-c/runHOT2-prompt.txt`, `runHOT2-transcript.txt`, `runHOT2b-*`.
+- **Credits (Pro):** 293.05 → 294.14 of 877 (~**1.09** across HOT2+HOT2b). Reset 2026-12-01.
+- **Kiro authored:** `.kiro/hooks/landscape-hud-on-save.json`, `tests/engine/touchLayout.pbt.test.js` (7 properties), `package.json` test:engine entry, tasks.md ticks, one-line comment in `src/engine/touch.js` (HOT2b).
+- **Hook firings:** manual invoke + Kiro PostFileSave on touch.js (`landscape-hud-on-save`, exit=0). Log ~180→182+.
+- **Build-agent:** ran PBT (7/7), npm test; task 5 ticked after exercise.
+- **Tests:** `npm test` green (includes touchLayout.pbt).
