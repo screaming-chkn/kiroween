@@ -76,6 +76,7 @@ export const TOUCH_LAYOUT_LANDSCAPE = Object.freeze({
   stick: Object.freeze({ xFrac: 0, yFrac: 0.25, wFrac: 0.144, hFrac: 0.75 }),
   stickRadiusFrac: 0.14,
   deadzone: 0.18,
+  // C5 defaults (spec 14); custom-layout toggle later — do not lock forever.
   fire: Object.freeze({ cxFrac: 0.935, cyFrac: 0.80, rFrac: 0.092 }),
   dash: Object.freeze({ cxFrac: 0.905, cyFrac: 0.58, rFrac: 0.082 }),
   stickRest: Object.freeze({ xFrac: 0.072, yFrac: 0.72 }),

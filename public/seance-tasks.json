@@ -1292,13 +1292,13 @@
     "spec": "14-phone-landscape",
     "id": 3,
     "title": "`tests/engine/touchLayout.pbt.test.js` (seeded PRNG, no deps) and wire it into `npm test` in package.json (R1, R2, R3, R4, R7)",
-    "done": false
+    "done": true
   },
   {
     "spec": "14-phone-landscape",
     "id": 4,
     "title": "Hook `.kiro/hooks/landscape-hud-on-save.json` (PostFileSave, via `scripts/kiro-hook-run.mjs`) (R8)",
-    "done": false
+    "done": true
   },
   {
     "spec": "14-phone-landscape",
