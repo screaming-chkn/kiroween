@@ -1277,6 +1277,48 @@
     "done": true
   },
   {
+    "spec": "14-phone-landscape",
+    "id": 1,
+    "title": "requirements.md and design.md for the shipped C5 landscape touch layout (R1–R8)",
+    "done": true
+  },
+  {
+    "spec": "14-phone-landscape",
+    "id": 2,
+    "title": "Steering `.kiro/steering/phone-landscape.md` (thumb arc, gutter, safe area, hit sizes, gaps, perf, defaults not locked)",
+    "done": true
+  },
+  {
+    "spec": "14-phone-landscape",
+    "id": 3,
+    "title": "`tests/engine/touchLayout.pbt.test.js` (seeded PRNG, no deps) and wire it into `npm test` in package.json (R1, R2, R3, R4, R7)",
+    "done": false
+  },
+  {
+    "spec": "14-phone-landscape",
+    "id": 4,
+    "title": "Hook `.kiro/hooks/landscape-hud-on-save.json` (PostFileSave, via `scripts/kiro-hook-run.mjs`) (R8)",
+    "done": false
+  },
+  {
+    "spec": "14-phone-landscape",
+    "id": 5,
+    "title": "Exercise the hook by saving a matched file, and log each firing and result (R8)",
+    "done": false
+  },
+  {
+    "spec": "14-phone-landscape",
+    "id": 6,
+    "title": "Measure mid-fight FPS on 844×390 @ DPR 3 class, write a note; soft fixes only if < 55 (R6)",
+    "done": false
+  },
+  {
+    "spec": "14-phone-landscape",
+    "id": 7,
+    "title": "Mark R1–R5 acceptance against `tests/engine/touch.test.js` and `tests/combat/landscapeHud.test.js`, and report the Fire right-inset open item to the owner (R1, R2, R3, R4, R5)",
+    "done": false
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",
