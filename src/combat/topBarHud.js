@@ -109,7 +109,8 @@ function zone(ids, x0, x1, gap, y, h, row, out) {
  * HOUND (clear of the pause button); row 2 = EN, POWER, READY, LV.
  * @param {number} vpW  canvas px
  * @param {number} [scale]  canvas px per CSS px
- * @param {{insetTop?:number, pauseReserve?:number}} [opts]  insetTop in CSS px
+ * @param {{insetTop?:number, pauseReserve?:number, compact?:boolean}} [opts]  insetTop in CSS px;
+ *   compact = landscape phone single row without EN/POWER
  * @returns {{h:number, narrow:boolean, rows:Array<{y:number,h:number}>, cells:Array<{id:string,row:number,x:number,y:number,w:number,h:number}>}}
  */
 export function topBarLayout(vpW, scale = 1, opts = {}) {
@@ -120,6 +121,20 @@ export function topBarLayout(vpW, scale = 1, opts = {}) {
   const gap = TOP_BAR.gap * s;
   const cells = [];
   const mid = vpW / 2;
+
+  if (opts.compact === true) {
+    // Landscape phone: one short row. EN and POWER are dropped first; HP,
+    // MM:SS and HOUND HP always stay (plus READY and LV when they fit).
+    const pad = TOP_BAR.narrowPadX * s;
+    const h = TOP_BAR.rowH * s;
+    const y = inset;
+    const tw = TOP_BAR.narrowTimerW * s;
+    const edge = pad + reserve;   // symmetric so the timer stays centred
+    cells.push({ id: 'timer', row: 0, x: mid - tw / 2, y, w: tw, h });
+    zone(['hp', 'ready'], edge, mid - tw / 2 - gap, gap, y, h, 0, cells);
+    zone(['hound', 'lv'], mid + tw / 2 + gap, vpW - edge, gap, y, h, 0, cells);
+    return { h: inset + h, narrow, compact: true, rows: [{ y, h }], cells: order(cells) };
+  }
 
   if (!narrow) {
     const pad = TOP_BAR.padX * s;
@@ -194,7 +209,8 @@ function ring(ctx, cx, cy, r, frac, ok, lw) {
 export function drawTopBarHud(ctx, state, vpW, lineBottom, opts = {}) {
   const s = opts.scale > 0 ? opts.scale : 1;
   const layout = topBarLayout(vpW, s, opts);
-  const cells = topBarCells(state, { hauntLv: opts.hauntLv, narrow: layout.narrow });
+  // Compact (landscape) cells are tight: use the short text forms.
+  const cells = topBarCells(state, { hauntLv: opts.hauntLv, narrow: layout.narrow || layout.compact === true });
   const bottom = Math.min(layout.h, Number.isFinite(lineBottom) ? lineBottom : layout.h);
   if (!(bottom > 0)) return layout;
 

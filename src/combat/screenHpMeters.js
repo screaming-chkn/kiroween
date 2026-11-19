@@ -76,6 +76,28 @@ export function arenaTopLineSy(camera, vpW, vpH, shakeX = 0, shakeY = 0, arenaCx
 }
 
 /**
+ * Landscape: left/right insets (canvas px) that put the meters in the ARENA's
+ * top corners (inside the border) instead of the screen corners, so they stay
+ * out of the control gutters.
+ * @param {{x:number,y:number,zoom:number}} camera
+ * @param {number} vpW
+ * @param {number} vpH
+ * @param {number} arenaW  world width
+ * @param {{shakeX?:number, shakeY?:number, scale?:number, pad?:number}} [o]
+ * @returns {{left:number, right:number}}
+ */
+export function arenaSideInsets(camera, vpW, vpH, arenaW, o = {}) {
+  const s = o.scale > 0 ? o.scale : 1;
+  const pad = (o.pad ?? 8) * s;
+  const l = worldToScreen(0, 0, camera, vpW, vpH, o.shakeX ?? 0, o.shakeY ?? 0).sx;
+  const r = worldToScreen(arenaW, 0, camera, vpW, vpH, o.shakeX ?? 0, o.shakeY ?? 0).sx;
+  return {
+    left: Math.max(10 * s, l + pad),
+    right: Math.max(10 * s, vpW - r + pad),
+  };
+}
+
+/**
  * topInset for the meter groups: line bottom plus METER_LINE_GAP, scaled the
  * same way the overlay scales its CSS px (hudScale / dpr).
  *
@@ -97,7 +119,8 @@ export function cornerVGeometry(vpW, vpH, opts = {}) {
   const s = opts.scale > 0 ? opts.scale : 1;
   const top = Math.max(8, opts.topInset ?? 12);
   const thick = Math.max(12, Math.min(18, Math.round((vpW / s) * 0.014))) * s;
-  const h = Math.max(72, Math.min(120, Math.round((vpH / s) * 0.14))) * s;
+  // compact (landscape phone): shorter bar so group + label stay small.
+  const h = (opts.compact ? 56 : Math.max(72, Math.min(120, Math.round((vpH / s) * 0.14)))) * s;
   const leftX = Math.max(8 * s, opts.leftInset ?? 10);
   const rightEdge = vpW - Math.max(8 * s, opts.rightInset ?? 10);
   const fontPx = 16 * s;

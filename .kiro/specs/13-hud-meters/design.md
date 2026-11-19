@@ -141,6 +141,17 @@ Pure helpers over a plain state `{ active, grabbed, spawned, x, y }`:
 
 - Mech art (C3): `TANK_DRAW_SCALE` 1.3 to 1.5 (draw only; `mech.js` collision radii untouched). Hull and turret are chamfered octagon prisms (`prismCorners`, `PRISM_EDGES`), the barrel is a tapered dual-edge stroke (3 px longer) and a needle antenna sits on the turret. `boxCorners`, `footprint` and palettes are unchanged; `drawTankGhost` uses the same chamfered hull and scale.
 
+## Landscape phone option
+Landscape keeps the C3 rules. `lineBottomPx` still uses the arena green line
+(never `phoneHudRect`), so meter `topInset` and `tauntUnderLineY` stay at line
++ 6 CSS px. The strip uses `topBarLayout(..., { compact: true })`: one 36 px row
+with HP, READY, MM:SS, HOUND HP and LV. EN and POWER are dropped first; HP and
+the timer never. The strip reserve keeps the line below the strip (no
+`phoneFrame` in landscape; the arena is pinned and centred). Meters use
+`compact` (56 px bars) and `arenaSideInsets` to sit in the arena's top corners,
+between the control gutters, so the stick, DASH and FIRE never meet them.
+Portrait is unchanged. Test: `tests/combat/landscapeHud.test.js`.
+
 ## Budgets and safety
 - No per-frame allocation is added by the meters. The ghost perk is one small
   object, replaced only on spawn and grab.

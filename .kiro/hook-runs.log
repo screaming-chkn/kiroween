@@ -154,3 +154,13 @@
 2026-11-19T19:31:28.224Z test-on-save event=PostFileSave file=tests/combat/severWall.test.js exit=1 ms=2249
 2026-11-19T19:31:52.711Z test-on-save event=PostFileSave file=src/combat/obstacle.js exit=0 ms=8542
 2026-11-19T19:31:53.903Z test-on-save event=PostFileSave file=src/combat/obstacle.js exit=0 ms=8443
+2026-11-19T19:34:43.415Z test-on-save event=PostFileSave file=src/combat/topBarHud.js exit=0 ms=10090
+2026-11-19T19:34:44.726Z test-on-save event=PostFileSave file=src/combat/topBarHud.js exit=0 ms=10426
+2026-11-19T19:34:46.010Z test-on-save event=PostFileSave file=src/combat/topBarHud.js exit=0 ms=10403
+2026-11-19T19:34:47.569Z test-on-save event=PostFileSave file=src/combat/screenHpMeters.js exit=0 ms=10649
+2026-11-19T19:34:49.902Z test-on-save event=PostFileSave file=src/combat/screenHpMeters.js exit=0 ms=10370
+2026-11-19T19:35:05.000Z test-on-save event=PostFileSave file=src/main.js exit=0 ms=9709
+2026-11-19T19:35:06.145Z test-on-save event=PostFileSave file=src/main.js exit=0 ms=9671
+2026-11-19T19:35:07.216Z test-on-save event=PostFileSave file=src/main.js exit=0 ms=9883
+2026-11-19T19:35:36.187Z test-on-save event=PostFileSave file=tests/combat/landscapeHud.test.js exit=0 ms=9170
+2026-11-19T19:35:57.353Z test-on-save event=PostFileSave file=tests/combat/landscapeHud.test.js exit=0 ms=8914

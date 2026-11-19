@@ -289,3 +289,12 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Kiro authored:** `src/combat/obstacle.js` (new), config SEVER_WALL_*, arena/mech/projectile/enemy/combatRenderer/main wiring, `tests/combat/severWall.test.js`, package.json test:combat entry, `.kiro/specs/11-sever-wall/requirements.md`.
 - **Build-agent follow-up:** balanceCore `runFight` now passes `hauntLv` into `createArena` (so LV3+ harness gets the wall; LV1 stays open); added `tasks.md` + séance rebuild; LV1 sanity harness (40 seeds × 16 builds): firstTimer **34.7%** / median **26.2s**, medium **66.7%** / median **27.2s** (in band; draw-only tanks did not skew). No balance retune.
 - **Tests:** `npm test` green (includes severWall suite).
+
+## HUD C3 landscape + shots (2026-11-19 ~11:33–11:38 AM PT, build agent) — branch feat/hud-c, NOT merged
+- **Run id:** C3-landscape.
+- **Command:** `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat runLandscape-prompt.txt)"`
+  Proof: `deploy/kiro-proof/hud-c/runLandscape-prompt.txt`, `runLandscape-transcript.txt`.
+- **Credits (Pro):** 283.58 → 287.25 (**3.67**).
+- **Kiro authored:** landscape compact top bar (HP/READY/timer/HOUND/LV; EN/POWER dropped), compact meters via arenaSideInsets, `tests/combat/landscapeHud.test.js`, package.json test:combat entry, design.md landscape note. Portrait path unchanged.
+- **Build-agent follow-up:** `globalThis.__HH_HUD_Y__` probe in `main.js` (canvas px + CSS gaps); `build-review/shots-hud-c3.mjs` + serve-hud-c.sh module list; captured shots under build-box `build-review/shots-hud-c3/` with **all required phone y-checks PASS** (gapCss 6.00). Shots are build-agent work (no Kiro credits).
+- **Tests:** `npm test` green (includes landscapeHud).

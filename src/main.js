@@ -49,7 +49,7 @@ import { drawWorld,
   drawEntities,
 }                              from './combat/combatRenderer.js';
 import {
-  drawScreenHpMeters, SCREEN_HP_LAYOUT, arenaTopLineSy, meterTopInset, meterSideReserve,
+  drawScreenHpMeters, SCREEN_HP_LAYOUT, arenaTopLineSy, meterTopInset, meterSideReserve, arenaSideInsets, cornerVGeometry,
 } from './combat/screenHpMeters.js';
 import { drawTopBarHud, topBarHeight, TOP_BAR } from './combat/topBarHud.js';
 import { drawGhostPerk } from './combat/ghostPerk.js';
@@ -415,6 +415,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     scale: hudScale, hauntLv,
     insetTop: phonePortrait ? insetTop : 0,
     pauseReserve: touchUi ? TOP_BAR.pauseReserve : 0,
+    compact: landscapeTouch,   // one short row; EN/POWER dropped, HP + MM:SS kept
   });
   const stripBottomPx = (vpW) => topBarHeight(vpW, hudScale, stripOpts());
   /** Bottom edge of the green line (canvas px); never above the strip bottom. */
@@ -422,9 +423,18 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     arenaTopLineSy(camera, vpW, vpH, shakeX + kickX, shakeY + kickY, aw / 2),
     stripBottomPx(vpW),
   );
-  const meterGeomOpts = () => ({
-    scale: hudScale, leftInset: 10 * hudScale, rightInset: 10 * hudScale,
-  });
+  const meterGeomOpts = () => {
+    if (!landscapeTouch) {
+      return { scale: hudScale, leftInset: 10 * hudScale, rightInset: 10 * hudScale };
+    }
+    // Landscape: meters sit in the arena's top corners, between the control
+    // gutters, still below the green line (topInset comes from lineBottomPx).
+    const vpW = renderer.canvas.width;
+    const vpH = renderer.canvas.height;
+    const ins = arenaSideInsets(camera, vpW, vpH, aw,
+      { shakeX: shakeX + kickX, shakeY: shakeY + kickY, scale: hudScale });
+    return { scale: hudScale, leftInset: ins.left, rightInset: ins.right, compact: true };
+  };
 
   registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
     // Hide the live HUD once the end card is up so the panel is clean (it stays
@@ -436,10 +446,32 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
     // Corner-v HP meters, everything >= 6 CSS px under the green line.
     const lineBottom = lineBottomPx(vpW, vpH);
-    drawScreenHpMeters(ctx, st, vpW, vpH, {
+    const meterOpts = {
       ...meterGeomOpts(),
       topInset: meterTopInset(lineBottom, hudScale),
-    });
+    };
+    drawScreenHpMeters(ctx, st, vpW, vpH, meterOpts);
+
+    // Debug probe for shots-hud-c3 y-check (canvas px; scale = canvas/CSS).
+    // Gaps in CSS px: (meterTop - lineBottom) / scale must be >= 6.
+    if (st.phase === 'playing') {
+      const g = cornerVGeometry(vpW, vpH, meterOpts);
+      const tauntBaseline = tauntUnderLineY({ lineBottom, scale: hudScale, gap: 6 });
+      const fontPx = Math.max(14, Math.round(14 * hudScale));
+      // alphabetic baseline → approximate glyph top
+      const tauntTop = Math.max(8 * hudScale, tauntBaseline - fontPx);
+      globalThis.__HH_HUD_Y__ = {
+        unit: 'canvasPx',
+        scale: hudScale,
+        lineBottom,
+        playerMeterTop: g.player.y,
+        houndMeterTop: g.enemy.y,
+        tauntTop,
+        playerGapCss: (g.player.y - lineBottom) / hudScale,
+        houndGapCss: (g.enemy.y - lineBottom) / hudScale,
+        tauntGapCss: (tauntTop - lineBottom) / hudScale,
+      };
+    }
   });
 
   // Phone-only enemy edge arrow (draw-only). Safe-area insets read once.

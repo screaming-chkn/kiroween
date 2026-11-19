@@ -1,22 +1,22 @@
-# C3 STATUS — tanks + Sever Wall done (2026-11-19 ~11:35 AM PT)
+# C3 STATUS — landscape + shots done (2026-11-19 ~11:38 AM PT)
 
-Hold lifted earlier (11:14 AM PT). Branch `feat/hud-c` **not merged**. Main stays `925696d`.
+Branch `feat/hud-c` **not merged**. Main stays `925696d`.
 
 ## WIP tip
-Tip: `1d95b4487196f99d6a22359b654f395ab33c2cef` (Sever Wall). Worktree: feature branch only.
+Tip after landscape/shots commit (see git log / tip hash in commit).
 
 ## Done
-- **C3b HUD:** below-line meters (≥6px), top bar HP green/red + MM:SS + EN/POWER/READY/LV, Orbitron OFL — `47c7948`.
-- **Tanks (draw-only):** TANK_DRAW_SCALE 1.5, chamfered hull/turret, sharper barrel/antenna — `3875467`. Hitboxes unchanged.
-- **Sever Wall:** LV3+ only mid vertical wall; blocks shots + dash; LV1–2 open — this commit. Spec `.kiro/specs/11-sever-wall/`.
-- **LV1 harness sanity (40 seeds):** firstTimer 34.7% / 26.2s; medium 66.7% / 27.2s. No retune.
-- **KIRO-USAGE:** C3b + tanks + Sever sections logged.
+- **C3b HUD:** below-line meters (≥6px), top bar HP + MM:SS, Orbitron — `47c7948`.
+- **Tanks (draw-only):** scale 1.5 + chamfer — `3875467`.
+- **Sever Wall:** LV3+ only — `1d95b44`.
+- **Landscape:** compact top bar + arena-corner meters; sticks clear; portrait regression OK. y-probe `__HH_HUD_Y__`.
+- **Shots + y-check:** `build-review/shots-hud-c3/` (build box) + `y-measurements.md` — **all required phone gaps PASS (6.00 CSS px)**.
+- **LV1 harness** (earlier): firstTimer 34.7%/26.2s; medium 66.7%/27.2s.
 
 ## Still open
-1. Landscape phone option / reflow.
-2. Screenshots (`build-review/shots-hud-c3/`) + y-check.
-3. Two-bot playtest (harness + Eggbot v2) + one revision; shots to BotKing.
-4. Optional: full LV3–5 balance re-check with wall present (task 6 in 11-sever-wall).
+1. Two-bot playtest (harness + Eggbot v2) + one revision.
+2. Shots / playtest report to BotKing; owner lock / merge gate.
+3. Optional: full LV3–5 balance re-check with Sever Wall.
 
 ## Do not
 - Merge to main / public deploy / spend
