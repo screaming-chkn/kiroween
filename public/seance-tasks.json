@@ -1175,6 +1175,66 @@
     "done": true
   },
   {
+    "spec": "13-hud-meters",
+    "id": 1,
+    "title": "screenHpMeters.js corner-v layout, screenHpTopReserve, drawScreenHpMeters + tests (R1)",
+    "done": true
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 2,
+    "title": "meterFillColor orange→red at ≤25%, VT323 labels, dotted phosphor frames + tests (R2)",
+    "done": true
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 3,
+    "title": "drawFixedHud drops HP; EN/POWER spaced; no duplicate HP readout (R3)",
+    "done": true
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 4,
+    "title": "tauntUnderLineY + tauntColor; drawPossessedTaunt under green line, speaker-coloured (R4)",
+    "done": true
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 5,
+    "title": "ghostPerk.js spawn / grab / heal helpers + tests (R5)",
+    "done": true
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 6,
+    "title": "createArena enableGhostPerk opt-in; harness/goldens stable when off (R6)",
+    "done": true
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 7,
+    "title": "main.js wiring: OVERLAY meters, taunt baseline, enableGhostPerk: true for live fights (R1, R4, R5, R6)",
+    "done": true
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 8,
+    "title": "Unit tests for meters + ghost perk (R7)",
+    "done": true
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 9,
+    "title": "Steering + save hook for HUD meters / ghost (fileMatch + test subset) — open; next Kiro run",
+    "done": false
+  },
+  {
+    "spec": "13-hud-meters",
+    "id": 10,
+    "title": "Readability shot pack (desktop + phone: orange, red-zone, ghost, HOUND taunt) confirmed against R1–R5 — open until merge pick",
+    "done": false
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",
