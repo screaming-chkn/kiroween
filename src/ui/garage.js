@@ -112,6 +112,21 @@ function loadSaved() {
   return defaultLoadout();
 }
 
+/** Last saved loadout, or the default one. */
+export function loadSavedLoadout() {
+  return loadSaved();
+}
+
+/**
+ * Plan for a title-screen quick deploy.
+ * @returns {{ loadout: Object, totals: Object, deployable: boolean }}
+ */
+export function quickDeployPlan() {
+  const loadout = loadSavedLoadout();
+  const t = totals(loadout, PARTS_BY_ID);
+  return { loadout, totals: t, deployable: canDeploy(t.loadPct) };
+}
+
 /**
  * Persist the current loadout.
  * @param {Object} loadout

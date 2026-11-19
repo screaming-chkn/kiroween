@@ -26,6 +26,9 @@ const CSS = `
 .hh-title-go{margin-top:10px;background:transparent;border:2px solid #47FF9A;color:#47FF9A;cursor:pointer;
   font-family:inherit;font-size:clamp(22px,6vw,34px);letter-spacing:.14em;padding:10px 26px;
   box-shadow:0 0 14px rgba(57,255,136,.35),inset 0 0 12px rgba(57,255,136,.2);animation:hh-pulse 1.3s ease-in-out infinite}
+.hh-title-garage{background:transparent;border:1px solid #8F9A92;color:#E8E2D0;cursor:pointer;
+  font-family:inherit;font-size:20px;letter-spacing:.12em;padding:8px 20px;min-width:44px;min-height:44px}
+.hh-title-garage:focus-visible,.hh-title-go:focus-visible{outline:2px solid #FF8A3D;outline-offset:2px}
 .hh-title-keys{font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:13px;color:#5E6B74;letter-spacing:.06em}
 .hh-title-lv{position:absolute;top:calc(10px + env(safe-area-inset-top));right:14px;font-size:18px;color:#FF8A3D;letter-spacing:.1em}
 @keyframes hh-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.97)}}
@@ -44,12 +47,27 @@ function injectCss() {
 }
 
 /**
- * Mount the title screen. Calls onStart() once on the first tap/click/key.
+ * Decide what a title click/key does. Pure.
+ * @param {{type?:string, key?:string, onGarageButton?:boolean}} ev
+ * @returns {'deploy'|'garage'|null}
+ */
+export function titleChoice({ type, key, onGarageButton } = {}) {
+  if (onGarageButton) return 'garage';
+  if (type === 'keydown') {
+    if (key === 'g' || key === 'G') return 'garage';
+    if (key === 'Tab' || key === 'Shift') return null;
+  }
+  return 'deploy';
+}
+
+/**
+ * Mount the title screen. Calls onDeploy() or onGarage() once on the first tap/click/key.
  * @param {HTMLElement} root
  * @param {{onStart:Function, touchUi?:boolean, hauntLv?:number}} opts
  * @returns {{destroy:Function}}
  */
-export function mountTitle(root, { onStart, touchUi = false, hauntLv = 1 }) {
+export function mountTitle(root, { onDeploy, onStart, onGarage, touchUi = false, hauntLv = 1 }) {
+  const deploy = onDeploy || onStart;
   injectCss();
   const el = document.createElement('div');
   el.className = 'hh-title';
@@ -57,13 +75,14 @@ export function mountTitle(root, { onStart, touchUi = false, hauntLv = 1 }) {
   el.setAttribute('aria-label', 'HAUNT//HOUND title');
   const keys = touchUi
     ? 'LEFT STICK move · RIGHT PAD aim + fire · DASH dodge · ❚❚ pause'
-    : 'WASD move · MOUSE aim · CLICK fire · SHIFT dash · ESC pause';
+    : 'WASD move · MOUSE aim · CLICK fire · SHIFT dash · ESC pause · G garage';
   el.innerHTML = `
     <div class="hh-title-fog"></div>
     <div class="hh-title-lv">HAUNT LV ${hauntLv}</div>
     <h1 class="hh-logo">HAUNT<span>//</span>HOUND</h1>
     <p class="hh-pitch">Something is <b>possessing the other tank</b>. Duel it, dodge its tell, exorcise it. Climb <b>HAUNT LV 1–5</b>.</p>
     <button class="hh-title-go" type="button">${touchUi ? 'TAP' : 'PRESS'} TO DEPLOY</button>
+    <button class="hh-title-garage" type="button">GARAGE</button>
     <p class="hh-title-keys">${keys}</p>`;
   root.appendChild(el);
   el.querySelector('.hh-title-go').focus({ preventScroll: true });
@@ -71,11 +90,17 @@ export function mountTitle(root, { onStart, touchUi = false, hauntLv = 1 }) {
   let done = false;
   function go(e) {
     if (done) return;
-    if (e && e.type === 'keydown' && (e.key === 'Tab' || e.key === 'Shift')) return;
+    const choice = titleChoice({
+      type: e && e.type,
+      key: e && e.key,
+      onGarageButton: !!(e && e.target && e.target.closest && e.target.closest('.hh-title-garage')),
+    });
+    if (!choice) return;
     done = true;
     if (e) e.preventDefault();
     destroy();
-    onStart();
+    if (choice === 'garage') { if (onGarage) onGarage(); else if (deploy) deploy(); }
+    else if (deploy) deploy();
   }
   el.addEventListener('click', go);
   window.addEventListener('keydown', go);

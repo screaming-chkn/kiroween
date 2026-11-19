@@ -27,7 +27,7 @@ import {
   resizeToDisplay,
   LAYERS,
 }                              from './engine/render.js';
-import { mountGarage }         from './ui/garage.js';
+import { mountGarage, quickDeployPlan } from './ui/garage.js';
 import { syncTankFx }          from './ui/tankFx.js';
 import { mountSeance }         from './ui/seance.js';
 import { injectPossessionCSS } from './ui/possession.js';
@@ -179,9 +179,18 @@ function showTitle(renderer, reducedMotion) {
   mountTitle(appRoot, {
     touchUi: isTouchUi(),
     hauntLv: readHauntLevel(),
-    onStart() {
-      // Same gesture already unlocked Web Audio (installAudioGestures):
-      // title sting, then the garage loop fades in under it.
+    onDeploy() {
+      // Same gesture already unlocked Web Audio (installAudioGestures).
+      cueMusic('title-go');
+      playSfx(SFX.UI_CLICK);
+      const plan = quickDeployPlan();
+      if (plan.deployable) {
+        loadGameFonts().then(() => startArena(renderer, plan.loadout, plan.totals, reducedMotion));
+      } else {
+        showGarage(renderer, reducedMotion);
+      }
+    },
+    onGarage() {
       cueMusic('title-go');
       playSfx(SFX.UI_CLICK);
       showGarage(renderer, reducedMotion);

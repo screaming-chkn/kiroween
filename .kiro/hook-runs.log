@@ -29,3 +29,14 @@
 2026-11-19T02:03:13.922Z test-on-save event=PostFileSave file=src/main.js exit=0 ms=10739
 2026-11-19T02:03:14.646Z test-on-save event=PostFileSave file=src/main.js exit=0 ms=10758
 2026-11-19T02:03:27.286Z seance-on-spec-save event=PostFileSave file=.kiro/specs/11-haunt-words/tasks.md exit=0 ms=273
+2026-11-19T02:15:06.546Z test-on-save event=PostFileSave file=src/ui/garage.js exit=0 ms=7947
+2026-11-19T02:15:07.507Z test-on-save event=PostFileSave file=src/ui/title.js exit=0 ms=7958
+2026-11-19T02:15:08.384Z test-on-save event=PostFileSave file=src/ui/title.js exit=0 ms=7973
+2026-11-19T02:15:09.338Z test-on-save event=PostFileSave file=src/ui/title.js exit=0 ms=8155
+2026-11-19T02:15:11.450Z test-on-save event=PostFileSave file=src/ui/title.js exit=1 ms=8315
+2026-11-19T02:15:13.318Z test-on-save event=PostFileSave file=src/ui/title.js exit=0 ms=8552
+2026-11-19T02:15:14.559Z test-on-save event=PostFileSave file=src/ui/title.js exit=0 ms=8578
+2026-11-19T02:15:16.871Z test-on-save event=PostFileSave file=src/main.js exit=0 ms=8944
+2026-11-19T02:15:17.399Z test-on-save event=PostFileSave file=src/main.js exit=0 ms=8740
+2026-11-19T02:15:21.097Z test-on-save event=PostFileSave file=tests/ui/title.test.js exit=0 ms=8207
+2026-11-19T02:15:26.399Z seance-on-spec-save event=PostFileSave file=.kiro/specs/10-polish/tasks.md exit=0 ms=143
