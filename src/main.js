@@ -339,8 +339,15 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   // Desktop reserves the top strip band above and below so the arena's green
   // line clears the top HUD strip (arena stays centred, zoom drops ~5%).
   const stripReserve = 2 * (TOP_BAR.rowH + 4) * (touchUi ? vpW0 / (canvas.clientWidth || vpW0) : 1);
+  // C5: ~10% wider landscape field vs C4. C4's landscapeStripW was capped by the
+  // old top-left HUD panel clearance; that panel is gone (C4 top strip), so we
+  // grow the strip 10% from that base, still capped by the control gutters.
+  // Height fit is unchanged (already maxed on 844×390).
+  const uiDprFit = vpW0 / (canvas.clientWidth || vpW0);
+  const landStripBase = landscapeStripW(vpW0, uiDprFit, LANDSCAPE_GUTTER_FRAC);
+  const landStrip = Math.min(vpW0 * (1 - 2 * LANDSCAPE_GUTTER_FRAC), landStripBase * 1.1);
   const fitZoom = (landscapeTouch
-    ? Math.min(landscapeStripW(vpW0, vpW0 / (canvas.clientWidth || vpW0), LANDSCAPE_GUTTER_FRAC) / aw, (vpH0 - stripReserve) / ah)
+    ? Math.min(landStrip / aw, (vpH0 - stripReserve) / ah)
     : Math.min(vpW0 / aw, (vpH0 - (touchUi ? 0 : stripReserve)) / ah)) * (touchUi ? 0.95 : 1);
   // Portrait phone: zoom in so the mech is readable, and bias toward the enemy.
   const phonePortrait = isPortraitTouch({

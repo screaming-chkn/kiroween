@@ -436,7 +436,26 @@ test('touchLayoutFor picks by orientation', () => {
   assert.equal(touchLayoutFor(844, 390), TOUCH_LAYOUT_LANDSCAPE);
   assert.equal(touchLayoutFor(390, 844), TOUCH_LAYOUT);
   assert.equal(touchLayoutFor(500, 500), TOUCH_LAYOUT);
-  assert.equal(LANDSCAPE_GUTTER_FRAC, 0.176);
+  assert.equal(LANDSCAPE_GUTTER_FRAC, 0.144);   // C5
+  assert.equal(TOUCH_LAYOUT_LANDSCAPE.stick.wFrac, LANDSCAPE_GUTTER_FRAC);
+});
+
+test('C5 landscape thumb arc: dash is up-left of fire (Digger), both ≥44 CSS px', () => {
+  const { fire, dash } = TOUCH_LAYOUT_LANDSCAPE;
+  assert.ok(dash.cxFrac < fire.cxFrac, 'dash left of fire');
+  assert.ok(dash.cyFrac < fire.cyFrac, 'dash above fire');
+  // Digger sizes: Fire ~72 CSS px, Dash ~64 CSS px on 844×390
+  assert.ok(fire.rFrac * 390 * 2 >= 70, 'fire ~72pt');
+  assert.ok(dash.rFrac * 390 * 2 >= 60, 'dash ~64pt');
+  for (const [w, h] of [[844, 390], [667, 375], [915, 412]]) {
+    const min = Math.min(w, h);
+    assert.ok(fire.rFrac * min * 2 >= 44 && dash.rFrac * min * 2 >= 44, `${w}x${h} diameter`);
+    const gx = w * (1 - LANDSCAPE_GUTTER_FRAC);
+    for (const c of [fire, dash]) {
+      assert.ok(c.cxFrac * w - c.rFrac * min >= gx - 1e-9, `${w}x${h} left of gutter`);
+      assert.ok(c.cxFrac * w + c.rFrac * min <= w + 1e-9, `${w}x${h} past right edge`);
+    }
+  }
 });
 
 test('844x390: dash, fire and stick rest circles lie inside the gutters', () => {

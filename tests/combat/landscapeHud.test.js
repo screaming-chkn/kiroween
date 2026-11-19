@@ -23,7 +23,11 @@ assert.ok(!TOP_BAR_ORDER.includes('hp'));
 assert.ok(!TOP_BAR_ORDER.includes('hound'));
 assert.ok(!TOP_BAR_ORDER.includes('power'));
 assert.ok(!TOP_BAR_ORDER.includes('ready'));
-assert.ok(LANDSCAPE_GUTTER_FRAC <= 0.18 && LANDSCAPE_GUTTER_FRAC >= 0.15);
+assert.ok(LANDSCAPE_GUTTER_FRAC <= 0.15 && LANDSCAPE_GUTTER_FRAC >= 0.13, 'C5 gutter ~0.144');
+{
+  const { fire, dash } = touchLayoutFor(844, 390);
+  assert.ok(dash.cxFrac < fire.cxFrac && dash.cyFrac < fire.cyFrac, 'C5 thumb arc: dash up-left of fire (Digger)');
+}
 assert.ok(!playerHudLabel().includes('HOUND'));
 assert.ok(!enemyHudLabel().includes('HOUND'));
 
@@ -44,7 +48,9 @@ for (const dpr of [1, 2, 3]) {
     assert.ok(Math.abs(timer.x + timer.w / 2 - vpW / 2) < 1e-6, 'timer centred');
 
     const reserve = 2 * (TOP_BAR.rowH + 4) * dpr;
-    const stripW = landscapeStripW(vpW, dpr, LANDSCAPE_GUTTER_FRAC);
+    // C5: ~10% wider than C4 landscapeStripW base, capped by gutters (matches main.js).
+    const stripBase = landscapeStripW(vpW, dpr, LANDSCAPE_GUTTER_FRAC);
+    const stripW = Math.min(vpW * (1 - 2 * LANDSCAPE_GUTTER_FRAC), stripBase * 1.1);
     const zoom = Math.min(stripW / AW, (vpH - reserve) / AH) * 0.95;
     const cam = { x: AW / 2, y: AH / 2, zoom };
     const stripBottom = bar.h;
@@ -76,6 +82,7 @@ for (const dpr of [1, 2, 3]) {
       const left = b.cxFrac * cssW - rCss;
       const top = b.cyFrac * cssH - rCss;
       assert.ok(left >= (vpW - gutter) / dpr - 1e-6, 'button inside right gutter');
+      assert.ok(left + 2 * rCss <= cssW + 1e-6, 'button on screen');
       assert.ok(top >= stripCss - 1e-6, 'button below top bar');
     }
     const stickR = stickRadiusPx(cssW, cssH);

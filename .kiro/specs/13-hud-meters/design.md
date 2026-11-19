@@ -182,3 +182,17 @@ talk moves above the field top (`tauntAboveLineY`). Top strip drops POWER/READY/
 cells and keeps MM:SS (+ LV). Mech names replace player-facing HOUND. Gutter and
 strip height nudged ~20% smaller than C3 for a larger fight field. Mirror-fair
 Sever Wall + spawns asserted by `tests/combat/mirrorFair.test.js`.
+
+## C5 — wider landscape field + thumb arc (nudge)
+- `LANDSCAPE_GUTTER_FRAC` 0.176 → 0.144 (`TOUCH_LAYOUT_LANDSCAPE.stick.wFrac`
+  matches). `main.js` grows the landscape strip ~10% vs C4's
+  `landscapeStripW` base (old HUD-panel clearance), capped by the control
+  gutters. Height fit is unchanged. Meters stay outside the field with the
+  ≥4 CSS px gap.
+- Right thumb arc (Digger brief): Fire low/primary (cx 0.935, cy 0.80,
+  r 0.092 ≈72 CSS px); Dash up-left of Fire (cx 0.905, cy 0.58, r 0.082
+  ≈64 CSS px) for notched-iPhone clearance. Centers clamped into the right
+  gutter. Both ≥44 CSS px on 844×390 / 667×375 / 915×412. Portrait untouched.
+- Meter geometry is unchanged. No balance, `HAUNT_LEVELS` or Sever geometry
+  change. `__HH_HUD_FIELD__` still reports the real edges and gaps.
+- Tests: `tests/engine/touch.test.js`, `tests/combat/landscapeHud.test.js`.

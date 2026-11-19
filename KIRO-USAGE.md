@@ -311,3 +311,11 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Files (feature):** `src/combat/mechNames.js` (new), `topBarHud.js`, `screenHpMeters.js`, `src/ui/possessedTaunts.js` (`tauntAboveLineY`), `src/engine/touch.js` (gutter 0.176), `src/main.js` (side-out + above-field probe), tests (`landscapeHud`, `screenHpMeters`, `hud`, `touch`, `possessedTaunts`, new `mechNames` + `mirrorFair`), `.kiro/specs/13-hud-meters/` R10–R11, `build-review/shots-hud-c4.mjs` + shots.
 - **Out of scope kept:** no HAUNT_LEVELS / damage / balance retune; Sever Wall geometry unchanged (already mid-X); no merge; no game-title rename.
 - Hooks: not run (work outside IDE). `npm test` green by hand.
+
+## C5 HUD — wider field + Digger thumb arc (2026-11-19 ~12:41–12:50 PM PT) — branch feat/hud-c, NOT merged
+- **Run id:** C5.
+- **Command:** `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write` with `deploy/kiro-proof/hud-c/runC5-prompt.txt` → `runC5-transcript.txt`.
+- **Credits (GitHub / Kiro Pro):** 288.05 → 291.67 of 877 (~**3.62** this run, including a short usage probe before the task). Reset 2026-12-01.
+- **Kiro authored:** `src/engine/touch.js` (gutter 0.144 + initial arc), `src/main.js` (landscape strip fit), `tests/engine/touch.test.js`, `tests/combat/landscapeHud.test.js`, `.kiro/specs/13-hud-meters/design.md`.
+- **Build-agent follow-up:** capped strip growth to ~10% intent (height-bound ~+5% on 844×390 / 1200×900 arena); applied Digger brief up-left Fire/Dash (~72/64 CSS px) clamped into gutter; shots + FIELD-CHECK PASS; no balance / Sever change.
+- **Tests:** `npm test` green. Digger brief used (up-left arc).
