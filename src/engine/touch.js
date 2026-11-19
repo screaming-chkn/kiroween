@@ -77,9 +77,10 @@ export const TOUCH_LAYOUT_LANDSCAPE = Object.freeze({
   stickRadiusFrac: 0.14,
   deadzone: 0.18,
   // C5 defaults (spec 14); custom-layout toggle later — do not lock forever.
-  fire: Object.freeze({ cxFrac: 0.935, cyFrac: 0.80, rFrac: 0.092 }),
-  dash: Object.freeze({ cxFrac: 0.905, cyFrac: 0.58, rFrac: 0.082 }),
-  stickRest: Object.freeze({ xFrac: 0.072, yFrac: 0.72 }),
+  // C8: stick left ~HUD_SPACE; fire/dash stay gutter-safe on 640–932 landscape.
+  fire: Object.freeze({ cxFrac: 0.937, cyFrac: 0.79, rFrac: 0.092 }),
+  dash: Object.freeze({ cxFrac: 0.907, cyFrac: 0.57, rFrac: 0.082 }),
+  stickRest: Object.freeze({ xFrac: 0.074, yFrac: 0.74 }),
 });
 
 /** Width fraction of each side gutter reserved for controls in landscape. */

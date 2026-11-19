@@ -90,14 +90,14 @@ test('arenaTopLineSy: bottom edge of the 2 wu border in screen space', () => {
   assert.equal(arenaTopLineSy({ x: NaN, y: 0, zoom: 1 }, 1280, 800), 0);
 });
 
-test('meterTopInset: line bottom + 6 CSS px scaled', () => {
-  assert.equal(METER_LINE_GAP, 6);
-  assert.ok(Math.abs(meterTopInset(41.6, 1) - 47.6) < 1e-9);
-  assert.equal(meterTopInset(100, 3), 118);
+test('meterTopInset: line bottom + 8 CSS px scaled (C8 HUD_SPACE)', () => {
+  assert.equal(METER_LINE_GAP, 8);
+  assert.ok(Math.abs(meterTopInset(41.6, 1) - 49.6) < 1e-9);
+  assert.equal(meterTopInset(100, 3), 124);
 });
 
-test('sideOutGeometry: groups stay outside arena edges by ≥4 CSS px', () => {
-  assert.equal(METER_FIELD_GAP, 4);
+test('sideOutGeometry: groups stay outside arena edges by ≥8 CSS px', () => {
+  assert.equal(METER_FIELD_GAP, 8);
   for (const [vpW, vpH, scale, left, right] of [
     [1280, 800, 1, 160, 1120],
     [1688, 780, 2, 300, 1388],

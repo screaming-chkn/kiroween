@@ -19,9 +19,10 @@ export const METER_RED = '#FF4D5E';
 export const METER_RED_PCT = 0.25;
 export const METER_FRAME = '#39FF88';
 export const METER_FONT = '"Press Start 2P", Orbitron, "Share Tech Mono", monospace';
-export const METER_LINE_GAP = 6;
+export const METER_LINE_GAP = 8; // C8 = HUD_SPACE
 /** Minimum CSS px between a meter group and the arena green border outer edge. */
-export const METER_FIELD_GAP = 4;
+/** CSS px between meter group and arena border (C8 = HUD_SPACE). */
+export const METER_FIELD_GAP = 8;
 export const ARENA_BORDER_WU = 2;
 
 const C = {
@@ -153,7 +154,7 @@ export function sideOutGeometry(vpW, vpH, opts = {}) {
   const h = (opts.compact ? 56 : Math.max(72, Math.min(130, Math.round((vpH / s) * 0.15)))) * s;
   const fontPx = (opts.compact ? 14 : 14) * s;       // mech name
   const hpFontPx = (opts.compact ? 18 : 14) * s;     // cur/max — larger on landscape
-  const gapX = 4 * s;
+  const gapX = 8 * s; // C8 HUD_SPACE
   // Labels sit BESIDE the bar (outward), so group height ≈ bar height.
   const labelW = Math.max(4 * fontPx, 7.2 * fontPx, 4.2 * hpFontPx); // name or HP
   const groupW = thick + gapX + labelW;

@@ -31,7 +31,7 @@ export const TOP_BAR = Object.freeze({
   narrowBelowW: 720,
   padX: 12,
   narrowPadX: 8,
-  gap: 6,
+  gap: 8, // C8 HUD_SPACE
   fontPx: 14,
   timerPx: 18,
   timerW: 104,

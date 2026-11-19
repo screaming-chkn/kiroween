@@ -66,7 +66,7 @@ export const TANK_STYLE_DRAW = {
     },
   },
   // Wheeled 8x8 — boxier hull, wheels as side ellipses, mid turret
-  // Wheeled 8x8 APC — boxy hull, flat cupola turret, long sensor mast (POP)
+  // Wheeled 8x8 APC — boxy hull, flat cupola, sensor mast (C8: thin/dashed, less bloom)
   wheeled: {
     player: {
       hull: { L: 38, W: 24, H: 12 }, turret: { L: 16, W: 14, H: 8 },
@@ -363,8 +363,13 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   ctx.translate(x, y);
   ctx.scale(TANK_DRAW_SCALE, TANK_DRAW_SCALE);
   ctx.translate(-x, -y);
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
+  if (TANK_STYLE === 'wheeled') {
+    ctx.lineJoin = 'miter';
+    ctx.lineCap = 'butt';
+  } else {
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+  }
 
   // a) ground shadow (no bob): hover disc / shadow under treads
   ctx.globalAlpha = 0.12;
@@ -392,42 +397,39 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
     }
     ctx.stroke();
   } else if (s.base === 'wheels') {
-    // 8x8 POP: four readable wheels/side with hub + tire ring, deeper shadow
+    // C8: crisp 8x8 wheels — thin tire + dashed hub detail, light shadow, no bloom
     const fx = Math.cos(hullHeading), fy = Math.sin(hullHeading);
     const lx = Math.sin(hullHeading), ly = -Math.cos(hullHeading);
     const hl = s.hull.L / 2, off = s.hull.W / 2 + 3.5;
-    const wr = Math.max(3.2, s.hull.H * 0.42);
-    // Soft ground shadow under the wheel line
-    ctx.globalAlpha = 0.18;
+    const wr = Math.max(3.0, s.hull.H * 0.4);
+    ctx.globalAlpha = 0.12;
     ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.ellipse(x, y + 7, s.hull.L * 0.7, s.hull.W * 0.55, hullHeading, 0, Math.PI * 2);
+    ctx.ellipse(x, y + 6, s.hull.L * 0.66, s.hull.W * 0.5, hullHeading, 0, Math.PI * 2);
     ctx.fill();
     for (const side of [-1, 1]) {
       for (let i = 0; i < 4; i++) {
         const tt = -hl + (hl * 2) * ((i + 0.5) / 4);
         const cx = x + fx * tt + lx * off * side;
-        const cy = y + fy * tt + ly * off * side + 1.8;
-        // Outer tire (glow edge)
-        widePass(ctx, s.glow, 4.5, 0.35, () => {
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, wr * 1.05, wr * 0.7, hullHeading, 0, Math.PI * 2);
-          ctx.stroke();
-        });
+        const cy = y + fy * tt + ly * off * side + 1.6;
         ctx.globalAlpha = 1;
         ctx.strokeStyle = s.turretStroke;
-        ctx.lineWidth = 1.6;
+        ctx.lineWidth = 1.05;
         ctx.beginPath();
-        ctx.ellipse(cx, cy, wr * 1.05, wr * 0.7, hullHeading, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, wr * 1.02, wr * 0.68, hullHeading, 0, Math.PI * 2);
         ctx.stroke();
-        // Hub ring + cross
-        ctx.lineWidth = 1.1;
+        // Dotted hub ring
+        ctx.lineWidth = 0.85;
+        ctx.setLineDash([1.2, 1.6]);
         ctx.beginPath();
-        ctx.ellipse(cx, cy, wr * 0.45, wr * 0.3, hullHeading, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, wr * 0.42, wr * 0.28, hullHeading, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.setLineDash([]);
+        // Thin hub cross
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.moveTo(cx - lx * wr * 0.35 * side, cy - ly * wr * 0.35 * side);
-        ctx.lineTo(cx + lx * wr * 0.35 * side, cy + ly * wr * 0.35 * side);
+        ctx.moveTo(cx - lx * wr * 0.32 * side, cy - ly * wr * 0.32 * side);
+        ctx.lineTo(cx + lx * wr * 0.32 * side, cy + ly * wr * 0.32 * side);
         ctx.stroke();
       }
     }
@@ -441,22 +443,43 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   ctx.fillStyle = s.fill;
   fillTop(ctx, g.hullPrism);
 
-  // c) wide additive glow, then crisp 1px with brighter front edges
+  // c) C8: single thin halo + crisp stroke (less bloom at phone size)
   for (const [pts, col] of [[g.hullPrism, s.stroke], [g.turretPrism, s.turretStroke]]) {
-    widePass(ctx, s.glow, 8, 0.12, () => strokeEdges(ctx, pts)); // under-halo
-    widePass(ctx, s.glow, 5.5, 0.38, () => strokeEdges(ctx, pts)); // mid halo
-    ctx.lineWidth = 1;
+    const isWheeled = TANK_STYLE === 'wheeled';
+    if (isWheeled) {
+      // C8: tiny glow-tint underlay (1.2px) — not a widePass bloom
+      ctx.globalAlpha = 0.22;
+      ctx.strokeStyle = s.glow;
+      ctx.lineWidth = 1.2;
+      strokeEdges(ctx, pts);
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = 0.85;
+    } else {
+      widePass(ctx, s.glow, 5.5, 0.22, () => strokeEdges(ctx, pts));
+      ctx.lineWidth = 1;
+    }
     ctx.globalAlpha = 1;
     ctx.strokeStyle = col;
-    if (dashed) ctx.setLineDash(dash);
+    // Hull: solid silhouette; turret/panel: dashed detail on wheeled
+    const useDash = dashed && (!isWheeled || pts === g.turretPrism);
+    if (useDash) ctx.setLineDash(isWheeled ? [2.2, 2.0] : dash);
     strokeEdges(ctx, pts);
-    if (dashed) ctx.setLineDash([]);
-    if (tech) {
+    if (useDash) ctx.setLineDash([]);
+    if (tech && !isWheeled) {
       ctx.strokeStyle = s.tick ?? s.turretStroke;
       drawCornerTicks(ctx, pts, pts === g.hullPrism ? s.hull : s.turret);
     }
-    ctx.strokeStyle = tint(col, 0.35);
-    strokeSome(ctx, pts, FRONT_EDGES);
+    // Wheeled: dotted panel seam on hull mid-line
+    if (isWheeled && pts === g.hullPrism) {
+      ctx.lineWidth = 0.75;
+      ctx.strokeStyle = tint(col, 0.15);
+      ctx.setLineDash([1.4, 2.2]);
+      strokeSome(ctx, pts, FRONT_EDGES);
+      ctx.setLineDash([]);
+    } else {
+      ctx.strokeStyle = tint(col, 0.35);
+      strokeSome(ctx, pts, FRONT_EDGES);
+    }
   }
 
   // d) barrels (recoil shifts only the firing barrel back along turretAngle)
@@ -480,11 +503,15 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
     }
     ctx.stroke();
   };
-  widePass(ctx, s.glow, 5, 0.18, barrelPath);
+  if (TANK_STYLE === 'wheeled') {
+    ctx.lineWidth = 0.9;
+  } else {
+    widePass(ctx, s.glow, 5, 0.18, barrelPath);
+    ctx.lineWidth = 1.4;
+  }
   ctx.globalAlpha = 1;
-  ctx.lineWidth = 1.4;
   ctx.strokeStyle = s.turretStroke;
-  if (dashed) ctx.setLineDash(dash);
+  if (dashed) ctx.setLineDash(TANK_STYLE === 'wheeled' ? [2.0, 1.8] : dash);
   barrelPath();
   if (dashed) ctx.setLineDash([]);
 
@@ -496,58 +523,52 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
     ctx.lineWidth = 1;
     ctx.strokeStyle = s.turretStroke;
     if (TANK_STYLE === 'wheeled') {
-      // Tall sensor mast + dish (unique 8x8 silhouette)
+      // Tall sensor mast + dish — thin solid mast, dotted dish rim (C8)
       const mastH = 16;
       const tip = { x: rear.x + 1.2, y: rear.y - mastH };
-      widePass(ctx, s.glow, 3.5, 0.4, () => {
-        ctx.beginPath();
-        ctx.moveTo(rear.x, rear.y);
-        ctx.lineTo(tip.x, tip.y);
-        ctx.stroke();
-      });
-      ctx.lineWidth = 1.3;
+      ctx.lineWidth = 0.95;
+      ctx.setLineDash([]);
       ctx.beginPath();
       ctx.moveTo(rear.x, rear.y);
       ctx.lineTo(tip.x, tip.y);
       ctx.stroke();
-      // Small dish / sensor ball at tip
+      // Dotted dish / sensor rim
+      ctx.lineWidth = 0.85;
+      ctx.setLineDash([1.2, 1.5]);
       ctx.beginPath();
-      ctx.arc(tip.x, tip.y, 2.4, 0, Math.PI * 2);
+      ctx.arc(tip.x, tip.y, 2.3, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.setLineDash([1.0, 1.4]);
       ctx.beginPath();
-      ctx.moveTo(tip.x - 4, tip.y + 1);
-      ctx.lineTo(tip.x + 4, tip.y - 1);
+      ctx.moveTo(tip.x - 3.6, tip.y + 0.8);
+      ctx.lineTo(tip.x + 3.6, tip.y - 0.8);
       ctx.stroke();
-      // Cupola ridge on turret top (flat APC look)
+      ctx.setLineDash([]);
+      // Cupola ridge — dashed ellipse
       const cup = project(x, y, s.hull.H + s.turret.H + 2);
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 0.85;
+      ctx.setLineDash([1.6, 1.8]);
       ctx.beginPath();
       ctx.ellipse(cup.x, cup.y, s.turret.L * 0.28, s.turret.W * 0.18, turretAngle, 0, Math.PI * 2);
       ctx.stroke();
-      // Accent lights — four hull corners (tiny bright ticks)
+      ctx.setLineDash([]);
+      // Accent lights — tiny ticks (no glow)
       const fx = Math.cos(hullHeading), fy = Math.sin(hullHeading);
       const lx = Math.sin(hullHeading), ly = -Math.cos(hullHeading);
       const hl = s.hull.L / 2 - 2, hw = s.hull.W / 2 - 1;
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = tint(s.stroke, 0.55);
+      ctx.lineWidth = 1.0;
+      ctx.strokeStyle = tint(s.stroke, 0.45);
       for (const [a, b] of [[hl, hw], [hl, -hw], [-hl, hw], [-hl, -hw]]) {
         const px = x + fx * a + lx * b;
         const py = y + fy * a + ly * b;
         const pt = project(px, py, s.hull.H * 0.55);
         ctx.beginPath();
-        ctx.moveTo(pt.x - 1.5, pt.y);
-        ctx.lineTo(pt.x + 1.5, pt.y);
+        ctx.moveTo(pt.x - 1.2, pt.y);
+        ctx.lineTo(pt.x + 1.2, pt.y);
         ctx.stroke();
       }
-      // Extra crisp layered outline pass (neon edge POP)
-      widePass(ctx, s.glow, 10, 0.16, () => strokeEdges(ctx, g.hullPrism));
-      ctx.globalAlpha = 1;
-      ctx.lineWidth = 1.35;
-      ctx.strokeStyle = s.stroke;
-      strokeEdges(ctx, g.hullPrism);
-      ctx.lineWidth = 1.2;
-      ctx.strokeStyle = s.turretStroke;
-      strokeEdges(ctx, g.turretPrism);
+      // No second outline pass (C8 — keep silhouette from the thin primary stroke)
+      ctx.setLineDash([]);
     } else {
       ctx.beginPath();
       ctx.moveTo(rear.x - 1.2, rear.y);

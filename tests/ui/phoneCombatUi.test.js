@@ -278,7 +278,7 @@ test('edgeArrow moves below the HUD when it would overlap', () => {
   const raw = place(-100, -1000);
   assert.ok(raw.y < 115);
   const p = place(-100, -1000, { hud });
-  assert.ok(p.y >= 12 + 103 + 10);
+  assert.ok(p.y >= 12 + 103 + EDGE_ARROW.hudGap);
   near(p.x, raw.x);
 });
 test('drawEdgeArrow smoke', () => {

@@ -357,3 +357,8 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Kiro authored:** confirmed neon double/inset border in `combatRenderer.js`; no code rewrite needed. Steering `.kiro/steering/hud-c7-neon-border.md` + `tank-wire-styles.md` (default wheeled).
 - **Build-agent hand:** wheeled 8x8 POP (wheels/mast/lights/glow), neon blue Fire/Dash/stick, double border, HUD crisp frames, Press Start 2P (OFL) self-host, default `TANK_STYLE=wheeled`.
 - **Tests / shots:** see team-archive/hud-c7/.
+
+## C8 HUD polish — thin tank + full frame + spacing (2026-11-19 ~3:20 PM PT) — branch feat/hud-c, NOT merged
+- **Kiro used:** steering `.kiro/steering/hud-c8-polish.md` (hand + short Auto confirm if run). Prefer Auto not Sonnet.
+- **Build-agent hand:** `tankWire.js` wheeled thin/dashed/less bloom; `combatRenderer.js` 4-side neon + corner brackets; `HUD_SPACE=8` wired through taunt/meters/touch edges; `RECIPES.explode` single laugh + one echo; preview OfflineAudio match in `team-archive/hud-c8/`.
+- **Tests / shots:** see `team-archive/hud-c8/`.

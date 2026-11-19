@@ -50,6 +50,9 @@ export function phoneHudRightCss() {
  * control gutters AND clears the top-left HUD panel on both sides (8 CSS px
  * gap), so the panel never covers the arena corner.
  */
+/** C8 single spacing unit (CSS px) for HUD gaps: taunt, meters, edges. */
+export const HUD_SPACE = 8;
+
 export function landscapeStripW(vpW, uiDpr, gutterFrac) {
   const byGutter = vpW * (1 - 2 * gutterFrac);
   const byHud = vpW - 2 * (phoneHudRightCss() + 8) * uiDpr;
@@ -330,7 +333,7 @@ export function drawCompactHp(ctx, state, view = null, opts = null) {
 
 // ── Phone-only enemy edge arrow (draw-only) ──────────────────────────────────
 
-export const EDGE_ARROW = Object.freeze({ size: 14, margin: 24, hudGap: 10, padGap: 12 });
+export const EDGE_ARROW = Object.freeze({ size: 14, margin: 24, hudGap: HUD_SPACE, padGap: HUD_SPACE });
 
 /**
  * Where to draw the off-screen enemy arrow (CSS px), or null when not needed.

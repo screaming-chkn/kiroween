@@ -221,7 +221,8 @@ export function tauntUnderLineY({ lineBottom, scale = 1, gap = 6 }) {
  * @returns {number} alphabetic baseline
  */
 /** CSS px gap between taunt glyph bottom and green field top (C5b). */
-export const TAUNT_ABOVE_GAP = 10;
+/** C8: matches HUD_SPACE (8). Vertical letterbox uses this for top=bottom. */
+export const TAUNT_ABOVE_GAP = 8;
 
 export function tauntAboveLineY({ lineTop, scale = 1, gap = TAUNT_ABOVE_GAP }) {
   const s = scale > 0 ? scale : 1;

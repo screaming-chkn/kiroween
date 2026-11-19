@@ -99,26 +99,74 @@ export function drawWorld(ctx, state, gridAlpha = 0.12) {
 
   ctx.globalAlpha = 1;
 
-  // ── Arena border — neon-blue double/inset (C7): outer glow + inner bevel ────
+  // ── Arena border — C8 full 4-side neon frame + corner brackets ─────────────
+  // Inset so all strokes sit fully inside the arena (camera clamp clips edge).
   ctx.save();
   ctx.lineJoin = 'miter';
   ctx.lineCap = 'butt';
-  // Outer line + glow
+  const o = 3;       // outer inset from arena edge
+  const mid = 7;     // bevel channel
+  const inn = 11;    // inner hard line
+  const bracket = Math.min(28, Math.min(width, height) * 0.06);
+
+  // Soft outer glow (kept modest — readable, not mush)
   ctx.strokeStyle = C.neonBlue;
   ctx.shadowColor = C.neonBlueGlow;
-  ctx.shadowBlur = 8;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1.5, 1.5, width - 3, height - 3);
-  // Clear shadow for crisp inner stroke
+  ctx.shadowBlur = 5;
+  ctx.lineWidth = 2.25;
+  ctx.strokeRect(o, o, width - o * 2, height - o * 2);
   ctx.shadowBlur = 0;
-  // Soft bevel highlight just inside the outer stroke
-  ctx.strokeStyle = 'rgba(127, 227, 255, 0.55)';
+
+  // Soft bevel mid line
+  ctx.strokeStyle = 'rgba(127, 227, 255, 0.5)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(4.5, 4.5, width - 9, height - 9);
-  // Inner hard inset (3D channel)
+  ctx.strokeRect(mid, mid, width - mid * 2, height - mid * 2);
+
+  // Inner hard inset (3D channel) — all 4 sides
   ctx.strokeStyle = C.neonBlue;
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(7, 7, width - 14, height - 14);
+  ctx.lineWidth = 1.6;
+  ctx.strokeRect(inn, inn, width - inn * 2, height - inn * 2);
+
+  // Tech corner brackets (chamfered L accents), symmetric on all 4 corners
+  ctx.strokeStyle = C.neonBlueGlow;
+  ctx.lineWidth = 1.75;
+  ctx.shadowColor = C.neonBlueGlow;
+  ctx.shadowBlur = 3;
+  const corners = [
+    // TL
+    [[o, o + bracket], [o, o], [o + bracket, o]],
+    // TR
+    [[width - o - bracket, o], [width - o, o], [width - o, o + bracket]],
+    // BR
+    [[width - o, height - o - bracket], [width - o, height - o], [width - o - bracket, height - o]],
+    // BL
+    [[o + bracket, height - o], [o, height - o], [o, height - o - bracket]],
+  ];
+  for (const pts of corners) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    ctx.lineTo(pts[1][0], pts[1][1]);
+    ctx.lineTo(pts[2][0], pts[2][1]);
+    ctx.stroke();
+  }
+  // Inner corner ticks (smaller, no blur)
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = C.neonBlue;
+  ctx.lineWidth = 1.1;
+  const ib = bracket * 0.55;
+  const ic = [
+    [[inn, inn + ib], [inn, inn], [inn + ib, inn]],
+    [[width - inn - ib, inn], [width - inn, inn], [width - inn, inn + ib]],
+    [[width - inn, height - inn - ib], [width - inn, height - inn], [width - inn - ib, height - inn]],
+    [[inn + ib, height - inn], [inn, height - inn], [inn, height - inn - ib]],
+  ];
+  for (const pts of ic) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    ctx.lineTo(pts[1][0], pts[1][1]);
+    ctx.lineTo(pts[2][0], pts[2][1]);
+    ctx.stroke();
+  }
   ctx.restore();
 
   if (state.arena.wall) drawSeverWall(ctx, state.arena.wall, state.elapsedMs ?? 0);

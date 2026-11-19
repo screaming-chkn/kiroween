@@ -334,8 +334,8 @@ test('tauntAboveLineY sits just above the green field top', () => {
   assert.equal(y, 94);
   const y2 = tauntAboveLineY({ lineTop: 200, scale: 2, gap: 6 });
   assert.equal(y2, 200 - 12);
-  assert.equal(TAUNT_ABOVE_GAP, 10);
-  assert.equal(tauntAboveLineY({ lineTop: 100, scale: 1 }), 90);
+  assert.equal(TAUNT_ABOVE_GAP, 8);
+  assert.equal(tauntAboveLineY({ lineTop: 100, scale: 1 }), 92);
 });
 
 

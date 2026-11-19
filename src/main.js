@@ -67,7 +67,7 @@ import {
   unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 }                              from './ui/phoneCombatUi.js';
-import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW, landscapeStripW } from './ui/phoneCombatUi.js';
+import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW, landscapeStripW, HUD_SPACE } from './ui/phoneCombatUi.js';
 import { prefersTouchUi, mergeTouchActions, touchLayoutFor, stickRadiusPx, LANDSCAPE_GUTTER_FRAC } from './engine/touch.js';
 import { mountTouchControls }  from './ui/touchControls.js';
 import {
@@ -500,9 +500,24 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       const fieldBottom = arenaBottomLineSy(
         camera, vpW, vpH, ah, shakeX + kickX, shakeY + kickY, aw / 2,
       );
+      // C8 spacing probe (CSS px); unit = HUD_SPACE
+      const cssW = canvas.clientWidth || window.innerWidth;
+      const cssH = canvas.clientHeight || window.innerHeight;
+      const TL = touchLayoutFor(cssW, cssH);
+      const minDim = Math.min(cssW, cssH);
+      const stickR = stickRadiusPx(cssW, cssH);
+      const stickX = TL.stickRest.xFrac * cssW;
+      const stickY = TL.stickRest.yFrac * cssH;
+      const fireR = TL.fire.rFrac * minDim;
+      const fireX = TL.fire.cxFrac * cssW;
+      const fireY = TL.fire.cyFrac * cssH;
+      const dashR = TL.dash.rFrac * minDim;
+      const dashX = TL.dash.cxFrac * cssW;
+      const dashY = TL.dash.cyFrac * cssH;
       globalThis.__HH_HUD_Y__ = {
         unit: 'canvasPx',
         scale: hudScale,
+        hudSpace: HUD_SPACE,
         lineTop,
         lineBottom,
         fieldBottom,
@@ -516,8 +531,24 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         enemyGapCss: (g.enemy.x - (g.arenaRight ?? meterOpts.arenaRight)) / hudScale,
         tauntGapCss: (lineTop - tauntBottom) / hudScale,
         bottomGapCss: (vpH - fieldBottom) / hudScale,
+        stickToLeftEdgeCss: stickX - stickR,
+        stickToBottomEdgeCss: cssH - (stickY + stickR),
+        fireToRightEdgeCss: cssW - (fireX + fireR),
+        fireToBottomEdgeCss: cssH - (fireY + fireR),
+        dashToRightEdgeCss: cssW - (dashX + dashR),
+        meterLabelGapCss: 8,
       };
       globalThis.__HH_HUD_FIELD__ = globalThis.__HH_HUD_Y__;
+      // Screen-space player centre for close-up crops (CSS px via scale).
+      try {
+        const pw = arenaState.player;
+        if (pw) {
+          const sx = (pw.x - camera.x) * camera.zoom + vpW / 2 + (shakeX + kickX);
+          const sy = (pw.y - camera.y) * camera.zoom + vpH / 2 + (shakeY + kickY);
+          globalThis.__HH_PLAYER_SCREEN__ = { x: sx / hudScale, y: sy / hudScale, scale: hudScale };
+        }
+      } catch (_) {}
+
     }
   });
 
