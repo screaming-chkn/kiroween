@@ -11,6 +11,9 @@ import assert from 'node:assert/strict';
 import {
   TOUCH_LAYOUT,
   stickVectorFromPointer,
+  TOUCH_LAYOUT_LANDSCAPE,
+  LANDSCAPE_GUTTER_FRAC,
+  touchLayoutFor,
   hitTestTouchControl,
   stickRadiusPx,
   createTouchController,
@@ -44,9 +47,10 @@ const DESK  = { width: 1280, height: 800 };
 
 /** Pixel centres of the buttons for a viewport. */
 function centres({ width, height }) {
+  const L = touchLayoutFor(width, height);   // landscape viewports use the gutter layout
   return {
-    fire: { x: TOUCH_LAYOUT.fire.cxFrac * width, y: TOUCH_LAYOUT.fire.cyFrac * height },
-    dash: { x: TOUCH_LAYOUT.dash.cxFrac * width, y: TOUCH_LAYOUT.dash.cyFrac * height },
+    fire: { x: L.fire.cxFrac * width, y: L.fire.cyFrac * height },
+    dash: { x: L.dash.cxFrac * width, y: L.dash.cyFrac * height },
   };
 }
 
@@ -419,6 +423,48 @@ test('controller with getBottomShift maps shifted dash tap to dash', () => {
   const d = TOUCH_LAYOUT.dash;
   c.onPointerDown({ pointerId: 1, clientX: d.cxFrac * W, clientY: d.cyFrac * H - 20 });
   assert.notEqual(c.activeDashId, null);
+});
+
+// ── Landscape layout ─────────────────────────────────────────────────────────
+
+console.log('\nsrc/engine/touch.js — landscape layout\n');
+
+test('touchLayoutFor picks by orientation', () => {
+  assert.equal(touchLayoutFor(844, 390), TOUCH_LAYOUT_LANDSCAPE);
+  assert.equal(touchLayoutFor(390, 844), TOUCH_LAYOUT);
+  assert.equal(touchLayoutFor(500, 500), TOUCH_LAYOUT);
+  assert.equal(LANDSCAPE_GUTTER_FRAC, 0.22);
+});
+
+test('844x390: dash, fire and stick rest circles lie inside the gutters', () => {
+  const w = 844, h = 390, min = 390, g = LANDSCAPE_GUTTER_FRAC * w;
+  const L = touchLayoutFor(w, h);
+  for (const c of [L.fire, L.dash]) {
+    const cx = c.cxFrac * w, cy = c.cyFrac * h, r = c.rFrac * min;
+    assert.ok(cx - r >= w - g, `${cx - r} not in right gutter`);
+    assert.ok(cx + r <= w, 'past right edge');
+    assert.ok(cy - r >= 0 && cy + r <= h, 'vertical overflow');
+  }
+  const sr = stickRadiusPx(w, h);
+  const sx = L.stickRest.xFrac * w, sy = L.stickRest.yFrac * h;
+  assert.ok(sx - sr >= 0 && sx + sr <= g, 'stick rest outside left gutter');
+  assert.ok(sy - sr >= 0 && sy + sr <= h, 'stick rest vertical overflow');
+});
+
+test('844x390: hit test finds dash/fire at landscape centres', () => {
+  const L = TOUCH_LAYOUT_LANDSCAPE;
+  assert.equal(hitTestTouchControl(L.dash.cxFrac * 844, L.dash.cyFrac * 390, 844, 390), 'dash');
+  assert.equal(hitTestTouchControl(L.fire.cxFrac * 844, L.fire.cyFrac * 390, 844, 390), 'fire');
+  assert.equal(hitTestTouchControl(422, 200, 844, 390), null);
+});
+
+test('390x844 portrait results are unchanged', () => {
+  const c = centres(PHONE);
+  assert.equal(hitTestTouchControl(c.fire.x, c.fire.y, 390, 844), 'fire');
+  assert.equal(hitTestTouchControl(c.dash.x, c.dash.y, 390, 844), 'dash');
+  near(stickRadiusPx(390, 844), 0.14 * 390);
+  assert.equal(TOUCH_LAYOUT.stickRest.xFrac, 0.2);
+  assert.equal(TOUCH_LAYOUT.stickRest.yFrac, 0.8);
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

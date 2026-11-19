@@ -146,8 +146,17 @@ test('drawCompactHp clamps enemy number inside view', () => {
   });
   drawCompactHp(ctx, { player: { x: 0, y: 0, hp: 1, maxHp: 1 }, enemy: { x: -50, y: 0, hp: 5, maxHp: 10 } },
     { left: 0, right: 100, top: 0, bottom: 100 });
-  assert.equal(pos[0][0], 24);
+  assert.equal(pos[0][0], 44);   // wider clamp: the label now reads "HOUND n"
   assert.ok(pos[0][1] >= 14);
+});
+test('drawCompactHp: enemy label names the HOUND', () => {
+  const txt = [];
+  const ctx = new Proxy({}, {
+    get(_, k) { return (...a) => { if (k === 'fillText') txt.push(a[0]); }; },
+    set() { return true; },
+  });
+  drawCompactHp(ctx, { player: { x: 0, y: 0, hp: 1, maxHp: 1 }, enemy: { x: 0, y: 0, hp: 1200, maxHp: 1200 } });
+  assert.equal(txt[0], 'HOUND 1200');
 });
 test('compactHpLayout', () => {
   const p = compactHpLayout('player');

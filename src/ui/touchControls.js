@@ -15,7 +15,7 @@ import {
   createTouchController,
   stickRadiusPx,
   touchSafeShift,
-  TOUCH_LAYOUT,
+  touchLayoutFor,
 } from '../engine/touch.js';
 
 /** Overlay stylesheet (exported for tests). */
@@ -152,8 +152,9 @@ export function mountTouchControls(root, { getViewport }) {
 
     const vis = controller.stickVisual();
     // Default rest spot: bottom-left (80% down keeps it well above the home bar).
-    const restX = Math.max(sr + 16, 0.2 * w);
-    const restY = 0.8 * h - shift;
+    const L = touchLayoutFor(w, h);
+    const restX = Math.max(sr + 16, L.stickRest.xFrac * w);
+    const restY = L.stickRest.yFrac * h - shift;
     let ox = restX;
     let oy = restY;
     let kx = restX;
@@ -172,9 +173,9 @@ export function mountTouchControls(root, { getViewport }) {
     place(stickEl, ox, oy, sr);
     place(knobEl, kx, ky, sr * 0.45);
 
-    const f = TOUCH_LAYOUT.fire;
+    const f = L.fire;
     place(fireEl, f.cxFrac * w, f.cyFrac * h - shift, f.rFrac * min);
-    const d2 = TOUCH_LAYOUT.dash;
+    const d2 = L.dash;
     place(dashEl, d2.cxFrac * w, d2.cyFrac * h - shift, d2.rFrac * min);
 
     fireEl.classList.toggle('hh-touch__btn--held', controller.activeFireId !== null);

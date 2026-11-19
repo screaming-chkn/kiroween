@@ -142,18 +142,18 @@ function block(css, selector) {
   return css.slice(open + 1, close).replace(/\s+/g, ' ').trim();
 }
 
-test('≥1280px media query switches body to three columns', () => {
-  const mq = GARAGE_CSS.indexOf('@media (min-width: 1280px)');
-  assert.ok(mq >= 0, 'missing ≥1280px media query');
+test('≥960px media query switches body to three columns', () => {
+  const mq = GARAGE_CSS.indexOf('@media (min-width: 960px)');
+  assert.ok(mq >= 0, 'missing ≥960px media query');
   // Within the media query, the body uses a three-area template.
   const slice = GARAGE_CSS.slice(mq, mq + 400);
   assert.ok(
     /grid-template-areas:\s*"slots picker preview"/.test(slice),
-    'three-column areas (slots | picker | preview) not set at ≥1280px',
+    'three-column areas (slots | picker | preview) not set at ≥960px',
   );
 });
 
-test('default (<1280px) body keeps slots | picker with preview wrapping', () => {
+test('default (<960px) body keeps slots | picker with preview wrapping', () => {
   const body = block(GARAGE_CSS, '.hh-garage__body {');
   assert.ok(body.includes('"slots picker"'), 'default should keep slots | picker row');
   assert.ok(body.includes('"preview preview"'), 'preview should wrap full-width by default');

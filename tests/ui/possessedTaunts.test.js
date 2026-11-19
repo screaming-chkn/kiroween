@@ -296,5 +296,12 @@ test('bug 2: baseline never enters the bottom HUD band', () => {
   assert.ok(y <= 800 - 140);
 });
 
+test('tauntBaselineY: a higher label (portrait compact bar) lifts the line above it', () => {
+  const base = tauntBaselineY({ enemyY: 600, zoom: 0.5, scale: 2, vpH: 1688 });
+  const lifted = tauntBaselineY({ enemyY: 600, zoom: 0.5, scale: 2, vpH: 1688, labelTopWu: 92.2 });
+  assert.ok(lifted < base);
+  assert.ok(lifted <= 600 - 92.2 * 0.5 - 8);
+});
+
 console.log(`possessedTaunts: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

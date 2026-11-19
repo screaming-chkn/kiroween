@@ -154,18 +154,19 @@ export const ENEMY_LABEL_TOP_WU = 58;
 
 /**
  * Baseline y (screen px) for the in-fight taunt: above the enemy's HP label
- * with a gap, never over it. If that would run off the top, the line goes
+ * with a gap, never over it (`labelTopWu`: the portrait phone's compact bar
+ * sits higher). If that would run off the top, the line goes
  * below the enemy instead. Pure, so it is unit-tested.
  *
  * @param {{enemyY:number, zoom:number, scale?:number, vpH:number, insetTop?:number}} o
  * @returns {number}
  */
-export function tauntBaselineY({ enemyY, zoom, scale = 1, vpH, insetTop = 0 }) {
+export function tauntBaselineY({ enemyY, zoom, scale = 1, vpH, insetTop = 0, labelTopWu = ENEMY_LABEL_TOP_WU }) {
   const s = scale > 0 ? scale : 1;
   const px = Math.max(14, Math.round(14 * s));
   const gap = 8 * s;
   const minTop = (8 + insetTop) * s + px + gap;          // keep clear of the HAUNT LV label row
-  const above = enemyY - ENEMY_LABEL_TOP_WU * zoom - gap;
+  const above = enemyY - labelTopWu * zoom - gap;
   const bottomLimit = vpH - 140 * s;
   if (above >= minTop) return Math.min(above, bottomLimit);
   const below = enemyY + 36 * zoom + px;                  // under the hull (MECH_RADIUS 20 + turret)

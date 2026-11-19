@@ -39,3 +39,4 @@
 - [x] 37. M4.5 property-based tests for loadout folding, arena bounds and damage invariants (R8)
 - [x] 38. Kiro CLI v3: workspace hooks log each firing to .kiro/hook-runs.log (R7)
 - [x] 39. Title DEPLOY goes straight to a duel with the saved or default loadout; GARAGE button and G key open the garage (R3)
+- [x] 40. Phone landscape: DASH/stick/FIRE in side gutters, arena fit to the middle strip; portrait camera frames both tanks and the enemy HP label (R4)

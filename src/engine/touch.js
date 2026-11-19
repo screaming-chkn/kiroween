@@ -63,7 +63,31 @@ export const TOUCH_LAYOUT = Object.freeze({
     cyFrac: 0.89,
     rFrac:  0.085,
   }),
+  // Default stick rest spot (fractions of the viewport).
+  stickRest: Object.freeze({ xFrac: 0.2, yFrac: 0.8 }),
 });
+
+/** Landscape phones: controls live in the side gutters, never over the arena. */
+export const TOUCH_LAYOUT_LANDSCAPE = Object.freeze({
+  stick: Object.freeze({ xFrac: 0, yFrac: 0.25, wFrac: 0.22, hFrac: 0.75 }),
+  stickRadiusFrac: 0.14,
+  deadzone: 0.18,
+  fire: Object.freeze({ cxFrac: 0.89, cyFrac: 0.74, rFrac: 0.15 }),
+  dash: Object.freeze({ cxFrac: 0.89, cyFrac: 0.36, rFrac: 0.11 }),
+  stickRest: Object.freeze({ xFrac: 0.11, yFrac: 0.72 }),
+});
+
+/** Width fraction of each side gutter reserved for controls in landscape. */
+export const LANDSCAPE_GUTTER_FRAC = 0.22;
+
+/**
+ * Pick the touch layout for a viewport.
+ * @param {number} vpW
+ * @param {number} vpH
+ */
+export function touchLayoutFor(vpW, vpH) {
+  return vpW > vpH ? TOUCH_LAYOUT_LANDSCAPE : TOUCH_LAYOUT;
+}
 
 // ── Pure geometry helpers ────────────────────────────────────────────────────
 
@@ -125,24 +149,25 @@ export function stickVectorFromPointer(
  */
 export function hitTestTouchControl(x, y, vpW, vpH) {
   const minDim = Math.min(vpW, vpH);
+  const L = touchLayoutFor(vpW, vpH);
 
   // FIRE button (circle).
-  const fx = TOUCH_LAYOUT.fire.cxFrac * vpW;
-  const fy = TOUCH_LAYOUT.fire.cyFrac * vpH;
-  const fr = TOUCH_LAYOUT.fire.rFrac * minDim;
+  const fx = L.fire.cxFrac * vpW;
+  const fy = L.fire.cyFrac * vpH;
+  const fr = L.fire.rFrac * minDim;
   if (Math.hypot(x - fx, y - fy) <= fr) return 'fire';
 
   // DASH button (circle).
-  const dx = TOUCH_LAYOUT.dash.cxFrac * vpW;
-  const dy = TOUCH_LAYOUT.dash.cyFrac * vpH;
-  const dr = TOUCH_LAYOUT.dash.rFrac * minDim;
+  const dx = L.dash.cxFrac * vpW;
+  const dy = L.dash.cyFrac * vpH;
+  const dr = L.dash.rFrac * minDim;
   if (Math.hypot(x - dx, y - dy) <= dr) return 'dash';
 
   // Stick activation zone (rect anchored bottom-left).
-  const sx = TOUCH_LAYOUT.stick.xFrac * vpW;
-  const sy = TOUCH_LAYOUT.stick.yFrac * vpH;
-  const sw = TOUCH_LAYOUT.stick.wFrac * vpW;
-  const sh = TOUCH_LAYOUT.stick.hFrac * vpH;
+  const sx = L.stick.xFrac * vpW;
+  const sy = L.stick.yFrac * vpH;
+  const sw = L.stick.wFrac * vpW;
+  const sh = L.stick.hFrac * vpH;
   if (x >= sx && x <= sx + sw && y >= sy && y <= sy + sh) return 'stick';
 
   return null;
@@ -155,7 +180,7 @@ export function hitTestTouchControl(x, y, vpW, vpH) {
  * @returns {number}
  */
 export function stickRadiusPx(vpW, vpH) {
-  return TOUCH_LAYOUT.stickRadiusFrac * Math.min(vpW, vpH);
+  return touchLayoutFor(vpW, vpH).stickRadiusFrac * Math.min(vpW, vpH);
 }
 
 /**
@@ -169,12 +194,13 @@ export function stickRadiusPx(vpW, vpH) {
 export function touchSafeShift(vpW, vpH, insetBottom = 0) {
   const pad = Math.max(16, insetBottom) + 12;
   const min = Math.min(vpW, vpH);
-  const f = TOUCH_LAYOUT.fire;
-  const d = TOUCH_LAYOUT.dash;
+  const L = touchLayoutFor(vpW, vpH);
+  const f = L.fire;
+  const d = L.dash;
   const maxBottom = Math.max(
     f.cyFrac * vpH + f.rFrac * min,
     d.cyFrac * vpH + d.rFrac * min,
-    0.8 * vpH + stickRadiusPx(vpW, vpH),
+    L.stickRest.yFrac * vpH + stickRadiusPx(vpW, vpH),
   );
   return Math.max(0, maxBottom - (vpH - pad));
 }
@@ -348,8 +374,9 @@ export function createTouchController(opts = {}) {
       const fdx = fireX - fireOriginX;
       const fdy = fireY - fireOriginY;
       const fd = Math.hypot(fdx, fdy);
-      const fr = TOUCH_LAYOUT.fire.rFrac * Math.min(width, height);
-      if (fr > 0 && fd >= fr * TOUCH_LAYOUT.deadzone) {
+      const L = touchLayoutFor(width, height);
+      const fr = L.fire.rFrac * Math.min(width, height);
+      if (fr > 0 && fd >= fr * L.deadzone) {
         lastAimDir = { x: fdx / fd, y: fdy / fd };
         fireDragged = true;
       }

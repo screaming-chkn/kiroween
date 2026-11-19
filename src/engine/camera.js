@@ -329,6 +329,35 @@ export function phoneCameraZoom({
 }
 
 /**
+ * Portrait phone frame: centre and zoom that keep both tanks (plus margins)
+ * inside the band between the top HUD panel and the touch controls.
+ * @param {{ player:{x:number,y:number}, enemy?:{x:number,y:number}|null, fitZoom:number, maxZoom:number, vpW:number, vpH:number, topPx?:number, bottomPx?:number, marginX?:number, marginY?:number }} p
+ * @returns {{x:number,y:number,zoom:number}}
+ */
+export function phoneFrame({
+  player,
+  enemy,
+  fitZoom,
+  maxZoom,
+  vpW,
+  vpH,
+  topPx = 0,
+  bottomPx = 0,
+  marginX = 100,
+  marginY = 80,
+}) {
+  if (!enemy) return { x: player.x, y: player.y, zoom: maxZoom };
+  const usable = Math.max(1, vpH - topPx - bottomPx);
+  const spanX = Math.abs(enemy.x - player.x) + 2 * marginX;
+  const spanY = Math.abs(enemy.y - player.y) + 2 * marginY;
+  const zoom = clamp(Math.min(vpW / spanX, usable / spanY), fitZoom, maxZoom);
+  const midX = (player.x + enemy.x) / 2;
+  const midY = (player.y + enemy.y) / 2;
+  const bandOffset = (topPx + (vpH - bottomPx)) / 2 - vpH / 2;
+  return { x: midX, y: midY - bandOffset / zoom, zoom };
+}
+
+/**
  * Camera follow point: player leaning toward the enemy, with each axis offset
  * clamped so the player stays on screen. Returns the player position when the
  * enemy is missing.

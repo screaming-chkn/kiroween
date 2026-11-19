@@ -220,7 +220,7 @@ function drawBar(ctx, kind, ent, view, fx = null) {
     ctx.fillText(txt, tx, ty);
   }
   if (L.showText) {
-    const txt = `${Math.ceil(ent.hp ?? 0)}`;
+    const txt = `${kind === 'enemy' ? 'HOUND ' : ''}${Math.ceil(ent.hp ?? 0)}`;
     ctx.font = `bold ${L.fontPx}px "Share Tech Mono", monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
@@ -229,7 +229,7 @@ function drawBar(ctx, kind, ent, view, fx = null) {
     let tx = ent.x;
     let ty = top - 2;
     if (view) {
-      tx = Math.max(view.left + 24, Math.min(view.right - 24, tx));
+      tx = Math.max(view.left + 44, Math.min(view.right - 44, tx));
       ty = Math.max(view.top + 14, ty);
     }
     ctx.strokeText(txt, tx, ty);

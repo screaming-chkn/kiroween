@@ -1031,6 +1031,12 @@
     "done": true
   },
   {
+    "spec": "10-polish",
+    "id": 40,
+    "title": "Phone landscape: DASH/stick/FIRE in side gutters, arena fit to the middle strip; portrait camera frames both tanks and the enemy HP label (R4)",
+    "done": true
+  },
+  {
     "spec": "11-haunt-words",
     "id": 1,
     "title": "endcard.js copy helpers take { level, maxLevel }: EXORCISED / POSSESSED / LAID TO REST, sublines, \"Spirit banished.\" + tests (R1)",

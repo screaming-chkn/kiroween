@@ -184,9 +184,10 @@ export const GARAGE_CSS = `
 }
 
 /* body — columns.
-   Default (<1280px): two columns (slots | part list); the preview + stats
+   Default (<960px): two columns (slots | part list); the preview + stats
    column wraps to a full-width third row.
-   R10 ≥1280px: three columns slots | part list | mech preview + stats. */
+   R10 ≥960px (was 1280px; M7 #4 for 1024x640): three columns
+   slots | part list | mech preview + stats. */
 .hh-garage__body {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 1fr;
@@ -200,12 +201,23 @@ export const GARAGE_CSS = `
 .hh-picker         { grid-area: picker; }
 .hh-preview        { grid-area: preview; }
 
-@media (min-width: 1280px) {
+@media (min-width: 960px) {
   .hh-garage__body {
     grid-template-columns: minmax(220px, 1fr) 1.3fr minmax(300px, 1fr);
     grid-template-areas: "slots picker preview";
   }
 }
+
+/* Dark, thin scrollbars everywhere in the garage (M7 #4). */
+.hh-garage, .hh-garage * {
+  scrollbar-color: var(--color-phosphor-dim, #1F9E57) var(--color-void, #0A0D0B);
+  scrollbar-width: thin;
+}
+.hh-garage { color-scheme: dark; }
+.hh-garage ::-webkit-scrollbar { width: 8px; height: 8px; }
+.hh-garage ::-webkit-scrollbar-track { background: var(--color-void, #0A0D0B); }
+.hh-garage ::-webkit-scrollbar-thumb { background: var(--color-phosphor-dim, #1F9E57); border-radius: 4px; }
+
 
 /* slot list (left) */
 .hh-garage__slots {
@@ -287,7 +299,7 @@ export const GARAGE_CSS = `
   padding: 16px 0;
 }
 
-/* preview + stats column (third column at ≥1280px — R10) */
+/* preview + stats column (third column at ≥960px — R10) */
 .hh-preview {
   padding: 16px;
   display: flex;
@@ -297,7 +309,7 @@ export const GARAGE_CSS = `
   border-left: 1px solid var(--color-panel, #121A15); /* flips on possession */
 }
 .hh-preview__art {
-  /* M4.7: never shrink. .hh-preview is a flex column; below 1280px it sits in
+  /* M4.7: never shrink. .hh-preview is a flex column; below 960px it sits in
      a short grid row, so default flex-shrink squeezed this box to its 120px
      min-height while the SVG kept its 220px height and spilled out of it.
      Holding the box at its content size lets .hh-preview scroll instead. */
@@ -615,6 +627,17 @@ export const GARAGE_CSS = `
 }
 
 /* reduced motion — skip width transitions */
+/* Short landscape screens (1024x640 and similar): compact rows and a smaller
+   preview so all six slots and the stats fit with no inner scrolling (M7 #4). */
+@media (min-width: 701px) and (max-height: 760px) {
+  .hh-garage__header { padding: 10px 24px 6px; }
+  .hh-garage__slots, .hh-picker, .hh-preview { padding: 10px 12px; }
+  .hh-preview { gap: 10px; }
+  .hh-slot { min-height: 40px; padding: 6px 10px; }
+  .hh-preview__art { min-height: 0; padding: 4px; }
+  .hh-preview__svg { max-height: 150px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hh-bar-fill,
   .hh-slot,
@@ -901,7 +924,7 @@ export function mountGarage(root, { onDeploy, onSeance } = {}) {
   // Picker panel
   const pickerPanel = el('div', { class: 'hh-picker', role: 'region', 'aria-label': 'Part picker', 'aria-live': 'polite' });
 
-  // Preview + stats column (third column at ≥1280px — R10).
+  // Preview + stats column (third column at ≥960px — R10).
   const previewCol = el('div', { class: 'hh-preview', role: 'region', 'aria-label': 'Mech preview and stats' });
   const previewArt = el('div', { class: 'hh-preview__art' });
   const summary = el('div', { class: 'hh-summary', 'aria-live': 'polite', 'aria-atomic': 'true' });

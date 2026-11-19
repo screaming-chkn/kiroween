@@ -32,6 +32,7 @@ import {
   isPortraitTouch,
   phoneCameraZoom,
   phoneFollowPoint,
+  phoneFrame,
 } from '../../src/engine/camera.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
@@ -558,6 +559,43 @@ test('phoneFollowPoint: null enemy returns player position', () => {
   assert.deepEqual(phoneFollowPoint({ x: 7, y: 9 }, null, 1, 100, 100), { x: 7, y: 9 });
   assert.deepEqual(phoneFollowPoint({ x: 7, y: 9 }, undefined, 1, 100, 100), { x: 7, y: 9 });
 });
+
+// ── phoneFrame ────────────────────────────────────────────────────────────────
+
+console.log('\nsrc/engine/camera.js — phoneFrame\n');
+
+{
+  const vpW = 780, vpH = 1688, topPx = 300, bottomPx = 500;
+  const base = { fitZoom: 0.7, maxZoom: 2.6, vpW, vpH, topPx, bottomPx };
+  const player = { x: 600, y: 1000 };
+  const enemy = { x: 600, y: 200 }; // 800 world units apart
+
+  test('phoneFrame: both tanks plus margins sit inside the usable band', () => {
+    const f = phoneFrame({ ...base, player, enemy });
+    const cam = { x: f.x, y: f.y, zoom: f.zoom };
+    for (const t of [player, enemy]) {
+      const { sx, sy } = worldToScreen(t.x, t.y, cam, vpW, vpH);
+      assert.ok(sx - 100 * f.zoom >= -1e-6 && sx + 100 * f.zoom <= vpW + 1e-6, `sx=${sx}`);
+      assert.ok(sy - 80 * f.zoom >= topPx - 1e-6, `sy=${sy} top`);
+      assert.ok(sy + 80 * f.zoom <= vpH - bottomPx + 1e-6, `sy=${sy} bottom`);
+    }
+  });
+
+  test('phoneFrame: zoom is clamped to fitZoom when the span is too big', () => {
+    const f = phoneFrame({ ...base, fitZoom: 1.2, player, enemy });
+    assert.equal(f.zoom, 1.2);
+  });
+
+  test('phoneFrame: zoom never exceeds maxZoom', () => {
+    const f = phoneFrame({ ...base, player, enemy: { x: 610, y: 1010 } });
+    assert.equal(f.zoom, base.maxZoom);
+  });
+
+  test('phoneFrame: no enemy returns the player position at maxZoom', () => {
+    assert.deepEqual(phoneFrame({ ...base, player, enemy: null }), { x: 600, y: 1000, zoom: 2.6 });
+    assert.deepEqual(phoneFrame({ ...base, player }), { x: 600, y: 1000, zoom: 2.6 });
+  });
+}
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 

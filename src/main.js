@@ -19,7 +19,7 @@
 
 import { startLoop }           from './engine/loop.js';
 import { createInputState }    from './engine/input.js';
-import { createCamera, updateCamera, addTrauma, isPortraitTouch, phoneCameraZoom, phoneFollowPoint } from './engine/camera.js';
+import { createCamera, updateCamera, addTrauma, isPortraitTouch, phoneCameraZoom, phoneFrame } from './engine/camera.js';
 import {
   createRenderer,
   registerLayer,
@@ -62,8 +62,8 @@ import {
   rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 }                              from './ui/phoneCombatUi.js';
-import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW } from './ui/phoneCombatUi.js';
-import { prefersTouchUi, mergeTouchActions, TOUCH_LAYOUT, stickRadiusPx } from './engine/touch.js';
+import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW, compactHpLayout } from './ui/phoneCombatUi.js';
+import { prefersTouchUi, mergeTouchActions, touchLayoutFor, stickRadiusPx, LANDSCAPE_GUTTER_FRAC } from './engine/touch.js';
 import { mountTouchControls }  from './ui/touchControls.js';
 import {
   beginKillMoment, tickKillMoment, resetKillMoment, shouldDrawEndCard,
@@ -295,8 +295,6 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   const { width: aw, height: ah } = arenaState.arena;
   const vpW0 = renderer.canvas.width  || 1280;
   const vpH0 = renderer.canvas.height || 800;
-  // Leave a small margin (factor 0.95) so the wall stroke is never cropped.
-  const fitZoom = Math.min(vpW0 / aw, vpH0 / ah) * 0.95;
   // Touch-UI decision is made once, before the camera, and reused below.
   const coarse = typeof window.matchMedia === 'function'
     ? window.matchMedia('(pointer: coarse)').matches
@@ -306,6 +304,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     matchMediaCoarse: coarse,
     width: window.innerWidth,
   });
+  // Leave a small margin (factor 0.95) so the wall stroke is never cropped.
+  // Landscape phones fit the middle strip so the arena clears the control gutters.
+  const landscapeTouch = touchUi && (canvas.clientWidth || 0) > (canvas.clientHeight || 0);
+  const fitZoom = (landscapeTouch
+    ? Math.min(vpW0 * (1 - 2 * LANDSCAPE_GUTTER_FRAC) / aw, vpH0 / ah)
+    : Math.min(vpW0 / aw, vpH0 / ah)) * 0.95;
   // Portrait phone: zoom in so the mech is readable, and bias toward the enemy.
   const phonePortrait = isPortraitTouch({
     touchUi,
@@ -446,8 +450,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       shakeX + kickX, shakeY + kickY);
     const r = phoneHudRect(phoneHudScale(uiDpr));
     const hud = { x: r.x / uiDpr, y: r.y / uiDpr, w: r.w / uiDpr, h: r.h / uiDpr };
+    const TL = touchLayoutFor(cssW, cssH);
     const bottomLimit = Math.min(
-      TOUCH_LAYOUT.fire.cyFrac * cssH - TOUCH_LAYOUT.fire.rFrac * Math.min(cssW, cssH),
+      TL.fire.cyFrac * cssH - TL.fire.rFrac * Math.min(cssW, cssH),
       0.8 * cssH - stickRadiusPx(cssW, cssH),
     ) - EDGE_ARROW.padGap;
     const placement = edgeArrowPlacement({
@@ -497,7 +502,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
           shakeX + kickX, shakeY + kickY);
         tx = sp.sx;
         // Above the enemy's HOUND label with a gap (bug 2: it used to sit on it).
-        ty = tauntBaselineY({ enemyY: sp.sy, zoom: camera.zoom, scale: hudScale, vpH, insetTop });
+        const cl = compactHpLayout('enemy');
+        // Portrait: keep the line under the HUD panel row, too.
+        const hudR = phonePortrait ? phoneHudRect(phoneHudScale(uiDpr)) : null;
+        ty = tauntBaselineY({ enemyY: sp.sy, zoom: camera.zoom, scale: hudScale, vpH,
+          insetTop: hudR ? Math.max(insetTop, (hudR.y + hudR.h) / hudScale) : insetTop,
+          ...(phonePortrait ? { labelTopWu: cl.offsetY + cl.h + 2 + cl.fontPx } : {}) });
       }
       if (!cardUp) drawPossessedTaunt(ctx, taunt, { x: tx, y: ty, scale: hudScale });
       else afterCard = { x: tx, y: ty, scale: hudScale };
@@ -750,11 +760,32 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
     // Camera: pin to arena centre when arena fits the viewport; follow +
     // clamp when the arena is larger than the viewport (R11).
+    // Portrait phone: frame both tanks inside the band between the HUD panel
+    // and the touch controls, easing the zoom.
+    let camTarget = arenaState.player;
+    if (phonePortrait) {
+      const cssW = canvas.clientWidth || window.innerWidth;
+      const cssH = canvas.clientHeight || window.innerHeight;
+      const hudR = phoneHudRect(phoneHudScale(uiDpr));
+      const L = touchLayoutFor(cssW, cssH);
+      const topControlPx = (L.fire.cyFrac * cssH - L.fire.rFrac * Math.min(cssW, cssH)) * uiDpr;
+      const f = phoneFrame({
+        player: arenaState.player,
+        enemy: arenaState.enemy,
+        fitZoom,
+        maxZoom: startZoom,
+        vpW,
+        vpH,
+        topPx: hudR.y + hudR.h + 8 * uiDpr,
+        bottomPx: vpH - topControlPx,
+        marginY: 110,   // the enemy's compact HP label sits ~92 wu above it
+      });
+      camera = { ...camera, zoom: camera.zoom + (f.zoom - camera.zoom) * Math.min(1, dt * 3) };
+      camTarget = { x: f.x, y: f.y };
+    }
     const cameraResult = updateCamera(
       camera,
-      phonePortrait
-        ? phoneFollowPoint(arenaState.player, arenaState.enemy, camera.zoom, vpW, vpH)
-        : arenaState.player,
+      camTarget,
       dt,
       arenaState.arena,
       vpW,
