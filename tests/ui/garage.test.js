@@ -13,7 +13,9 @@
 import assert from 'node:assert/strict';
 import { LOADOUT_EFFECTS, effectTokensFor } from '../../src/combat/loadoutEffects.js';
 import { STERILE_TOKENS, POSSESSED_TOKENS } from '../../src/ui/possession.js';
-import { formatDelta, statChipLabel, overdrawPenaltyPct, GARAGE_CSS, pickerEmptyHint } from '../../src/ui/garage.js';
+import { formatDelta, statChipLabel, overdrawPenaltyPct, GARAGE_CSS, pickerEmptyHint, statRanges, statBarPct } from '../../src/ui/garage.js';
+import { PARTS } from '../../src/data/parts.js';
+import { defaultLoadout } from '../../src/data/presets.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
 
@@ -327,6 +329,58 @@ test('preview art box never flex-shrinks below its SVG (no spill under 1280px)',
   assert.match(prev, /overflow-y:\s*auto/, 'preview column scrolls instead of clipping');
   const svg = GARAGE_CSS.match(/\.hh-preview__svg \{([^}]*)\}/)[1];
   assert.match(svg, /max-height:\s*220px/);
+});
+
+// ── Stat bar scaling ────────────────────────────────────────────────────────
+
+console.log('\nstat bar scaling\n');
+
+const BAR_KEYS = ['armor', 'speed', 'damage', 'sensor'];
+const BAR_SLOTS = ['legs', 'core', 'armL', 'armR', 'back', 'head'];
+
+test('statRanges matches a brute-force per-slot min/max sum', () => {
+  const r = statRanges();
+  for (const key of BAR_KEYS) {
+    let min = 0;
+    let max = 0;
+    for (const slot of BAR_SLOTS) {
+      const vals = PARTS.filter(p => p.slot === slot).map(p => p.stats[key]);
+      if (!vals.length) continue;
+      min += Math.min(...vals);
+      max += Math.max(...vals);
+    }
+    assert.equal(r[key].min, min, `${key} min`);
+    assert.equal(r[key].max, max, `${key} max`);
+  }
+});
+
+test('every stat range has max > min', () => {
+  const r = statRanges();
+  for (const key of BAR_KEYS) assert.ok(r[key].max > r[key].min, key);
+});
+
+test('statBarPct: 100 at max, 10 at min, 55 mid, clamped outside', () => {
+  const range = { min: 10, max: 30 };
+  assert.equal(statBarPct(30, range), 100);
+  assert.equal(statBarPct(10, range), 10);
+  assert.equal(statBarPct(20, range), 55);
+  assert.equal(statBarPct(99, range), 100);
+  assert.equal(statBarPct(-5, range), 10);
+  assert.equal(statBarPct(5, { min: 5, max: 5 }), 100);
+  assert.equal(typeof statBarPct(20, range), 'number');
+});
+
+test('default loadout: speed bar is full, sensor bar is above 80', () => {
+  const lo = defaultLoadout();
+  const stats = { armor: 0, speed: 0, damage: 0, sensor: 0 };
+  for (const slot of BAR_SLOTS) {
+    const part = PARTS.find(p => p.id === lo[slot]);
+    if (!part) continue;
+    for (const key of BAR_KEYS) stats[key] += part.stats[key];
+  }
+  const r = statRanges();
+  assert.equal(statBarPct(stats.speed, r.speed), 100);
+  assert.ok(statBarPct(stats.sensor, r.sensor) > 80);
 });
 
 // ── Summary ──────────────────────────────────────────────────────────────────

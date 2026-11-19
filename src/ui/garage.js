@@ -87,8 +87,44 @@ const STAT_CODES = {
   sensor: 'SEN',
 };
 
-// Max stat value for bar width calculations (stats are 0–10 per design).
-const STAT_MAX = 10;
+const RANGE_SLOTS = ['legs', 'core', 'armL', 'armR', 'back', 'head'];
+
+/**
+ * Min/max total of each stat across every possible loadout. Slots are
+ * independent, so min/max is the sum of each slot's smallest/largest value.
+ * A slot with no parts contributes 0.
+ * @param {Array} [parts]
+ * @returns {{armor:{min:number,max:number},speed:{min:number,max:number},damage:{min:number,max:number},sensor:{min:number,max:number}}}
+ */
+export function statRanges(parts = PARTS) {
+  const out = {};
+  for (const key of STAT_KEYS) {
+    let min = 0;
+    let max = 0;
+    for (const slot of RANGE_SLOTS) {
+      const vals = parts.filter(p => p.slot === slot).map(p => p.stats?.[key] ?? 0);
+      if (vals.length === 0) continue;
+      min += Math.min(...vals);
+      max += Math.max(...vals);
+    }
+    out[key] = { min, max };
+  }
+  return out;
+}
+
+const STAT_RANGES = statRanges();
+
+/**
+ * Bar width percent for a stat total. Lowest possible total shows a 10% stub.
+ * @param {number} value
+ * @param {{min:number,max:number}} range
+ * @returns {number}
+ */
+export function statBarPct(value, range) {
+  if (range.max <= range.min) return 100;
+  const t = Math.min(1, Math.max(0, (value - range.min) / (range.max - range.min)));
+  return 10 + 90 * t;
+}
 
 // ── localStorage helpers ──────────────────────────────────────────────────────
 
@@ -1084,8 +1120,9 @@ export function mountGarage(root, { onDeploy, onSeance } = {}) {
     // Row 2: aggregate stat bars
     const barsRow = el('div', { class: 'hh-bars', 'aria-label': 'Aggregate stats' });
     for (const key of STAT_KEYS) {
-      const val = Math.min(aggStats[key], STAT_MAX * 6); // 6 slots × 10 max
-      const pct = Math.min(100, (val / (STAT_MAX * 6)) * 100);
+      const val = aggStats[key];
+      const range = STAT_RANGES[key];
+      const pct = statBarPct(val, range);
 
       const grp   = el('div', { class: 'hh-bar-group' });
       const lbl   = el('div', { class: 'hh-bar-group__label', 'aria-hidden': 'true' });
@@ -1096,8 +1133,8 @@ export function mountGarage(root, { onDeploy, onSeance } = {}) {
         role: 'progressbar',
         'aria-label': STAT_LABELS[key],
         'aria-valuenow': String(val),
-        'aria-valuemin': '0',
-        'aria-valuemax': String(STAT_MAX * 6),
+        'aria-valuemin': String(range.min),
+        'aria-valuemax': String(range.max),
       });
       fill.style.width = `${pct}%`;
       track.append(fill);

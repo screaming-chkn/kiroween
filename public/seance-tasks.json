@@ -1037,6 +1037,12 @@
     "done": true
   },
   {
+    "spec": "10-polish",
+    "id": 41,
+    "title": "Garage stat bars scale against the real min/max loadout totals per stat (statRanges / statBarPct), not 6 x 10 (R10)",
+    "done": true
+  },
+  {
     "spec": "11-haunt-words",
     "id": 1,
     "title": "endcard.js copy helpers take { level, maxLevel }: EXORCISED / POSSESSED / LAID TO REST, sublines, \"Spirit banished.\" + tests (R1)",
