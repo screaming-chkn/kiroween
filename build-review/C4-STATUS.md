@@ -3,7 +3,7 @@
 Branch `feat/hud-c` **not merged**. Main stays untouched. Merge held for owner lock.
 
 ## Tip
-See latest `feat/hud-c` tip after the C4 feature commit (this file updates with the tip hash in the same commit or a follow-up docs commit).
+Tip: `72253a651c9e47a11c4fb7c6c9ba3c75235c0e70` (`72253a6`). Worktree: feature branch only.
 
 ## What changed
 - Landscape phone primary (844×390); desktop 1280×720; portrait must not break.
