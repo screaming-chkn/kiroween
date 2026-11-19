@@ -63,7 +63,7 @@ import {
   unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 }                              from './ui/phoneCombatUi.js';
-import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW, compactHpLayout, landscapeStripW } from './ui/phoneCombatUi.js';
+import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW, landscapeStripW } from './ui/phoneCombatUi.js';
 import { prefersTouchUi, mergeTouchActions, touchLayoutFor, stickRadiusPx, LANDSCAPE_GUTTER_FRAC } from './engine/touch.js';
 import { mountTouchControls }  from './ui/touchControls.js';
 import {
@@ -75,7 +75,8 @@ import { formatArenaSpecStamp } from './ui/specStamp.js';
 import { SEANCE_DATA_URL }     from './ui/seance.js';
 import { drawEndCardView }     from './ui/endCardView.js';
 import {
-  createTauntMachine, isDemoTaunts, drawPossessedTaunt, specTauntLine, tauntBaselineY,
+  createTauntMachine, isDemoTaunts, drawPossessedTaunt, specTauntLine,
+  tauntUnderLineY,
 }                              from './ui/possessedTaunts.js';
 import {
   readHauntLevel, setHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel, MAX_HAUNT_LEVEL,
@@ -454,8 +455,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       topInset: phonePortrait ? 12 * s : 28,
     };
     if (hudR) {
-      // Sit just below the green-bordered phone HUD panel.
-      meterOpts.topInset = hudR.y + hudR.h + 8 * s;
+      // Sit just under the green-bordered phone HUD panel (hug the corners).
+      meterOpts.topInset = hudR.y + hudR.h + 3 * s;
+    } else {
+      // Desktop: just under the arena's top green border (world y = 0).
+      const topBorder = worldToScreen(0, 0, camera, vpW, vpH, shakeX + kickX, shakeY + kickY);
+      if (Number.isFinite(topBorder.sy)) meterOpts.topInset = topBorder.sy + 3;
     }
     drawScreenHpMeters(ctx, st, vpW, vpH, meterOpts);
   });
@@ -531,31 +536,31 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       drawTellCaption(ctx, tellCaption.current(nowMs), { x: vpW / 2, y: capTop * hudScale, scale: hudScale });
     }
 
-    // Possessed taunt. While playing it floats above the enemy (screen space,
-    // clamped); once the end card is up it sits near the top so the veil
+    // Possessed taunt. In-fight (layout C): centered just under the green line,
+    // coloured to the speaking tank. End card: near the top so the veil
     // doesn't swallow the death line.
     const taunt = tauntMachine.current();
     let afterCard = null;
     if (taunt) {
-      let tx;
+      let tx = vpW / 2;
       let ty;
+      const sidePad = 56 * hudScale; // clear of corner meters
       if (cardUp) {
-        tx = vpW / 2;
         ty = (56 + insetTop) * hudScale;
       } else {
-        const sp = worldToScreen(st.enemy.x, st.enemy.y, camera, vpW, vpH,
-          shakeX + kickX, shakeY + kickY);
-        tx = sp.sx;
-        // Above the enemy's HOUND label with a gap (bug 2: it used to sit on it).
-        const cl = compactHpLayout('enemy');
-        // Portrait: keep the line under the HUD panel row, too.
         const hudR = phonePortrait ? phoneHudRect(phoneHudScale(uiDpr)) : null;
-        ty = tauntBaselineY({ enemyY: sp.sy, zoom: camera.zoom, scale: hudScale, vpH,
-          insetTop: hudR ? Math.max(insetTop, (hudR.y + hudR.h) / hudScale) : insetTop,
-          ...(phonePortrait ? { labelTopWu: cl.offsetY + cl.h + 2 + cl.fontPx } : {}) });
+        let lineBottom;
+        if (hudR) {
+          lineBottom = hudR.y + hudR.h;
+        } else {
+          const topBorder = worldToScreen(0, 0, camera, vpW, vpH,
+            shakeX + kickX, shakeY + kickY);
+          lineBottom = Number.isFinite(topBorder.sy) ? topBorder.sy : 28;
+        }
+        ty = tauntUnderLineY({ lineBottom, scale: hudScale, gap: 4 });
       }
-      if (!cardUp) drawPossessedTaunt(ctx, taunt, { x: tx, y: ty, scale: hudScale });
-      else afterCard = { x: tx, y: ty, scale: hudScale };
+      if (!cardUp) drawPossessedTaunt(ctx, taunt, { x: tx, y: ty, scale: hudScale, sidePad });
+      else afterCard = { x: tx, y: ty, scale: hudScale, sidePad };
     }
 
     // End card — only once the kill moment has finished.

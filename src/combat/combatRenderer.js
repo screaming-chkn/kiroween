@@ -380,10 +380,11 @@ export function drawHUD(ctx, state) {
  *
  * It shows, with tabular numerals ≥ 20px at ≥ 7:1 contrast (accessibility
  * rules 1 & 8):
- *   - HP     player hit-points      cur/max
  *   - EN     player energy          cur/max
  *   - a weapon cooldown ring        (fills as the weapon recharges)
  *   - POWER  OK (bone) or STUTTER (ember)   — never colour alone (rule 6)
+ *
+ * HP is omitted here — corner screen meters carry hit-points (layout C).
  *
  * Because the fixed HUD must live in screen space it is registered on the
  * OVERLAY layer (render.js draws OVERLAY without the world transform), ahead
@@ -392,14 +393,14 @@ export function drawHUD(ctx, state) {
 
 // Fixed-HUD layout constants (screen-space pixels).
 const FHUD_MARGIN      = 20;   // gap from the bottom-left corner
-const FHUD_PAD         = 14;   // inner padding
-const FHUD_LINE_H      = 30;   // line height for stat rows
+const FHUD_PAD         = 16;   // inner padding (roomier after HP moved to meters)
+const FHUD_LINE_H      = 40;   // line height for EN / POWER (HP lives on corner meters)
 const FHUD_STAT_PX     = 22;   // stat numeral size (≥ 20px, R9)
 const FHUD_LABEL_PX    = 16;   // small row label size (≥ 14px, rule 8)
 const FHUD_RING_R      = 26;   // cooldown ring radius
 const FHUD_RING_W      = 6;    // cooldown ring stroke width
 const FHUD_PANEL_W     = 240;  // panel width
-const FHUD_PANEL_H     = 128;  // panel height
+const FHUD_PANEL_H     = 128;  // panel height (kept: more air between EN and POWER)
 
 /**
  * LAYERS.OVERLAY draw callback (registered before the end card) — fixed HUD.
@@ -436,9 +437,7 @@ export function drawFixedHUD(ctx, state, vpW, vpH) {
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'alphabetic';
 
-  // ── HP row ──────────────────────────────────────────────────────────────────
-  drawStatRow(ctx, textX, rowY, 'HP', formatHudStat(player.hp, player.maxHp), C.phosphor);
-  rowY += FHUD_LINE_H;
+  // HP is on the corner meters (layout C) — not duplicated here.
 
   // ── EN (energy) row — falls back to 0 when energy is not modelled ───────────
   const energy    = player.energy    ?? 0;

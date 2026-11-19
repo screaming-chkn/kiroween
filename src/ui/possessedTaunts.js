@@ -44,6 +44,27 @@ export const FADE_MS = 300;
 export const DEMO_SPAWN = TAUNTS.spawn[0];
 export const DEMO_DEATH = TAUNTS.enemyDeath[0];
 
+/** Phosphor green — player-spoken lines. */
+export const TAUNT_COLOR_PLAYER = '#39FF88';
+/** Blood red — HOUND-spoken lines. */
+export const TAUNT_COLOR_HOUND = '#FF4D5E';
+
+/**
+ * Who says this kind of line. Current bank is all HOUND; player is reserved
+ * for future ally / victory quips.
+ * @param {string} kind
+ * @returns {'hound'|'player'}
+ */
+export function tauntSpeaker(kind) {
+  if (kind === 'playerQuip') return 'player';
+  return 'hound';
+}
+
+/** Fill colour for a speaker. */
+export function tauntColor(speaker) {
+  return speaker === 'player' ? TAUNT_COLOR_PLAYER : TAUNT_COLOR_HOUND;
+}
+
 /** True when the URL search string asks for the deterministic demo lines. */
 export function isDemoTaunts(search) {
   const s = typeof search === 'string' ? search : '';
@@ -89,8 +110,8 @@ export function createTauntMachine({ demo = false, rng = Math.random } = {}) {
   let lowHpFired = false;
   let now = 0;
 
-  function start(text, nowMs) {
-    line = { text, startMs: nowMs };
+  function start(text, nowMs, speaker = 'hound') {
+    line = { text, startMs: nowMs, speaker: speaker === 'player' ? 'player' : 'hound' };
     now = nowMs;
   }
 
@@ -106,22 +127,22 @@ export function createTauntMachine({ demo = false, rng = Math.random } = {}) {
     now = Math.max(now, nowMs);
     if (showing()) return;
     lastWindup = nowMs;
-    start(pickTaunt(kind, rng), nowMs);
+    start(pickTaunt(kind, rng), nowMs, tauntSpeaker(kind));
   }
 
   function onEnemyDeath(nowMs) {
-    start(demo ? DEMO_DEATH : pickTaunt('enemyDeath', rng), nowMs);
+    start(demo ? DEMO_DEATH : pickTaunt('enemyDeath', rng), nowMs, tauntSpeaker('enemyDeath'));
   }
 
   return {
     reset() { line = null; lastWindup = -Infinity; lowHpFired = false; now = 0; },
-    onSpawn(nowMs) { start(demo ? DEMO_SPAWN : pickTaunt('spawn', rng), nowMs); },
+    onSpawn(nowMs) { start(demo ? DEMO_SPAWN : pickTaunt('spawn', rng), nowMs, tauntSpeaker('spawn')); },
     onWindup(nowMs) { rateLimited('windup', nowMs); },
     onHit(nowMs) { rateLimited('hit', nowMs); },
     onLowHp(nowMs) {
       if (lowHpFired) return;
       lowHpFired = true;
-      start(pickTaunt('lowHp', rng), nowMs);
+      start(pickTaunt('lowHp', rng), nowMs, tauntSpeaker('lowHp'));
     },
     onEnemyDeath,
     onDeath: onEnemyDeath,
@@ -129,10 +150,10 @@ export function createTauntMachine({ demo = false, rng = Math.random } = {}) {
       const text = typeof specLine === 'string' && specLine.length > 0
         ? specLine
         : pickTaunt('playerDeath', rng);
-      start(text, nowMs);
+      start(text, nowMs, tauntSpeaker('playerDeath'));
     },
     tick(nowMs) { now = nowMs; },
-    /** @returns {null | {text:string, typed:string, alpha:number}} */
+    /** @returns {null | {text:string, typed:string, alpha:number, speaker:'hound'|'player', color:string}} */
     current() {
       if (!line) return null;
       const e = now - line.startMs;
@@ -143,7 +164,8 @@ export function createTauntMachine({ demo = false, rng = Math.random } = {}) {
       const n = Math.min(line.text.length, Math.floor(e / TYPE_MS_PER_CHAR) + 1);
       const fadeT = e - typeMs - HOLD_MS;
       const alpha = fadeT > 0 ? Math.max(0, 1 - fadeT / FADE_MS) : 1;
-      return { text: line.text, typed: line.text.slice(0, n), alpha };
+      const speaker = line.speaker === 'player' ? 'player' : 'hound';
+      return { text: line.text, typed: line.text.slice(0, n), alpha, speaker, color: tauntColor(speaker) };
     },
   };
 }
@@ -153,10 +175,9 @@ export function createTauntMachine({ demo = false, rng = Math.random } = {}) {
 export const ENEMY_LABEL_TOP_WU = 58;
 
 /**
- * Baseline y (screen px) for the in-fight taunt: above the enemy's HP label
- * with a gap, never over it (`labelTopWu`: the portrait phone's compact bar
- * sits higher). If that would run off the top, the line goes
- * below the enemy instead. Pure, so it is unit-tested.
+ * Legacy baseline y (screen px) above the enemy's old over-mech HP label.
+ * Kept for unit tests and end-card fallback; in-fight draw uses
+ * {@link tauntUnderLineY} (layout C: under the green HUD / arena line).
  *
  * @param {{enemyY:number, zoom:number, scale?:number, vpH:number, insetTop?:number}} o
  * @returns {number}
@@ -165,21 +186,41 @@ export function tauntBaselineY({ enemyY, zoom, scale = 1, vpH, insetTop = 0, lab
   const s = scale > 0 ? scale : 1;
   const px = Math.max(14, Math.round(14 * s));
   const gap = 8 * s;
-  const minTop = (8 + insetTop) * s + px + gap;          // keep clear of the HAUNT LV label row
+  const minTop = (8 + insetTop) * s + px + gap;
   const above = enemyY - labelTopWu * zoom - gap;
   const bottomLimit = vpH - 140 * s;
   if (above >= minTop) return Math.min(above, bottomLimit);
-  const below = enemyY + 36 * zoom + px;                  // under the hull (MECH_RADIUS 20 + turret)
+  const below = enemyY + 36 * zoom + px;
   return Math.min(Math.max(below, minTop), bottomLimit);
+}
+
+/**
+ * Baseline y (screen px) for layout-C in-fight trash talk: just under the
+ * green line (phone HUD bottom, or desktop arena top border), centered draw
+ * happens at x = vpW/2. Leaves a small gap so glyphs clear the line and the
+ * corner meters.
+ *
+ * @param {{lineBottom:number, scale?:number, gap?:number}} o
+ *   `lineBottom` = screen y of the green line's bottom edge.
+ * @returns {number} alphabetic baseline
+ */
+export function tauntUnderLineY({ lineBottom, scale = 1, gap = 6 }) {
+  const s = scale > 0 ? scale : 1;
+  const px = Math.max(14, Math.round(14 * s));
+  const g = (Number.isFinite(gap) ? gap : 6) * s;
+  const y0 = Number.isFinite(lineBottom) ? lineBottom : 0;
+  return y0 + g + px;
 }
 
 /**
  * Screen-space draw. The line is laid out from its FULL width so typing never
  * jitters, and clamped inside the canvas so it fits a 390-wide view.
+ * Colour matches the speaking tank (green player / red HOUND). On phone the
+ * side margins leave room for the corner meters (~56 CSS px each side).
  *
  * @param {CanvasRenderingContext2D} ctx
- * @param {{text:string,typed:string,alpha:number}|null} line
- * @param {{x:number,y:number,scale?:number}} pos  anchor (text centre / baseline)
+ * @param {{text:string,typed:string,alpha:number,speaker?:string,color?:string}|null} line
+ * @param {{x:number,y:number,scale?:number,sidePad?:number}} pos  anchor (text centre / baseline)
  */
 export function drawPossessedTaunt(ctx, line, pos) {
   if (!line || !line.typed) return;
@@ -193,17 +234,26 @@ export function drawPossessedTaunt(ctx, line, pos) {
     ? (ctx.measureText(line.text)?.width ?? line.text.length * px * 0.6)
     : line.text.length * px * 0.6;
   const viewW = ctx.canvas?.width ?? Infinity;
-  const margin = 8 * scale;
+  const side = Number.isFinite(pos.sidePad) ? pos.sidePad : 56 * scale;
+  const margin = Math.max(8 * scale, side);
   let x = pos.x - fullW / 2;
   if (Number.isFinite(viewW)) x = Math.min(x, viewW - margin - fullW);
   x = Math.max(margin, x);
-  const y = Math.max(px + margin, pos.y);
+  // If the full line still won't fit between the meters, shrink once (floor 14px).
+  let drawPx = px;
+  const usable = Number.isFinite(viewW) ? viewW - 2 * margin : Infinity;
+  if (fullW > usable && usable > 0) {
+    drawPx = Math.max(14, Math.floor(px * usable / fullW));
+    ctx.font = `${drawPx}px "Share Tech Mono", monospace`;
+  }
+  const y = Math.max(drawPx + 8 * scale, pos.y);
+  const fill = line.color || tauntColor(line.speaker);
   ctx.globalAlpha = Math.max(0, Math.min(1, line.alpha));
   ctx.lineWidth = 1;
   ctx.lineJoin = 'round';
   ctx.strokeStyle = '#0A0D0B';
   ctx.strokeText(line.typed, x, y);
-  ctx.fillStyle = '#9FD8FF';
+  ctx.fillStyle = fill;
   ctx.fillText(line.typed, x, y);
   ctx.restore();
 }
