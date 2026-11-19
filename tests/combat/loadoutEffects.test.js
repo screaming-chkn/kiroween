@@ -252,14 +252,14 @@ test('flag-off fights are identical to pre-M4.5 totals (3 builds x 3 seeds)', ()
   }
 });
 
-test('flag-off golden: builds without combatMods replay main efaae9d exactly (36 fights)', () => {
+test('flag-off golden: builds without combatMods replay main 25887b3 exactly (36 fights)', () => {
   const golden = JSON.parse(readFileSync(new URL('./fixtures/flagoff-golden.json', import.meta.url), 'utf8')).rows;
   const byLabel = new Map(enumerateLoadouts().map((b) => [b.label, b]));
   assert.equal(golden.length, 36);
   for (const [label, seed, lv, policy, phase, elapsedMs, playerHp, enemyHp] of golden) {
     const b = byLabel.get(label);
     const { combatMods, ...off } = b.totals;   // what main.js passes when the flag is off
-    // efaae9d ran LV1 at 0.8x; M7 #7 moved live LV1 to 0.6x, so replay the old multiplier.
+    // 25887b3 ran LV1 at 0.8x; M7 #7 moved live LV1 to 0.6x, so replay the old multiplier.
     const r = runFight({ ...b, totals: off }, seed, lv === 1 ? { pressure: 0.8, policy } : { hauntLv: lv, policy });
     assert.deepEqual([r.phase, r.elapsedMs, r.playerHp, r.enemyHp], [phase, elapsedMs, playerHp, enemyHp], `${label} seed ${seed} LV${lv} ${policy}`);
   }
