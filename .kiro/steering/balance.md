@@ -73,3 +73,9 @@ Additional constraints (all LVs):
 Dash and fire timings are sized for touch latency. Any number change that moves
 the median duel length outside its band (baseline LV1 15–35 s, LV2–LV5 30–120 s) must be reverted or
 compensated before merge.
+
+## Cold-pass caption hygiene
+The one-shot DASH teach uses `localStorage` key `hh-tell-caption-seen-v2`
+(`src/ui/tellCaption.js`). Before a cold first-minute pass, clear that key or
+serve from a fresh origin so the caption can fire. Bumping the `-vN` suffix
+re-teaches once after a retune without wiping other progress.

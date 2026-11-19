@@ -554,6 +554,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (!cardUp) { endCardButtons = null; return; }
     if (cardShownAtMs === 0) {
       cardShownAtMs = nowMs;
+      focusIndex = 0; // always open on REDEPLOY (a/d during death used to flip focus)
       cueMusic(st.phase === 'win' ? 'win' : 'lose');
     }
     const restartReady = canRestart(phaseEndedAtMs, nowMs, null);
@@ -609,11 +610,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (arenaState.phase === 'playing') return;
 
     // Focus navigation is always allowed (no restart risk).
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-        e.key === 'Tab' || e.key === 'a' || e.key === 'd') {
+    // Arrows + Tab only. Do not bind a/d — those are move keys and flip focus
+    // to GARAGE when the player dies while strafing.
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
       e.preventDefault();
-      if (e.key === 'ArrowLeft'  || e.key === 'a') focusIndex = 0;
-      else if (e.key === 'ArrowRight' || e.key === 'd') focusIndex = 1;
+      if (e.key === 'ArrowLeft') focusIndex = 0;
+      else if (e.key === 'ArrowRight') focusIndex = 1;
       else focusIndex = focusIndex === 0 ? 1 : 0;   // Tab toggles
       return;
     }

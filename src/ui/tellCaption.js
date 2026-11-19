@@ -3,11 +3,13 @@
  *
  * On the first enemy windup ever, show one line under the HUD that says what
  * the red ring means. A localStorage flag makes it show once per browser, so a
- * second duel or a reload never shows it again. No animation (reduced-motion
- * safe): the line just appears, holds and goes.
+ * second duel or a reload never shows it again. Key is versioned
+ * (`hh-tell-caption-seen-v2`) so a retune can re-teach once without wiping
+ * other progress; for a cold pass, clear that key or use a fresh origin. No
+ * animation (reduced-motion safe): the line just appears, holds and goes.
  */
 
-export const TELL_CAPTION_KEY = 'hh-tell-caption-seen';
+export const TELL_CAPTION_KEY = 'hh-tell-caption-seen-v2';
 export const TELL_CAPTION_MS = 3500;
 
 /** Caption text for the current controls (SHIFT on desktop, DASH button on touch). */

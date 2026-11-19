@@ -52,6 +52,10 @@ test('no storage (or throwing storage) still shows once per match', () => {
   assert.equal(d.current(10), tellCaptionText(false));
 });
 
+test('caption key is versioned so a retune can re-teach once', () => {
+  assert.match(TELL_CAPTION_KEY, /^hh-tell-caption-seen-v\d+$/);
+});
+
 test('text names the real dash control per input', () => {
   assert.match(tellCaptionText(false), /RED RING = INCOMING SHOT/);
   assert.match(tellCaptionText(false), /SHIFT/);

@@ -108,6 +108,7 @@ Harness-only player models (`HUMAN_PROFILES` in `balanceCore.mjs`). Both run the
 
 - **firstTimer:** a first game. Rough aim (sigma 60 was the old "near-0 % wins" setting), reacts to a quarter of the red rings, a bit slow.
 - **medium:** has learned the tell (the LV1 caption teaches it). Slightly better aim, dashes on most rings.
+- Cold passes: clear `localStorage` key `hh-tell-caption-seen-v2` (or use a fresh origin) so the one-shot DASH caption is actually tested.
 - A reaction dashes along the strafe line once the delay has passed; after the 450 ms windup it is too late. Dash cooldown still applies, so nobody dodges every shot.
 - The gap between the two is mostly tell-reading: at LV1, medium's tell habit with first-timer aim (sigma 60) already wins 63.8 %, so about 30 of the 36 pp gap is the dodge. Win rate is very sensitive to "stands still": at LV1, 30 % gives first-timer ~52 % / medium ~73 %, 50 % gives ~20 % / ~61 %. Treat these as models, not measurements; a real phone playtest is the check.
 
