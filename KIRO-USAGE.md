@@ -362,3 +362,9 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Kiro used:** steering `.kiro/steering/hud-c8-polish.md` (hand + short Auto confirm if run). Prefer Auto not Sonnet.
 - **Build-agent hand:** `tankWire.js` wheeled thin/dashed/less bloom; `combatRenderer.js` 4-side neon + corner brackets; `HUD_SPACE=8` wired through taunt/meters/touch edges; `RECIPES.explode` single laugh + one echo; preview OfflineAudio match in `team-archive/hud-c8/`.
 - **Tests / shots:** see `team-archive/hud-c8/`.
+
+## Séance Ritual Chain film — live Auto tick (2026-11-19 ~3:33 PM PT) — branch kiro-seance-film
+- **Kiro used:** headless `kiro-cli` v3 Auto, `--trust-tools=fs_read,fs_write` only. Prompt: flip one checkbox in `.kiro/specs/13-hud-meters/tasks.md` (demo tick, then reverted).
+- **Proof:** `seance-on-spec-save` PostFileSave fired → `.kiro/hook-runs.log` line `2026-11-19T23:33:01.375Z ... exit=0 ms=147`. SÉANCE counts 207→208 then reverted to 207. Film + stills: `team-archive/seance-film/` (`seance-ritual-chain.mp4`).
+- **Credits:** `/usage` before 295.02/877; after readout still 295.02 (short run / meter lag). No credit purchase.
+- **Honesty:** LIVE agent save → hook. No IDE/MCP. Hook stdout not claimed as same-turn agent feedback.
