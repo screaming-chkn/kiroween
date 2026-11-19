@@ -15,7 +15,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  buildSite, shouldCopy, listLocalImports, assertSafeOutDir, REPO_ROOT,
+  buildSite, shouldCopy, listLocalImports, assertSafeOutDir, moduleGraph, addModulePreloads, REPO_ROOT,
 } from '../../scripts/build-site.mjs';
 
 let passed = 0;
@@ -148,6 +148,43 @@ test('assertSafeOutDir refuses the repo root, its parents, / and home', () => {
   assert.throws(() => assertSafeOutDir('/home/u', root, '/home/u'));
   assert.doesNotThrow(() => assertSafeOutDir('/tmp/some/repo/deploy/site', root, '/home/u'));
   assert.doesNotThrow(() => assertSafeOutDir('/tmp/other/site', root, '/home/u'));
+});
+
+test('moduleGraph walks relative imports breadth-first and survives cycles', () => {
+  const files = {
+    'src/main.js': "import './a.js';\nimport { b } from './sub/b.js';\nimport x from './missing.js';",
+    'src/a.js': 'export const a = 1;',
+    'src/sub/b.js': "import { a } from '../a.js';\nimport './c.js';",
+    'src/sub/c.js': "import './b.js';",
+  };
+  const read = (rel) => (rel in files ? files[rel] : null);
+  assert.deepEqual(moduleGraph('src/main.js', read), ['src/main.js', 'src/a.js', 'src/sub/b.js', 'src/sub/c.js']);
+});
+
+test('addModulePreloads inserts links before the module script, idempotently', () => {
+  const html = '<html><head></head><body>\n  <script type="module" src="src/main.js"></script>\n</body></html>';
+  const out1 = addModulePreloads(html, ['src/a.js', 'src/b.js']);
+  const link = (p) => `  <link rel="modulepreload" href="${p}">`;
+  assert.ok(out1.includes(`${link('src/a.js')}\n${link('src/b.js')}\n`));
+  assert.ok(out1.lastIndexOf('modulepreload') < out1.indexOf('<script type="module"'));
+  assert.equal(addModulePreloads(out1, ['src/c.js']), out1);
+  assert.equal(addModulePreloads(html, []), html);
+  assert.throws(() => addModulePreloads('<html><body></body></html>', ['src/a.js']), Error);
+});
+
+test('built index.html preloads every module reachable from src/main.js once, before the script', () => {
+  const html = readFileSync(join(out, 'index.html'), 'utf8');
+  const hrefs = [...html.matchAll(/<link rel="modulepreload" href="([^"]+)">/g)].map((m) => m[1]);
+  const graph = moduleGraph('src/main.js', (rel) => (
+    existsSync(join(REPO_ROOT, rel)) ? readFileSync(join(REPO_ROOT, rel), 'utf8') : null
+  )).filter((p) => p !== 'src/main.js');
+  assert.ok(graph.length > 1);
+  assert.deepEqual([...hrefs].sort(), [...graph].sort());
+  assert.equal(new Set(hrefs).size, hrefs.length);
+  for (const h of hrefs) assert.ok(existsSync(join(out, h)), `preload target missing: ${h}`);
+  const scriptAt = html.search(/<script\s+type="module"/);
+  assert.ok(scriptAt > 0);
+  assert.ok(html.lastIndexOf('rel="modulepreload"') < scriptAt);
 });
 
 rmSync(dirname(out), { recursive: true, force: true });

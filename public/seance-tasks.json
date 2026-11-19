@@ -1043,6 +1043,12 @@
     "done": true
   },
   {
+    "spec": "10-polish",
+    "id": 42,
+    "title": "Built site adds modulepreload hints for the full static import chain from src/main.js (moduleGraph / addModulePreloads) to cut the phone import waterfall",
+    "done": true
+  },
+  {
     "spec": "11-haunt-words",
     "id": 1,
     "title": "endcard.js copy helpers take { level, maxLevel }: EXORCISED / POSSESSED / LAID TO REST, sublines, \"Spirit banished.\" + tests (R1)",

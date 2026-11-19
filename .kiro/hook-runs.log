@@ -69,3 +69,6 @@
 2026-11-19T02:35:51.841Z test-on-save event=PostFileSave file=tests/ui/garage.test.js exit=0 ms=7355
 2026-11-19T02:35:52.869Z test-on-save event=PostFileSave file=tests/ui/garage.test.js exit=0 ms=7405
 2026-11-19T02:35:58.548Z seance-on-spec-save event=PostFileSave file=.kiro/specs/10-polish/tasks.md exit=0 ms=145
+2026-11-19T02:38:47.682Z seance-on-spec-save event=PostFileSave file=.kiro/specs/10-polish/tasks.md exit=0 ms=142
+2026-11-19T02:39:11.232Z test-on-save event=PostFileSave file=tests/engine/site.test.js exit=0 ms=7174
+2026-11-19T02:39:11.753Z test-on-save event=PostFileSave file=tests/engine/site.test.js exit=0 ms=7070

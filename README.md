@@ -101,9 +101,9 @@ Each hook command goes through `scripts/kiro-hook-run.mjs`, which logs every fir
 - A second, free-tier Kiro account (Google login) ran the first two M4 runs on a Mac mini: 4.81 credits.
 - The original Kiro Pro account (GitHub login) ran every later run on the build box: 1.56 credits for M4, 6.32 for M5 (steering rewrite and spec reconcile, the `build:site` script with its tests and the README check hook, and this README's first draft) and 8.51 for M4.5 (loadout-effects spec, steering, implementation draft, property-based tests).
 
-Another 0.62 Pro credits were metered between runs and aren't tied to any one run. **Total: 21.82 credits metered** (4.81 + 1.56 + 6.32 + 8.51 + 0.62).
+Another 0.62 Pro credits were metered between runs and aren't tied to any one run. Later Pro runs on the CLI's v3 engine (where the workspace hooks fire): 0.13 for the hook probe, 6.99 for M6 (haunt words and taunts) and 7.58 for M7 (title deploy, phone layout, stat bars, modulepreload). **Total: 36.52 credits metered** (Google 4.81, Pro 31.71). Per-run detail is in `KIRO-USAGE.md`.
 
-All runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write` with one focused prompt each. No credits were bought.
+The first runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write` with one focused prompt each; from the probe on, the same command adds `--agent-engine v3 --trust-workspace`. No credits were bought.
 
 ## Balance
 

@@ -185,3 +185,24 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Proof** (build box, not in the repo): `deploy/kiro-proof/run12-*`, `run13-*`, `run14-*` (screen recording, scrubbed transcript, prompt).
 - **Tests:** `npm test` 900 passed, 0 failed.
 - **Account totals:** 21.95 + 6.99 = **28.94 credits metered** (Google 4.81, Pro 24.13).
+
+## M7: title deploy, phone layout, stat bars, load hints (win-review #3, #4, #8, #10) (2026-11-18, build agent)
+- **Kiro used: yes**, 4 runs (plus 1 aborted) on the box, Pro (GitHub login), model **Auto**, kiro-cli 3.4.0, **engine v3** with workspace trust, file tools only:
+  `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat runN-prompt.txt)"`
+- **Run 15 (18:14–18:15 PT), PR #14, win-review #3:** the title's PRESS TO DEPLOY goes straight into a duel with the saved (or default) loadout; a GARAGE button and the G key open the garage (`titleChoice`, `quickDeployPlan`, tests, task 39).
+  - Hooks fired: `test-on-save` ×10 (1 failing mid-edit), `seance-on-spec-save` ×1.
+  - Measured: DEPLOY tap to a live duel in about 0.3 s on desktop and phone (before: the tap opened the garage).
+- **Run 16 (18:18 PT), aborted:** my tool call was cut off after about 25 s while Kiro was still reading files. It made no edits. The partial recording and transcript are kept as `run16-aborted-*`.
+- **Run 16b (18:18–18:20 PT), PR #15, win-review #4:** landscape phone controls moved into 22% side gutters with the arena fitted to the middle strip (`TOUCH_LAYOUT_LANDSCAPE`, `touchLayoutFor`); the portrait camera frames both tanks (`phoneFrame`), plus tests and task 40.
+  - Hooks fired: `test-on-save` ×21 (20 failing while edits were half done), `seance-on-spec-save` ×1.
+  - My fixes (separate commits): the test import Kiro dropped; button centres in the test follow the layout; the portrait taunt sits above the compact HOUND label and under the HUD row; the label reads "HOUND n"; the 1024×640 garage uses three columns from 960 px, compact rows on short screens and dark thin scrollbars (0 inner scroll panes, 6/6 slots visible).
+- **Run 17 (18:34–18:36 PT), PR #16, win-review #8:** garage stat bars scale against the real min/max loadout totals (`statRanges`, `statBarPct`, tests, task 41). The default SCOUT bars went from 10 / 18 / 12 / 38 % to 15 / 100 / 17.5 / 88 %.
+  - Hooks fired: `test-on-save` ×6 (1 failing mid-edit), `seance-on-spec-save` ×1.
+  - My fix (separate commit): dropped the unused `STAT_MAX`.
+- **Run 18 (18:38–18:39 PT), PR #18, win-review #10:** the built site adds `<link rel="modulepreload">` for all 45 modules reachable from `src/main.js` (`moduleGraph`, `addModulePreloads`, tests, task 42). The repo's own `index.html` is unchanged.
+  - Hooks fired: `seance-on-spec-save` ×1, `test-on-save` ×2 (green). `scripts/` edits match no hook.
+- **Not Kiro:** the public-repo scrub (PR #13) and the LV1 balance tune (PR #17: pressure 0.8 → 0.6, LV1 median 56.0 → 42.3 s, LV2–LV5 unchanged) were done by build agent.
+- **Hook output and the agent:** as in M6, Kiro said it could not see hook output or run shell commands. I ran `npm test` after every run.
+- **Credits (`/usage`):** Pro 248.59 → 249.99 (run 15) → 253.94 (run 16b, including the aborted run 16) → 255.26 (run 17) → 256.17 (run 18). **7.58 for M7.** About 621 left of 877; resets 2026-12-01. No credits bought, no plan or settings change, no new login, no IDE.
+- **Proof** (build box, not in the repo): `deploy/kiro-proof/run15-*`, `run16-aborted-*`, `run16b-*`, `run17-*`, `run18-*` (screen recording, scrubbed transcript, prompt).
+- **Account totals:** 28.94 + 7.58 = **36.52 credits metered** (Google 4.81, Pro 31.71).

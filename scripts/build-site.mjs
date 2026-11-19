@@ -3,7 +3,8 @@
  *
  * Copies exactly what the browser needs into an output folder and adds the
  * noindex files for the private preview:
- *   index.html (with a noindex meta), favicon.svg, LICENSE, src/**, assets/**,
+ *   index.html (with a noindex meta and modulepreload hints for the whole
+ *   static import chain from src/main.js), favicon.svg, LICENSE, src/**, assets/**,
  *   public/seance-tasks.json, _headers, robots.txt
  *
  * Run:  node scripts/build-site.mjs [outDir]
@@ -21,7 +22,7 @@ import {
   copyFileSync, rmSync, statSync,
 } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { dirname, join, resolve, relative, sep } from 'node:path';
+import { dirname, join, resolve, relative, sep, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 
@@ -136,6 +137,59 @@ export function addNoindexMeta(html) {
   return html.replace(re, `$1\n  ${NOINDEX_META}`);
 }
 
+/**
+ * Breadth-first walk of relative imports from `entryRel` (repo-relative, e.g.
+ * 'src/main.js'). Returns unique repo-relative paths in discovery order, entry
+ * first. `readSource(rel)` returns the file text or null when missing (such
+ * files are skipped). Cycle-safe. Pure.
+ *
+ * @param {string} entryRel
+ * @param {(rel: string) => (string|null)} readSource
+ * @returns {string[]}
+ */
+export function moduleGraph(entryRel, readSource) {
+  const entry = posix.normalize(entryRel);
+  const seen = new Set([entry]);
+  const order = [];
+  const queue = [entry];
+  while (queue.length) {
+    const rel = queue.shift();
+    const src = readSource(rel);
+    if (src === null || src === undefined) continue;
+    order.push(rel);
+    for (const spec of listLocalImports(src)) {
+      const target = posix.normalize(posix.join(posix.dirname(rel), spec));
+      if (seen.has(target)) continue;
+      seen.add(target);
+      queue.push(target);
+    }
+  }
+  return order;
+}
+
+/**
+ * Insert one `<link rel="modulepreload" href="...">` line per path right
+ * before the first `<script type="module"` tag. Unchanged when `paths` is
+ * empty or a modulepreload link already exists. Throws without a module
+ * script tag. Pure.
+ *
+ * @param {string} html
+ * @param {string[]} paths
+ * @returns {string}
+ */
+export function addModulePreloads(html, paths) {
+  if (!paths || paths.length === 0) return html;
+  if (/<link\s[^>]*rel="modulepreload"/i.test(html)) return html;
+  const m = /^([ \t]*)<script\s+type="module"/im.exec(html);
+  const at = html.search(/<script\s+type="module"/i);
+  if (at === -1) throw new Error('build-site: module script tag not found in index.html');
+  const lineStart = html.lastIndexOf('\n', at) + 1;
+  const onOwnLine = m !== null && lineStart === m.index && html.slice(lineStart, at).trim() === '';
+  const links = paths.map((p) => `  <link rel="modulepreload" href="${p}">`).join('\n');
+  if (onOwnLine) return `${html.slice(0, lineStart)}${links}\n${html.slice(lineStart)}`;
+  return `${html.slice(0, at)}${links}\n${html.slice(at)}`;
+}
+
 // ── I/O ──────────────────────────────────────────────────────────────────────
 
 function walk(dirAbs, out = []) {
@@ -178,7 +232,11 @@ export function buildSite(outDir = DEFAULT_OUT) {
     const dest = join(out, ...rel.split('/'));
     mkdirSync(dirname(dest), { recursive: true });
     if (rel === 'index.html') {
-      writeFileSync(dest, addNoindexMeta(readFileSync(join(REPO_ROOT, rel), 'utf8')), 'utf8');
+      const graph = moduleGraph('src/main.js', (r) => (
+        existsSync(join(REPO_ROOT, r)) ? readFileSync(join(REPO_ROOT, r), 'utf8') : null
+      )).filter((p) => p !== 'src/main.js');
+      const html = addModulePreloads(addNoindexMeta(readFileSync(join(REPO_ROOT, rel), 'utf8')), graph);
+      writeFileSync(dest, html, 'utf8');
     } else {
       copyFileSync(join(REPO_ROOT, rel), dest);
     }
