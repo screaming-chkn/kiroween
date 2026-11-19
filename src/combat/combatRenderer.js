@@ -66,8 +66,9 @@ const C = {
  *
  * @param {CanvasRenderingContext2D} ctx
  * @param {{ arena: { width: number, height: number } }} state
+ * @param {number} [gridAlpha=0.12]  Grid line opacity.
  */
-export function drawWorld(ctx, state) {
+export function drawWorld(ctx, state, gridAlpha = 0.12) {
   const { width, height } = state.arena;
 
   // ── Floor fill ──────────────────────────────────────────────────────────────
@@ -78,7 +79,7 @@ export function drawWorld(ctx, state) {
   const GRID = 80;
   ctx.strokeStyle = C.phosphorDim;
   ctx.lineWidth   = 1;
-  ctx.globalAlpha = 0.12;
+  ctx.globalAlpha = gridAlpha;
 
   for (let x = GRID; x < width; x += GRID) {
     ctx.beginPath();

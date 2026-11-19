@@ -689,12 +689,66 @@ export const GARAGE_CSS = `
   .hh-preview { overflow: visible; }
 }
 
+/* ── Haunting (spec 12, R6) ─────────────────────────────
+   Garage wisps and panel tint. CSS only, token colours only (they flip on
+   possession). Haze stays ≤ 0.35 and sits behind the mech SVG, never over text. */
+.hh-preview__art {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 30% 25%, color-mix(in srgb, var(--color-ghost, #9FD8FF) 14%, transparent), transparent 60%),
+    radial-gradient(ellipse at 75% 80%, color-mix(in srgb, var(--color-ghost, #9FD8FF) 8%, transparent), transparent 65%),
+    var(--color-panel, #121A15);
+}
+.hh-preview__art::before,
+.hh-preview__art::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.3;
+}
+.hh-preview__art::before {
+  background:
+    radial-gradient(ellipse at 25% 35%, color-mix(in srgb, var(--color-ghost, #9FD8FF) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse at 70% 70%, color-mix(in srgb, var(--color-ghost, #9FD8FF) 10%, transparent), transparent 50%);
+  animation: hh-wisp-a 14s ease-in-out infinite alternate;
+}
+.hh-preview__art::after {
+  background:
+    radial-gradient(ellipse at 65% 30%, color-mix(in srgb, var(--color-ghost, #9FD8FF) 16%, transparent), transparent 55%),
+    radial-gradient(ellipse at 30% 75%, color-mix(in srgb, var(--color-ghost, #9FD8FF) 8%, transparent), transparent 50%);
+  animation: hh-wisp-b 19s ease-in-out infinite alternate;
+}
+@keyframes hh-wisp-a {
+  from { transform: translate(-3%, 2%) scale(1); opacity: 0.2; }
+  to   { transform: translate(3%, -2%) scale(1.08); opacity: 0.35; }
+}
+@keyframes hh-wisp-b {
+  from { transform: translate(3%, 3%) scale(1.06); opacity: 0.35; }
+  to   { transform: translate(-3%, -3%) scale(1); opacity: 0.2; }
+}
+.hh-preview__svg {
+  position: relative;
+  z-index: 1;
+}
+.hh-slot,
+.hh-picker,
+.hh-preview {
+  background-image: linear-gradient(to bottom, color-mix(in srgb, var(--color-ghost, #9FD8FF) 5%, transparent), transparent);
+}
+/* ── end Haunting (spec 12, R6) ── */
+
 @media (prefers-reduced-motion: reduce) {
   .hh-bar-fill,
   .hh-slot,
   .hh-option,
   .hh-deploy { transition: none; }
   .hh-slot__caret { transition: none; }
+  .hh-preview__art::before,
+  .hh-preview__art::after { animation: none; }
 }
 
 /* ── Phone (≤700px, e.g. 390×844): single column, scrollable ───────────── */

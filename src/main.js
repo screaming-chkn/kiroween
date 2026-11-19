@@ -80,6 +80,10 @@ import {
   readHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel, MAX_HAUNT_LEVEL,
 }                              from './ui/hauntLevel.js';
 import { resetHpFx }           from './ui/phoneCombatUi.js';
+import {
+  createHauntFx, tickHaunt, startGhost, gridAlpha, drawBorderFog,
+  drawEctoTrail, drawKillGhost, drawHauntVignette,
+}                              from './ui/haunting.js';
 
 // ── Session-level state shared across arena restarts ────────────────────────
 
@@ -258,6 +262,15 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   if (advanceHaunt) { bumpHauntLevel(); advanceHaunt = false; }
   const hauntLv = readHauntLevel();
   arenaState = { ...arenaState, enemy: applyHauntPressure(arenaState.enemy, hauntLv) };
+  const hauntFx = createHauntFx({
+    reducedMotion,
+    arena: { width: arenaState.arena.width, height: arenaState.arena.height },
+    seed: 7,
+    lite: isTouchUi(),   // phones: no vignette, fewer fog puffs (60 fps budget)
+  });
+  const windupT01 = (enemy) => (enemy && enemy.windupRemainingMs > 0
+    ? Math.min(1, Math.max(0, 1 - enemy.windupRemainingMs / ENEMY_SHOT_WINDUP_MS))
+    : 0);
 
   // Kill-moment / taunt / HP-flash presentation state starts clean every match.
   resetKillMoment();
@@ -347,11 +360,16 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   //  so clear old callbacks by rebuilding them via module-level references.)
   renderer.callbacks[LAYERS.WORLD].length   = 0;
   renderer.callbacks[LAYERS.ENTITY].length  = 0;
+  renderer.callbacks[LAYERS.FOG].length     = 0;
   renderer.callbacks[LAYERS.HUD].length     = 0;
   renderer.callbacks[LAYERS.OVERLAY].length = 0;
 
-  registerLayer(renderer, LAYERS.WORLD,   (ctx, st) => drawWorld(ctx, st));
+  registerLayer(renderer, LAYERS.WORLD,   (ctx, st) => {
+    drawWorld(ctx, st, gridAlpha(hauntFx.t, windupT01(st.enemy), reducedMotion));
+    drawBorderFog(ctx, hauntFx);
+  });
   const afterimages = [];
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawEctoTrail(ctx, hauntFx));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawDashAfterimages(ctx, afterimages));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => { syncTankFx(st); });
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
@@ -361,6 +379,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       drawKillShatter(ctx, getKillSnapshot(), killMomentT01(performance.now()));
     }
   });
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawKillGhost(ctx, hauntFx));
+  registerLayer(renderer, LAYERS.FOG,     (ctx) =>
+    drawHauntVignette(ctx, hauntFx, renderer.canvas.width, renderer.canvas.height));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st, cam) =>
     drawWindupGlow(ctx, st.enemy, ENEMY_SHOT_WINDUP_MS, (cam ?? camera).zoom / uiDpr));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEnemyShotGlow(ctx, st.projectiles));
@@ -738,6 +759,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       beginKillMoment({
         phase: arenaState.phase, enemy: arenaState.enemy, nowMs: killNow, reducedMotion,
       });
+      const wreck = arenaState.phase === 'win' ? arenaState.enemy : arenaState.player;
+      startGhost(hauntFx, wreck.x, wreck.y);
       if (arenaState.phase === 'win') {
         advanceHaunt = true;
         tauntMachine.onDeath(killNow);
@@ -753,6 +776,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   function stepPresentation(dt) {
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
+    tickHaunt(hauntFx, dt * 1000, arenaState.phase === 'playing' ? arenaState.enemy : null);
     stepSparks(sparks, dt);
     // Decay the kick toward zero so it reads as a single punch (~120 ms).
     const kickDecay = Math.max(0, 1 - dt * 8);
@@ -865,6 +889,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (insetProbe) { insetProbe.remove(); insetProbe = null; }
     renderer.callbacks[LAYERS.WORLD].length   = 0;
     renderer.callbacks[LAYERS.ENTITY].length  = 0;
+    renderer.callbacks[LAYERS.FOG].length     = 0;
     renderer.callbacks[LAYERS.HUD].length     = 0;
     renderer.callbacks[LAYERS.OVERLAY].length = 0;
   }

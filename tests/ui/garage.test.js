@@ -391,6 +391,64 @@ test('landscape phones: the garage body is the only scroll pane (no inner panes)
   assert.match(blk, /\.hh-preview\s*\{\s*overflow:\s*visible/);
 });
 
+// ── Haunting (spec 12, R6) ──────────────────────────────────────────────────
+
+console.log('\nsrc/ui/garage.js — haunting (spec 12, R6)\n');
+
+const HAUNT_START = GARAGE_CSS.indexOf('Haunting (spec 12, R6)');
+const HAUNT_END = GARAGE_CSS.indexOf('end Haunting (spec 12, R6)');
+const HAUNT_CSS = GARAGE_CSS.slice(HAUNT_START, HAUNT_END);
+
+test('haunting block sits before the reduced-motion block', () => {
+  assert.ok(HAUNT_START >= 0 && HAUNT_END > HAUNT_START, 'haunting block markers missing');
+  assert.ok(HAUNT_END < GARAGE_CSS.indexOf('@media (prefers-reduced-motion: reduce)'));
+});
+
+test('wisp keyframes exist and only animate transform and opacity', () => {
+  for (const name of ['hh-wisp-a', 'hh-wisp-b']) {
+    const at = GARAGE_CSS.indexOf(`@keyframes ${name}`);
+    assert.ok(at >= 0, `missing @keyframes ${name}`);
+    const open = GARAGE_CSS.indexOf('{', at);
+    let depth = 0;
+    let end = open;
+    for (let i = open; i < GARAGE_CSS.length; i++) {
+      if (GARAGE_CSS[i] === '{') depth++;
+      if (GARAGE_CSS[i] === '}' && --depth === 0) { end = i; break; }
+    }
+    const body = GARAGE_CSS.slice(open + 1, end);
+    const props = [...body.matchAll(/([a-z-]+)\s*:/g)].map(m => m[1]);
+    assert.ok(props.length > 0, `${name} has no declarations`);
+    for (const p of props) assert.ok(p === 'transform' || p === 'opacity', `${name} animates ${p}`);
+  }
+});
+
+test('wisp pseudo-elements ignore pointer events and stay at or under 0.35 opacity', () => {
+  const rule = block(HAUNT_CSS, '.hh-preview__art::before,');
+  assert.match(rule, /pointer-events:\s*none/);
+  assert.match(rule, /z-index:\s*-1/);
+  const op = Number(/opacity:\s*([\d.]+)/.exec(rule)[1]);
+  assert.ok(op <= 0.35, `opacity ${op}`);
+  for (const m of HAUNT_CSS.matchAll(/opacity:\s*([\d.]+)/g)) assert.ok(Number(m[1]) <= 0.35, `opacity ${m[1]}`);
+});
+
+test('reduced motion turns both wisp animations off', () => {
+  const at = GARAGE_CSS.indexOf('@media (prefers-reduced-motion: reduce)');
+  const blk = GARAGE_CSS.slice(at, GARAGE_CSS.indexOf('\n}\n', at)).replace(/\s+/g, ' ');
+  assert.match(blk, /\.hh-preview__art::before,\s*\.hh-preview__art::after \{ animation: none; \}/);
+});
+
+test('preview SVG sits above the wisps (z-index 1)', () => {
+  const rule = block(HAUNT_CSS, '.hh-preview__svg {');
+  assert.match(rule, /position:\s*relative/);
+  assert.match(rule, /z-index:\s*1\b/);
+});
+
+test('haunting block adds no hex colours beyond the token fallbacks', () => {
+  const allowed = new Set(['#9FD8FF', '#1F9E57', '#121A15', '#0A0D0B']);
+  const hexes = HAUNT_CSS.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
+  for (const h of hexes) assert.ok(allowed.has(h.toUpperCase()), `unexpected hex ${h}`);
+});
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);
