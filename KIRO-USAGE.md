@@ -2,29 +2,31 @@
 
 How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used per milestone. Kept honest for the Devpost write-up. The master copy lives on the team's build box; this repo-root copy is kept in sync. "Build agent" below is the team's AI coding agent; its edits, and copy from the team's copywriter, are marked separately from Kiro's. The Kiro IDE was never used by the crew; every logged Kiro run is the headless kiro-cli.
 
-## M1: real SFX (2026-11-18, build agent) — PR #1, squash 369fdaf
+Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hashes below point to this repo. PR numbers, and the branch commits ed4b814, 8c74def, 9616e58 and 74743f6 (squashed into main before the re-creation), refer to the original private repo, which is kept as an archive.
+
+## M1: real SFX (2026-11-18, build agent) — PR #1, squash 784137b
 - Kiro used: **no**. Built and tested with box tools (node, git, gh, headless Chrome). No Kiro credits spent.
 - .kiro specs/steering/hooks: **not used or changed**. Earlier spec tasks are the source for some of the design: R4 audio buses (`audio.js`) and the ENEMY_SHOT_WINDUP_MS 450 ms tell. No .kiro file was edited.
 - Follow-up: the steering/README rewrite (planned) should add a short SFX note so the spec matches the code.
 
-## M2: game feel, title, pause, settings (2026-11-18, build agent) — PR #2, squash ccf67d9
+## M2: game feel, title, pause, settings (2026-11-18, build agent) — PR #2, squash fd31b16
 - Kiro IDE used: **no**. No Kiro credits spent. Built with box tools (node, git, gh, headless Chrome).
 - .kiro specs: **added `.kiro/specs/10-polish/` (requirements.md, design.md, tasks.md) covering M1–M5.** These spec files were written by the build agent outside the Kiro IDE (by hand, in the format of the existing specs 01–08). Kiro did not generate them. M1 and M2 tasks (1–13) are marked done; M3–M5 (14–18) are open.
 - `public/seance-tasks.json` rebuilt with the repo's own `npm run build:seance` script, so the séance screen lists 10-polish (159 tasks, 131 done).
 - Steering and hooks: not changed. `.kiro/hooks/test-on-save.json` was not run, because work happened outside the IDE; `npm test` was run by hand instead.
 - `.kiro/` stays committed (it is not in .gitignore).
 
-## M3: music, fonts, page weight (2026-11-18, build agent) — PR #3, squash 26a0677
+## M3: music, fonts, page weight (2026-11-18, build agent) — PR #3, squash 5d5e0a3
 - Kiro IDE used: **no**, and no Kiro credits spent. Built with box tools (node, git, gh, npm pack for the fonts, headless Chrome).
 - .kiro specs: I updated `.kiro/specs/10-polish/` by hand, outside the Kiro IDE. tasks.md marks M3 done (14, 15, plus new 19–22). requirements.md R5 and design.md describe music.js and fonts.js. I rebuilt `public/seance-tasks.json` with `npm run build:seance` (163 tasks, 137 done).
 - Steering: not edited. The existing `.kiro/steering/design-tokens.md` rule ("Self-hosted, OFL license in repo") is the requirement this milestone satisfied.
 - Hooks: not run (work happened outside the IDE). I ran `npm test` by hand.
 - `.kiro/` stays committed.
 
-## M4: balance (2026-11-18, build agent): PR #4, squash ca6fec8
+## M4: balance (2026-11-18, build agent): PR #4, squash 95e34fb
 - **Kiro used: yes**, through `kiro-cli` 3.4.0 in headless chat mode and not in the IDE. Every run used model **Auto** (never Sonnet), `--no-interactive`, and `--trust-tools=fs_read,fs_write`, so Kiro could not run shell commands. Each run had one focused prompt and no long agent loop.
 - **Accounts per step:**
-  - Runs 1–2 were on the owner's Mac mini in `a local clone`, synced to origin/main 26a0677. Nothing was pushed from the mini. The account was the **Google login**, KIRO FREE, a second Kiro account alongside the original.
+  - Runs 1–2 were on the owner's Mac mini in `a local clone`, synced to origin/main 5d5e0a3. Nothing was pushed from the mini. The account was the **Google login**, KIRO FREE, a second Kiro account alongside the original.
   - Runs 3–4 were on the box in the build box's repo clone. The account was the **GitHub login**, **Kiro Pro**, which is the original account.
 - **Commands** (run from the repo root):
   - Run 1, mini: `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat prompt1.txt)"`. The prompt asked for the R6 balance spec in `.kiro/specs/10-polish` (requirements, design, tasks), the steering file `.kiro/steering/balance.md`, and two hooks.
@@ -50,7 +52,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
   - I did all the tuning: `HAUNT_PRESSURE` 0.8/1.0/1.1/1.17/1.2 and `DASH_COOLDOWN_MS.mid` 3000. I updated their unit tests, marked tasks done, rebuilt seance-tasks.json, and wrote the PLAN.md table.
 - **Hooks:** the new hooks were not exercised by an IDE, because the work was headless. I ran `npm test` (802 passed) and `npm run build:seance` by hand. `.kiro/` stays committed.
 
-## M5: ship prep (2026-11-18, build agent): PR #5, squash afbd763
+## M5: ship prep (2026-11-18, build agent): PR #5, squash efaae9d
 - **Kiro used: yes.** Every M5 run was on the box (`kiro-cli` 3.4.0 in the build box's repo clone) with the **GitHub login**, **Kiro Pro**. The mini's Google login was not used and is left alone as a backup.
 - **Command for each run:** `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat promptN.txt)"`, run from the repo root. Model was Auto every time (never Sonnet), and Kiro could not run shell commands. `/usage` was checked before and after each run.
 - **Runs:**
@@ -117,7 +119,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
     - Pulse reload x0.95
     - Furnace shots x1.2 / reload x0.97
   - **Harness fix.** The scripted player now leads its aim with the build's real shot speed. Before, faster shots measured as worse because the bot under-led.
-  - **Tests.** I rewrote the unit tests to read expected numbers from the table, and added a golden flag-off test: 36 fights recorded on main afbd763 must replay exactly without `combatMods`.
+  - **Tests.** I rewrote the unit tests to read expected numbers from the table, and added a golden flag-off test: 36 fights recorded on main efaae9d must replay exactly without `combatMods`.
   - **Spec and steering** updated to the tuned table. Marked tasks 17 and 32–37 done and rebuilt the séance.
   - **Docs.** README, DEVPOST and CAPTURE-NOTES updated. KIRO-USAGE.md copied into the repo.
 - **Hooks:** no IDE save happened, so the hooks did not fire. I ran their commands by hand: `npm test` (850 passed), `npm run build:seance`, `node scripts/check-readme.mjs`, and `node tests/combat/balance.test.js`.
@@ -208,7 +210,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Account totals:** 28.94 + 7.58 = **36.52 credits metered** (Google 4.81, Pro 31.71).
 
 ## M8: visible haunting in the arena and garage (win-review #5) (2026-11-18, build agent)
-- **Kiro used: yes**, 4 runs on the box, Pro (GitHub login), model **Auto**, kiro-cli 3.4.0, **engine v3** with workspace trust, file tools only (same command as M7). All four are in PR #21 (squash `fda6656`).
+- **Kiro used: yes**, 4 runs on the box, Pro (GitHub login), model **Auto**, kiro-cli 3.4.0, **engine v3** with workspace trust, file tools only (same command as M7). All four are in PR #21 (squash `1e6e485`).
 - **Run 19 (18:55–18:56 PT):** Kiro wrote spec `.kiro/specs/12-haunting/` (requirements R1–R8, design, 10 tasks) and the Haunting rules in `ui-style.md` and `design-tokens.md` (task 9).
   - Hooks fired: `seance-on-spec-save` ×1.
 - **Run 20 (18:57–18:59 PT):** tasks 1–6. `src/ui/haunting.js` (effect caps, reduced-motion flags, a 16-point trail ring buffer with a 700 ms life, kill ghost pose, grid flicker, border fog, cached sprites) and its tests.
