@@ -46,6 +46,11 @@ import {
   createFloatingNumber,
   stepFloatingNumber,
 } from './hitFeedback.js';
+import {
+  createGhostPerk,
+  maybeSpawnGhost,
+  tryGrabGhost,
+} from './ghostPerk.js';
 
 // ── Internal ID counter ───────────────────────────────────────────────────────
 
@@ -146,6 +151,8 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     // renderer reads it to tint the sprite. `floaters` is a culled list of
     // rising/fading damage numbers in world space.
     floaters: [],
+    // Preview C: opt-in so goldens / flag-off fights stay stable.
+    ghostPerk: stats.enableGhostPerk ? createGhostPerk() : null,
     phase: 'playing',   // 'playing' | 'win' | 'lose'
     elapsedMs: 0,       // time survived so far (R8 end card)
   };
@@ -359,6 +366,20 @@ export function updateArena(state, actions, dt) {
     enemyAfterHits = { ...enemyAfterHits, flash: null };
   }
 
+  // ── 8c. Ghost perk: mid-fight spawn + player-only grab (+10% maxHp heal)
+  const elapsedNext = (state.elapsedMs ?? 0) + dt * 1000;
+  let ghostPerk = state.ghostPerk;
+  if (ghostPerk) {
+    ghostPerk = maybeSpawnGhost(
+      ghostPerk,
+      elapsedNext,
+      playerAfterHits,
+      enemyAfterHits,
+      arena,
+    );
+    ({ perk: ghostPerk, player: playerAfterHits } = tryGrabGhost(ghostPerk, playerAfterHits));
+  }
+
   // ── 9. Phase transitions (R6) ────────────────────────────────────────────
   let phase = 'playing';
   if (enemyAfterHits.hp <= 0) {
@@ -373,8 +394,9 @@ export function updateArena(state, actions, dt) {
     enemy:       enemyAfterHits,
     projectiles: liveProjectiles,
     floaters,
+    ghostPerk,
     phase,
     // Accumulate survived time (R8). dt is seconds → convert to ms.
-    elapsedMs:   (state.elapsedMs ?? 0) + dt * 1000,
+    elapsedMs:   elapsedNext,
   };
 }

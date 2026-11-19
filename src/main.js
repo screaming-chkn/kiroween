@@ -50,6 +50,7 @@ import { drawWorld,
   drawFixedHUD,
 }                              from './combat/combatRenderer.js';
 import { drawScreenHpMeters, screenHpTopReserve, SCREEN_HP_LAYOUT } from './combat/screenHpMeters.js';
+import { drawGhostPerk } from './combat/ghostPerk.js';
 import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
@@ -262,7 +263,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   const combatMods = combatModsFor(loadout);
   if (combatMods) arenaStats.combatMods = combatMods;
 
-  let arenaState = createArena(arenaStats);
+  let arenaState = createArena(arenaStats, { enableGhostPerk: true });
   cueMusic('duel');
 
   // Difficulty ramp (HAUNT LV): applied at spawn, outside createArena math.
@@ -381,6 +382,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawDashAfterimages(ctx, afterimages));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => { syncTankFx(st); });
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawGhostPerk(ctx, st.ghostPerk, st.elapsedMs ?? 0));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawSparks(ctx, sparks));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => {
     if (killMomentPhase() === 'shatter') {
@@ -442,18 +444,18 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     // Fixed edge/top HP meters — away from the mechs (layout per SCREEN_HP_LAYOUT).
     // Units are canvas px (OVERLAY has no world transform).
     const hudR = phonePortrait ? phoneHudRect(s) : null;
+    // Layout C: short vertical meters just under the green HUD / top strip,
+    // inside the arena view (not the very top of the screen).
     const meterOpts = {
       bottomInset: phonePortrait ? 170 * s : 150,
       leftInset: 10 * (touchUi ? s : 1),
       rightInset: 10 * (touchUi ? s : 1),
       sidePad: (phonePortrait ? 12 : 20) * (touchUi ? s : 1),
-      topInset: SCREEN_HP_LAYOUT === 'top' ? 36 : 72,
+      topInset: phonePortrait ? 12 * s : 28,
     };
     if (hudR) {
-      const underHud = hudR.y + hudR.h + 10 * s;
-      meterOpts.topInset = SCREEN_HP_LAYOUT === 'top'
-        ? underHud
-        : Math.max(underHud, 72 * s);
+      // Sit just below the green-bordered phone HUD panel.
+      meterOpts.topInset = hudR.y + hudR.h + 8 * s;
     }
     drawScreenHpMeters(ctx, st, vpW, vpH, meterOpts);
   });
