@@ -42,7 +42,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
   - Spec: 10-polish R6 in requirements.md, design.md "## M4 balance", and tasks 16 and 23–26.
   - Harness: per-LV matrix and probes in `tests/combat/balanceCore.mjs` and `balance.mjs`.
   - Tests: R6 guards in `tests/combat/balance.test.js`.
-- **What I edited** (build agent, in separate commits):
+- **What I edited** (by hand, in separate commits):
   - Kiro inverted the R6 win-rate bands. It wrote LV1 as "10–25 % player wins". I rewrote them as player win rate LV1 85–100 down to LV5 40–60. I later widened LV4 to 50–80 after measuring, and logged that in PLAN.md.
   - In the steering, I fixed the wrong claim that `npm run test:balance` runs balance.test.js, and updated the ramp text.
   - I removed Kiro's dashSpam-vs-tell-blind-baseline test cap, because the deep run shows that edge is real and intended. Dominance is now checked against the reactive probe.
@@ -66,7 +66,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
   - Spec task reconcile across 02, 04, 05, 06 and 07, and 10-polish tasks 27–31 with R7/design text.
   - build-site.mjs, site.test.js, check-readme.mjs, readme.test.js, the readme-check hook and .gitignore.
   - The README draft.
-- **What I edited** (build agent, separate commits):
+- **What I edited** (by hand, separate commits):
   - 07 task 4 is now an honest partial (only volume and mute shipped, not the static/shake/colorblind sliders); updated the 05 header; replaced the design-tokens radar lines.
   - README: removed two false claims (settings sliders for static, shake and reduced motion), labelled the balance column "scripted player win %", and replaced Kiro's credits placeholder with the real per-account numbers.
   - Updated the index.html meta description and package.json description to the 1v1 duel.
@@ -108,7 +108,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
   - the R8 spec, design and tasks 32–37
   - `loadout-effects.md` steering
   - the whole first implementation, its unit tests and the PBT file
-- **What I edited** (build agent, separate commits):
+- **What I edited** (by hand, separate commits):
   - **Balance retune.** Kiro's first all-upside table (17 dmg, x1.35 shot speed, +25 HP, x0.8 dash, x0.87 reload, x0.88 incoming damage) pushed the 16×200 harness to LV5 ≈ 86 % and LV3 ≈ 98 %, with a 23 pp build gap. I retuned it into sidegrades:
     - Hatchet 18 dmg / reload x1.32
     - Lancer shots x1.4 / reload x1.04
@@ -176,7 +176,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
   - Hooks fired: `test-on-save` ×9 (2 failing mid-edit, the last 7 green), `seance-on-spec-save` ×1.
 - **Hook output and the agent:** every firing is in `.kiro/hook-runs.log`. In both implementation runs Kiro said it had not seen the hooks' summaries, so on v3 headless, PostFileSave command output does not appear to reach the agent's context. The hooks really ran, but Kiro did not use their results to fix things. I ran `npm test` after each run.
 - **Credits (`/usage`):** Pro 241.60 → 244.97 (after run 13; run 12's metering lagged into this reading) → 248.59 (after run 14). **6.99 for M6** (runs 12+13: 3.37, run 14: 3.62). About 628 left of 877; resets 2026-12-01. No credits bought, no plan or settings change, no new login, no IDE.
-- **What I edited (build agent, separate commits):**
+- **What I edited (by hand, separate commits):**
   - **Bug 2:** the in-fight taunt was drawn 56 world units above the enemy, right on its HP label (top at 58). The new `tauntBaselineY` puts it above the label with a gap, or below the enemy when the top edge is too close. Tests added.
   - `specTauntLine` now drops a spec number's leading zero (`3.5`, not `03.5`).
   - Task 11 (text-fit check) was ticked by hand and the séance rebuilt with `npm run build:seance` by hand. No hook fired for that edit.
