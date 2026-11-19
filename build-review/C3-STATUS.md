@@ -3,7 +3,7 @@
 Branch `feat/hud-c` **not merged**. Main stays `925696d`.
 
 ## WIP tip
-Tip after landscape/shots commit (see git log / tip hash in commit).
+Tip:  (landscape + shots). Worktree: feature branch only.
 
 ## Done
 - **C3b HUD:** below-line meters (≥6px), top bar HP + MM:SS, Orbitron — `47c7948`.
