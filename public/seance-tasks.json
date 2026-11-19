@@ -1019,6 +1019,12 @@
     "done": true
   },
   {
+    "spec": "10-polish",
+    "id": 38,
+    "title": "Kiro CLI v3: workspace hooks log each firing to .kiro/hook-runs.log (R7)",
+    "done": true
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",

@@ -78,7 +78,7 @@ Human and agent edits went in separate commits. The Kiro IDE was not used. The f
 - `seance-on-spec-save.json` runs `npm run build:seance` when any spec `tasks.md` is saved.
 - `readme-check-on-save.json` runs `node scripts/check-readme.mjs` when `README.md`, `LICENSE` or a hook file is saved.
 
-The Kiro IDE runs these hooks on save. The headless CLI runs did not trigger them, so the same commands were run by hand.
+Each hook command goes through `scripts/kiro-hook-run.mjs`, which logs every firing to `.kiro/hook-runs.log`. Our first ten headless runs used the CLI's default v2 engine, which does not load workspace hooks, so those commands were run by hand. With `kiro-cli chat --agent-engine v3 --trust-workspace` the hooks fire on Kiro's own file edits; the first logged firing is `seance-on-spec-save` rebuilding the séance after Kiro edited a spec `tasks.md`.
 
 **Steering** (`.kiro/steering/`):
 

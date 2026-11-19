@@ -148,3 +148,17 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Phone aim fix:** the aim is now anchored at the tank.
 - **BUILD.txt:** `build:site` now writes `BUILD.txt` with the source commit.
 - **Hooks:** none fired; their commands were run by hand.
+
+## Kiro #1 probe: CLI v3 fires the workspace hooks (2026-11-18, build agent): branch kiro-v3-hooks
+- **Why:** every earlier run used `--no-interactive` without choosing an engine, and `kiro-cli chat --help` says that defaults to the **v2** engine. The Kiro docs (kiro.dev/docs/hooks) say standalone `.kiro/hooks/*.json` files load in the IDE and **CLI V3**, and that file hooks fire only on agent edits. So our hooks never fired.
+- **Logging first (build agent, not Kiro, commit 9616e58):** each hook command now runs through `scripts/kiro-hook-run.mjs`, which runs the same command and appends one line to `.kiro/hook-runs.log` (UTC time, hook, event, file, exit code, ms). Test: `tests/engine/hookRun.test.js`.
+- **Run 11, box, Pro (GitHub login), model Auto, kiro-cli 3.4.0, engine v3:**
+  `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write "<prompt>"`
+  - Prompt: append task 38 to `.kiro/specs/10-polish/tasks.md`, edit nothing else, run no shell commands.
+  - Started 17:44:44 PT, Kiro exited 0 at 17:44:55 PT. Kiro read the file, then made one "Replace in File" edit.
+- **Hook fired:** `seance-on-spec-save` (PostFileSave, matcher `.kiro/specs/*/tasks.md`). Log line: `2026-11-19T01:44:53.504Z seance-on-spec-save event=PostFileSave file=.kiro/specs/10-polish/tasks.md exit=0 ms=213` (17:44:53 PT). It rebuilt `public/seance-tasks.json` at 17:44:53 PT (161/179 done). No other hook matched the edit, so none fired.
+- **Commits:** ed4b814 "Kiro-authored" (the tasks.md line), 8c74def (hook output: seance-tasks.json and the first hook-runs.log line, produced by the hook rather than by hand).
+- **Credits (`/usage`):** Pro 241.47 → 241.60 of 877. **0.13 used** (metering can lag; recheck at the next run). About 635 left; resets 2026-12-01. No credits bought, no plan or settings change, no new login, no IDE.
+- **Proof** (crew box, not in the repo): `kiro-proof/ (team archive)` holds `probe-recording.mp4` (screen recording of the box desktop, 75 s, the run in a visible terminal), `probe-transcript.txt` (`script` capture), `probe-prompt.txt`, `run-probe.sh` and `frame-16s.png`.
+- **Tests:** `npm test` 877 passed, 0 failed (873 + 4 new).
+- **Account totals:** 21.82 + 0.13 = **21.95 credits metered** (Google 4.81, Pro 17.14).

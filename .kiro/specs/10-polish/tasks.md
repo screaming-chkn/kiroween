@@ -37,3 +37,4 @@
 - [x] 35. M4.5 tests: per-effect unit tests + flag-off identical seeded fights in loadoutEffects.test.js (R8)
 - [x] 36. M4.5 balance rerun with the flag on, tune numbers only, PLAN.md before/after table (R8)
 - [x] 37. M4.5 property-based tests for loadout folding, arena bounds and damage invariants (R8)
+- [x] 38. Kiro CLI v3: workspace hooks log each firing to .kiro/hook-runs.log (R7)

@@ -6,7 +6,10 @@
       "description": "Rebuild the seance artifact whenever any spec tasks.md is saved.",
       "trigger": "PostFileSave",
       "matcher": "\\.kiro/specs/[^/]+/tasks\\.md$",
-      "action": { "type": "command", "command": "npm run build:seance" },
+      "action": {
+        "type": "command",
+        "command": "node scripts/kiro-hook-run.mjs seance-on-spec-save -- npm run build:seance"
+      },
       "timeout": 60
     }
   ]
