@@ -259,7 +259,8 @@ test('flag-off golden: builds without combatMods replay main afbd763 exactly (36
   for (const [label, seed, lv, policy, phase, elapsedMs, playerHp, enemyHp] of golden) {
     const b = byLabel.get(label);
     const { combatMods, ...off } = b.totals;   // what main.js passes when the flag is off
-    const r = runFight({ ...b, totals: off }, seed, { hauntLv: lv, policy });
+    // afbd763 ran LV1 at 0.8x; M7 #7 moved live LV1 to 0.6x, so replay the old multiplier.
+    const r = runFight({ ...b, totals: off }, seed, lv === 1 ? { pressure: 0.8, policy } : { hauntLv: lv, policy });
     assert.deepEqual([r.phase, r.elapsedMs, r.playerHp, r.enemyHp], [phase, elapsedMs, playerHp, enemyHp], `${label} seed ${seed} LV${lv} ${policy}`);
   }
 });

@@ -424,10 +424,13 @@ test('R6: LV1 baseline win rate >= 0.80 and LV5 within 0.30–0.70', () => {
   assert.ok(lv5 >= 0.3 && lv5 <= 0.7, `LV5 win rate ${lv5} outside 0.30–0.70`);
 });
 
-test('R6: median duel length is 45–120 s at each tested LV', () => {
+// M7 #7 (owner call): LV1 is the first fight, so its band is 30–45 s.
+const MEDIAN_BAND = (lv) => (lv === 1 ? [30, 45] : [45, 120]);
+test('R6: median duel length is in band at each tested LV (LV1 30–45 s, else 45–120 s)', () => {
   for (const lv of R6_LEVELS) {
     const m = r6().baseline[lv].medianSec;
-    assert.ok(m >= 45 && m <= 120, `LV${lv} median ${m.toFixed(1)}s outside 45–120s`);
+    const [lo, hi] = MEDIAN_BAND(lv);
+    assert.ok(m >= lo && m <= hi, `LV${lv} median ${m.toFixed(1)}s outside ${lo}–${hi}s`);
   }
 });
 

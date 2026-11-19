@@ -113,7 +113,7 @@ Per HAUNT LV, baseline run with loadout effects on (200 seeds × 16 builds per l
 
 | LV | Scripted player win % | Median duel (s) | Max build gap from mean (pp) |
 |---:|---:|---:|---:|
-| 1 | 100.0 | 56.0 | 0.0 |
+| 1 | 100.0 | 42.3 | 0.0 |
 | 2 | 94.6 | 70.0 | 5.1 |
 | 3 | 83.1 | 75.6 | 7.4 |
 | 4 | 74.9 | 80.2 | 7.9 |

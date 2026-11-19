@@ -125,8 +125,8 @@ licence.
   seeded fights are identical to fights run without combatMods.
 - WHEN the balance matrix runs with the flag on (16 builds x 200 seeds per LV),
   every LV's win rate SHALL be inside its R6 band (LV1 85-100, LV2 75-95,
-  LV3 65-85, LV4 50-80, LV5 40-60), the median duel length SHALL be 45-120 s at
-  every LV, and no build SHALL differ from its LV mean by more than 15
+  LV3 65-85, LV4 50-80, LV5 40-60), the median duel length SHALL be 30-45 s at
+  LV1 (M7 #7) and 45-120 s at LV2-LV5, and no build SHALL differ from its LV mean by more than 15
   percentage points.
 - WHILE the flag is on, dash-spam SHALL still lose to the reactive
   tell-reading probe at every LV.

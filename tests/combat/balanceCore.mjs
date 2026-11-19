@@ -37,7 +37,7 @@ import {
   PROJECTILE_SPEED,
   ENEMY_STRAFE_SPEED,
 } from '../../src/combat/config.js';
-import { applyHauntPressure } from '../../src/ui/hauntLevel.js';
+import { applyHauntPressure, applyPressure } from '../../src/ui/hauntLevel.js';
 import { combatModsFor } from '../../src/combat/loadoutEffects.js';
 
 // ── Tunables for the harness (NOT combat tuning) ───────────────────────────────
@@ -593,7 +593,10 @@ export function runFight(build, seed, opts = {}) {
   // Apply haunt pressure only when a numeric hauntLv is explicitly passed
   // (default 1 kept here matches live difficulty; callers that omit hauntLv
   // get unchanged behaviour).
-  if (typeof opts.hauntLv === 'number') {
+  if (typeof opts.pressure === 'number') {
+    // Explicit multiplier (golden replays of an older tuning).
+    state = { ...state, enemy: applyPressure(state.enemy, opts.pressure) };
+  } else if (typeof opts.hauntLv === 'number') {
     state = { ...state, enemy: applyHauntPressure(state.enemy, opts.hauntLv) };
   }
 

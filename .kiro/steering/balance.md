@@ -29,11 +29,14 @@ Win rate = scripted player beats the bot (phase === 'win').
 
 | HAUNT LV | Player win rate | Median duel |
 |----------|----------------|-------------|
-| 1        | 85–100 %       | 45–120 s    |
+| 1        | 85–100 %       | 30–45 s *   |
 | 2        | 75–95 %        | 45–120 s    |
 | 3        | 65–85 %        | 45–120 s    |
 | 4        | 50–80 %        | 45–120 s    |
 | 5        | 40–60 %        | 45–120 s    |
+
+\* LV1 is the first fight, so it is short on purpose (owner call, M7 #7:
+median was 56 s, now about 42 s at 0.6× pressure).
 
 Additional constraints (all LVs):
 - No build's win rate may deviate more than 10 pp from its LV mean (no dominant
@@ -63,5 +66,5 @@ Additional constraints (all LVs):
 
 ## Phone is first-class
 Dash and fire timings are sized for touch latency. Any number change that moves
-the median duel length outside 45–120 s on any LV must be reverted or
+the median duel length outside its band (LV1 30–45 s, LV2–LV5 45–120 s) must be reverted or
 compensated before merge.

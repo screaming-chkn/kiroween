@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   MAX_HAUNT_LEVEL, hauntPressure, readHauntLevel, setHauntLevel, bumpHauntLevel,
-  applyHauntPressure, formatHauntLabel, drawHauntLevel, hauntAdvancesOn,
+  applyHauntPressure, applyPressure, formatHauntLabel, drawHauntLevel, hauntAdvancesOn,
   levelUpText, HAUNT_PRESSURE,
 } from '../../src/ui/hauntLevel.js';
 
@@ -17,7 +17,7 @@ function test(name, fn) {
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} !~ ${b}`);
 
 test('hauntPressure ramp and cap', () => {
-  near(hauntPressure(1), 0.8);
+  near(hauntPressure(1), 0.6);   // M7 #7: faster first win
   near(hauntPressure(2), 1.0);
   near(hauntPressure(3), 1.1);
   near(hauntPressure(4), 1.17);
@@ -62,10 +62,15 @@ test('uses sessionStorage key hh-haunt-lv when available', () => {
   }
 });
 
+test('applyPressure takes an explicit multiplier', () => {
+  const a = applyPressure({ hp: 1 }, 0.8, { baseHp: 1500, baseDamage: 20 });
+  assert.equal(a.hp, 1200); assert.equal(a.shotDamage, 16);
+});
+
 test('applyHauntPressure scales hp, maxHp, shotDamage on a copy', () => {
   const e = { x: 1, y: 2, hp: 1500, maxHp: 1500 };
   const a = applyHauntPressure(e, 1, { baseHp: 1500, baseDamage: 20 });
-  assert.equal(a.hp, 1200); assert.equal(a.maxHp, 1200); assert.equal(a.shotDamage, 16);
+  assert.equal(a.hp, 900); assert.equal(a.maxHp, 900); assert.equal(a.shotDamage, 12);
   assert.equal(a.x, 1);
   assert.equal(e.hp, 1500); assert.equal(e.shotDamage, undefined);
   const b = applyHauntPressure(e, 3, { baseHp: 1500, baseDamage: 20 });
@@ -107,7 +112,7 @@ test('levelUpText shows the new level, empty at or below LV 1', () => {
   assert.equal(levelUpText(1), '');
   assert.equal(levelUpText(0), '');
   assert.equal(levelUpText(undefined), '');
-  assert.deepEqual(Array.from(HAUNT_PRESSURE), [0.8, 1.0, 1.1, 1.17, 1.2]);
+  assert.deepEqual(Array.from(HAUNT_PRESSURE), [0.6, 1.0, 1.1, 1.17, 1.2]);
 });
 
 test('formatHauntLabel', () => {

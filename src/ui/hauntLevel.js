@@ -35,10 +35,12 @@ function clampLevel(n) {
  * against the seeded headless matrix (tests/combat/balance.mjs, PLAN.md):
  * LV2–LV4 were too easy (100 / 91 / 79 % scripted-player wins), so they move
  * up; LV1 (onboarding) and LV5 (cap) are unchanged. Shot damage rounds to
- * 16 / 20 / 22 / 23 / 24, i.e. 9 / 7 / 7 / 7 / 6 hits to kill a 140 HP mech —
+ * 12 / 20 / 22 / 23 / 24, i.e. 12 / 7 / 7 / 7 / 6 hits to kill a 140 HP mech —
  * keep LV4 below 1.175 or it rounds to 24 and lands on LV5's 6-hit cliff.
+ * M7 #7: LV1 drops 0.8 → 0.6 (900 HP, 12 dmg) so the first win lands in
+ * 30–45 s (median was 56 s); LV2–LV5 unchanged.
  */
-export const HAUNT_PRESSURE = Object.freeze([0.8, 1.0, 1.1, 1.17, 1.2]);
+export const HAUNT_PRESSURE = Object.freeze([0.6, 1.0, 1.1, 1.17, 1.2]);
 
 export function hauntPressure(level) {
   return HAUNT_PRESSURE[clampLevel(level) - 1];
@@ -89,8 +91,12 @@ export function hauntAdvancesOn(outcome, action = null) { // eslint-disable-line
  * @param {number} level
  * @param {{baseHp?:number, baseDamage?:number}} [base]
  */
-export function applyHauntPressure(enemy, level, { baseHp = ENEMY_MAX_HP ?? 1500, baseDamage = ENEMY_PROJECTILE_DAMAGE ?? 20 } = {}) {
-  const p = hauntPressure(level);
+export function applyHauntPressure(enemy, level, bases = {}) {
+  return applyPressure(enemy, hauntPressure(level), bases);
+}
+
+/** Same as applyHauntPressure but with an explicit multiplier (tests replay old tunings). */
+export function applyPressure(enemy, p, { baseHp = ENEMY_MAX_HP ?? 1500, baseDamage = ENEMY_PROJECTILE_DAMAGE ?? 20 } = {}) {
   const hp = Math.round(baseHp * p);
   return { ...enemy, hp, maxHp: hp, shotDamage: Math.round(baseDamage * p) };
 }
