@@ -101,6 +101,31 @@ export function drawWorld(ctx, state, gridAlpha = 0.12) {
   ctx.lineWidth   = 2;
   // Inset by 1 px so the stroke sits wholly inside the arena rect.
   ctx.strokeRect(1, 1, width - 2, height - 2);
+
+  if (state.arena.wall) drawSeverWall(ctx, state.arena.wall);
+}
+
+/**
+ * Sever Wall (LV3+): void-filled slab with a double wireframe stroke, bone
+ * outside and phosphor inside, so it reads on a phone. World space, opaque.
+ */
+function drawSeverWall(ctx, wall) {
+  const half = wall.thickness / 2;
+  const x = Math.min(wall.x1, wall.x2) - half;
+  const y = Math.min(wall.y1, wall.y2) - half;
+  const w = Math.abs(wall.x2 - wall.x1) + wall.thickness;
+  const h = Math.abs(wall.y2 - wall.y1) + wall.thickness;
+  ctx.save();
+  ctx.fillStyle = C.void;
+  ctx.fillRect(x, y, w, h);
+  ctx.lineJoin = 'miter';
+  ctx.strokeStyle = C.bone;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x - 1.5, y - 1.5, w + 3, h + 3);
+  ctx.strokeStyle = C.phosphor;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+  ctx.restore();
 }
 
 // ── ENTITY layer ───────────────────────────────────────────────────────────────

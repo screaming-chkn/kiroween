@@ -17,6 +17,7 @@
  */
 
 import { BASE_SPEED, MECH_RADIUS, MECH_CORNER_MARGIN } from './config.js';
+import { resolveWallMove } from './obstacle.js';
 
 // ── createMech ────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,12 @@ export function moveMech(mech, dir, dt, arena, speedMult = 1) {
   // MECH_CORNER_MARGIN ≥ MECH_RADIUS so the collision circle is also inside.
   const cx = Math.max(MECH_CORNER_MARGIN, Math.min(arena.width  - MECH_CORNER_MARGIN, nx));
   const cy = Math.max(MECH_CORNER_MARGIN, Math.min(arena.height - MECH_CORNER_MARGIN, ny));
+
+  // Sever Wall (LV3+): only present on arena.wall; open-field arenas skip this.
+  if (arena.wall) {
+    const r = resolveWallMove(arena.wall, mech, { x: cx, y: cy }, MECH_RADIUS);
+    if (r.bumped) return { ...mech, x: r.x, y: r.y, wallBump: true };
+  }
 
   return { ...mech, x: cx, y: cy };
 }

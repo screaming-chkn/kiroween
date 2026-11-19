@@ -31,8 +31,10 @@ import {
   DASH_DURATION_MS,
   DASH_SPEED_MULT,
   DASH_BUFFER_MS,
+  SEVER_WALL_MIN_LV,
   dashCooldownForLoad,
 } from './config.js';
+import { wallForLevel } from './obstacle.js';
 import { createMech, moveMech, aimMech } from './mech.js';
 import { createEnemy, stepEnemy }        from './enemy.js';
 import { createProjectile, stepProjectile, hitTestCircle } from './projectile.js';
@@ -82,6 +84,12 @@ export function createArena(loadoutTotals = {}, stats = {}) {
   _nextId = 0;
 
   const arena = { width: ARENA_WIDTH, height: ARENA_HEIGHT };
+  // Sever Wall: HAUNT LV 3+ only. stats.severWall (true/false) overrides for
+  // test harnesses; otherwise stats.hauntLv decides. Absent -> open field.
+  const wall = stats.severWall === false ? null
+    : stats.severWall === true ? wallForLevel(SEVER_WALL_MIN_LV)
+    : wallForLevel(stats.hauntLv);
+  if (wall) arena.wall = wall;
 
   const player = createMech({
     id:           'player',
@@ -215,6 +223,13 @@ export function updateArena(state, actions, dt) {
   let player = act.move
     ? moveMech(state.player, act.move, dt, arena, speedMult)
     : state.player;
+
+  // Sever Wall bump: cancel the rest of the dash (the dash cooldown keeps running).
+  if (player.wallBump) {
+    const { wallBump, ...rest } = player;
+    player = rest;
+    dashRemainingMs = 0;
+  }
 
   // Carry the dash timers forward onto the (possibly moved) player object.
   player = {

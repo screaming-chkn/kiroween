@@ -266,12 +266,14 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   const combatMods = combatModsFor(loadout);
   if (combatMods) arenaStats.combatMods = combatMods;
 
-  let arenaState = createArena(arenaStats, { enableGhostPerk: true });
-  cueMusic('duel');
-
   // Difficulty ramp (HAUNT LV): applied at spawn, outside createArena math.
+  // Read the level first: the Sever Wall (LV3+) is part of the arena itself.
   if (advanceHaunt) { bumpHauntLevel(); advanceHaunt = false; }
   const hauntLv = readHauntLevel();
+
+  let arenaState = createArena(arenaStats, { enableGhostPerk: true, hauntLv });
+  cueMusic('duel');
+
   arenaState = { ...arenaState, enemy: applyHauntPressure(arenaState.enemy, hauntLv) };
   const hauntFx = createHauntFx({
     reducedMotion,

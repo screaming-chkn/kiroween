@@ -16,6 +16,25 @@ export const ARENA_WIDTH  = 1200;
 /** World-unit height of the arena. */
 export const ARENA_HEIGHT = 900;
 
+// ── Sever Wall (HAUNT LV 3+ only) ─────────────────────────────────────────────
+
+/** First HAUNT LV that has the Sever Wall. LV1-2 stay an open field. */
+export const SEVER_WALL_MIN_LV = 3;
+
+/** Wall centre (world units): arena midline. */
+export const SEVER_WALL_X = ARENA_WIDTH / 2;
+export const SEVER_WALL_Y = ARENA_HEIGHT / 2;
+
+/**
+ * Plan-view length: ~1.5 tank widths. The drawn tank is about 80 wu wide
+ * (2 x MECH_RADIUS x TANK_DRAW_SCALE-ish footprint), so 1.5 x 80 = 120 wu.
+ * Vertical, so two flank corridors stay open above and below.
+ */
+export const SEVER_WALL_LENGTH = 120;
+
+/** Collision / stroke thickness (world units). */
+export const SEVER_WALL_THICKNESS = 16;
+
 // ── Mechs ────────────────────────────────────────────────────────────────────
 
 /** Base movement speed (world units / second) before any speed penalty. */

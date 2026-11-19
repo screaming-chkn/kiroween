@@ -1115,6 +1115,42 @@
     "done": true
   },
   {
+    "spec": "11-sever-wall",
+    "id": 1,
+    "title": "Wall data + wallForLevel (LV3+ only; original Sever Wall name)",
+    "done": true
+  },
+  {
+    "spec": "11-sever-wall",
+    "id": 2,
+    "title": "Mech / dash / projectile collision against the wall",
+    "done": true
+  },
+  {
+    "spec": "11-sever-wall",
+    "id": 3,
+    "title": "Draw double-stroke wireframe in combatRenderer",
+    "done": true
+  },
+  {
+    "spec": "11-sever-wall",
+    "id": 4,
+    "title": "Gate via createArena({ hauntLv }) + main.js level wiring",
+    "done": true
+  },
+  {
+    "spec": "11-sever-wall",
+    "id": 5,
+    "title": "Tests: LV1–2 open, LV3+ present, shot/move/dash blocked",
+    "done": true
+  },
+  {
+    "spec": "11-sever-wall",
+    "id": 6,
+    "title": "Re-check LV3–5 balance bands with wall in the harness (follow-up)",
+    "done": false
+  },
+  {
     "spec": "12-haunting",
     "id": 1,
     "title": "src/ui/haunting.js: HAUNT_FX constants, hauntFlags, createHauntFx (preallocated Float64Array trail, fog puffs, ghost slot, clock) + tests (R1, R7)",

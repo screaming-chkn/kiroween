@@ -22,6 +22,7 @@ import {
   PLAYER_PROJECTILE_RADIUS,
   ENEMY_PROJECTILE_RADIUS,
 } from './config.js';
+import { circleHitsWall } from './obstacle.js';
 
 // ── createProjectile ──────────────────────────────────────────────────────────
 
@@ -73,7 +74,9 @@ export function stepProjectile(proj, dt, arena) {
   // Destroy when the centre leaves the arena rectangle (R1).
   const dead =
     nx < 0 || nx > arena.width ||
-    ny < 0 || ny > arena.height;
+    ny < 0 || ny > arena.height ||
+    // Sever Wall (LV3+): shots stop on the wall, no bounce.
+    circleHitsWall(arena.wall, nx, ny, PROJECTILE_RADIUS);
 
   return { ...proj, x: nx, y: ny, dead };
 }

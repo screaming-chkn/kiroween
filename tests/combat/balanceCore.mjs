@@ -647,7 +647,9 @@ export function runFight(build, seed, opts = {}) {
   const policy = opts.policy ?? 'baseline';
 
   const rng = mulberry32(seed);
-  let state = createArena(build.totals, {});
+  // Pass hauntLv so Sever Wall (LV3+) gates the same as live createArena.
+  const arenaOpts = typeof opts.hauntLv === 'number' ? { hauntLv: opts.hauntLv } : {};
+  let state = createArena(build.totals, arenaOpts);
 
   // Apply haunt pressure only when a numeric hauntLv is explicitly passed
   // (default 1 kept here matches live difficulty; callers that omit hauntLv

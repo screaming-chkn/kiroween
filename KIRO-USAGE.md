@@ -272,3 +272,20 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Not in this commit (still open):** bigger angular tanks + LV1 check, landscape phone option, Sever Wall on LV3+, screenshots / two-bot playtest.
 - **Tests:** `npm test` **970** passed, 0 failed.
 - **Do not merge** until BotKing / owner pick. Main stays `925696d`.
+
+## HUD C3 tanks (2026-11-19 ~11:26–11:28 AM PT, build agent) — branch feat/hud-c, NOT merged
+- **Run id:** C3-tanks.
+- **Command:** `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat runC3-tanks-prompt.txt)"`
+  Proof: `deploy/kiro-proof/hud-c/runC3-tanks-prompt.txt`, `runC3-tanks-transcript.txt`.
+- **Credits (Pro):** 277.43 → 279.04 (**1.61**).
+- **Kiro authored:** `src/ui/tankWire.js` (TANK_DRAW_SCALE 1.3→1.5, chamfered hull/turret prisms, longer taper barrels, antenna), `tests/ui/tankWire.test.js`, `.kiro/specs/13-hud-meters/design.md` Mech art bullet. Hitboxes / HAUNT_LEVELS untouched.
+- **Build-agent follow-up:** phoneCombatUi + tankFx tests updated for new scale/barrelLen; `npm test` green.
+- **Commit:** `3875467`.
+
+## HUD C3 Sever Wall (2026-11-19 ~11:28–11:35 AM PT, build agent) — branch feat/hud-c, NOT merged
+- **Run id:** C3-sever.
+- **Command:** same kiro-cli pattern with `runSeverWall-prompt.txt` → `runSeverWall-transcript.txt`.
+- **Credits (Pro):** 279.04 → 283.08 (**4.04**).
+- **Kiro authored:** `src/combat/obstacle.js` (new), config SEVER_WALL_*, arena/mech/projectile/enemy/combatRenderer/main wiring, `tests/combat/severWall.test.js`, package.json test:combat entry, `.kiro/specs/11-sever-wall/requirements.md`.
+- **Build-agent follow-up:** balanceCore `runFight` now passes `hauntLv` into `createArena` (so LV3+ harness gets the wall; LV1 stays open); added `tasks.md` + séance rebuild; LV1 sanity harness (40 seeds × 16 builds): firstTimer **34.7%** / median **26.2s**, medium **66.7%** / median **27.2s** (in band; draw-only tanks did not skew). No balance retune.
+- **Tests:** `npm test` green (includes severWall suite).
