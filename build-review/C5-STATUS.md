@@ -2,7 +2,7 @@
 
 **Branch:** `feat/hud-c` (NOT merged; merge still held)
 **Base tip before C5:** `f64728a` (C4)
-**Feature tip:** _(filled after commit)_
+**Feature tip:** `c0c178b`
 
 ## What changed
 - `LANDSCAPE_GUTTER_FRAC` 0.176 → **0.144** (`TOUCH_LAYOUT_LANDSCAPE.stick.wFrac` matches) for a wider L-R fight field.
