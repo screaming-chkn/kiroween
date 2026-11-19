@@ -47,9 +47,9 @@ import { combatModsFor }       from './combat/loadoutEffects.js';
 import { buildPlayerActions }  from './combat/actions.js';
 import { drawWorld,
   drawEntities,
-  drawHUD,
   drawFixedHUD,
 }                              from './combat/combatRenderer.js';
+import { drawScreenHpMeters, screenHpTopReserve, SCREEN_HP_LAYOUT } from './combat/screenHpMeters.js';
 import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
@@ -58,8 +58,8 @@ import { clientToCanvasEl } from './engine/pointer.js';
 import { ENEMY_SHOT_WINDUP_MS } from './combat/config.js';
 import {
   endCardScale, scaleRects, phoneHudScale, phoneHudViewportH, hudPanelRect, phoneHudRect,
-  circleOverlapsRect, drawWindupGlow, drawCompactHp, HUD_UNDER_ALPHA,
-  rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
+  circleOverlapsRect, drawWindupGlow, HUD_UNDER_ALPHA,
+  unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 }                              from './ui/phoneCombatUi.js';
 import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW, compactHpLayout, landscapeStripW } from './ui/phoneCombatUi.js';
@@ -393,17 +393,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st, cam) =>
     drawWindupGlow(ctx, st.enemy, ENEMY_SHOT_WINDUP_MS, (cam ?? camera).zoom / uiDpr));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEnemyShotGlow(ctx, st.projectiles));
-  registerLayer(renderer, LAYERS.HUD,     (ctx, st) => {
-    if (!phonePortrait) { drawHUD(ctx, st); return; }
-    const vw = renderer.canvas.width;
-    const vh = renderer.canvas.height;
-    const hw = vw / 2 / camera.zoom;
-    const hh = vh / 2 / camera.zoom;
-    drawCompactHp(ctx, st, {
-      left: camera.x - hw, right: camera.x + hw,
-      top: camera.y - hh, bottom: camera.y + hh,
-    });
-  });
+  // World-space over-mech HP bars removed — meters live in screen space
+  // (drawScreenHpMeters on OVERLAY). Legacy drawHUD/drawCompactHp remain for unit tests.
+  registerLayer(renderer, LAYERS.HUD,     (_ctx, _st) => {});
 
   // Fixed bottom-left combat HUD (R9) — screen space, so it lives on the
   // OVERLAY layer (drawn without the world transform) ahead of the end card.
@@ -418,8 +410,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const sp = worldToScreen(st.player.x, st.player.y, camera, vpW, vpH,
       shakeX + kickX, shakeY + kickY);
     const rect = touchUi ? phoneHudRect(s) : hudPanelRect(vpH);
-    if (circleOverlapsRect(sp.sx, sp.sy, 30 * camera.zoom, rect) ||
-        rectsOverlap(playerHpBarScreenRect(st.player, camera, vpW, vpH, phonePortrait), rect)) {
+    if (circleOverlapsRect(sp.sx, sp.sy, 30 * camera.zoom, rect)) {
       if (!hudOffscreen) hudOffscreen = document.createElement('canvas');
       if (hudOffscreen.width !== vpW || hudOffscreen.height !== vpH) {
         hudOffscreen.width = vpW;
@@ -439,12 +430,6 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       ctx.globalAlpha = HUD_UNDER_ALPHA;
       ctx.drawImage(hudOffscreen, 0, 0);
       ctx.restore();
-      // Keep the player HP bar readable above the faded HUD.
-      ctx.save();
-      ctx.translate(vpW / 2 - camera.x * camera.zoom, vpH / 2 - camera.y * camera.zoom);
-      ctx.scale(camera.zoom, camera.zoom);
-      (phonePortrait ? drawCompactHp : drawHUD)(ctx, playerOnlyState(st));
-      ctx.restore();
     } else if (touchUi) {
       ctx.save();
       ctx.scale(s, s);
@@ -453,6 +438,24 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     } else {
       drawFixedHUD(ctx, st, vpW, vpH);
     }
+
+    // Fixed edge/top HP meters — away from the mechs (layout per SCREEN_HP_LAYOUT).
+    // Units are canvas px (OVERLAY has no world transform).
+    const hudR = phonePortrait ? phoneHudRect(s) : null;
+    const meterOpts = {
+      bottomInset: phonePortrait ? 170 * s : 150,
+      leftInset: 10 * (touchUi ? s : 1),
+      rightInset: 10 * (touchUi ? s : 1),
+      sidePad: (phonePortrait ? 12 : 20) * (touchUi ? s : 1),
+      topInset: SCREEN_HP_LAYOUT === 'top' ? 36 : 72,
+    };
+    if (hudR) {
+      const underHud = hudR.y + hudR.h + 10 * s;
+      meterOpts.topInset = SCREEN_HP_LAYOUT === 'top'
+        ? underHud
+        : Math.max(underHud, 72 * s);
+    }
+    drawScreenHpMeters(ctx, st, vpW, vpH, meterOpts);
   });
 
   // Phone-only enemy edge arrow (draw-only). Safe-area insets read once.
@@ -516,10 +519,13 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
     const cardUp = shouldDrawEndCard();
 
-    // One-time tell caption (first windup ever), under the HUD row.
+    // One-time tell caption (first windup ever), under the HUD row / top meters.
     if (!cardUp) {
       const hr = phonePortrait ? phoneHudRect(phoneHudScale(uiDpr)) : null;
-      const capTop = hr ? (hr.y + hr.h) / hudScale + 8 : 32 + insetTop;
+      const meterReserve = screenHpTopReserve() ;
+      const capTop = hr
+        ? (hr.y + hr.h) / hudScale + 8 + meterReserve
+        : 32 + insetTop + meterReserve;
       drawTellCaption(ctx, tellCaption.current(nowMs), { x: vpW / 2, y: capTop * hudScale, scale: hudScale });
     }
 
