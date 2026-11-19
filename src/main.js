@@ -460,17 +460,20 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const vpH = renderer.canvas.height;
     const edges = arenaSideEdges(camera, vpW, vpH, aw,
       { shakeX: shakeX + kickX, shakeY: shakeY + kickY });
-    // Labels sit in the letterbox under the slim strip (clear of stick).
-    // Bars themselves start at barMinY = top neon bottom so they never cover it.
-    const topInset = stripBottomPx(vpW) + 4 * hudScale;
+    // C9: meter TOP aligns exactly to the arena top border line (lineTop).
+    // Bars sit just outside L/R with HUD_SPACE gap; names stay far outward.
+    const lb = lineBottomPx(vpW, vpH);
+    const lt = Math.min(
+      arenaTopLineTopSy(camera, vpW, vpH, shakeX + kickX, shakeY + kickY, aw / 2),
+      lb,
+    );
     return {
       layout: SCREEN_HP_LAYOUT,
       scale: hudScale,
       compact: !!landscapeTouch,
       arenaLeft: edges.left,
       arenaRight: edges.right,
-      topInset,
-      barMinY: lineBottomPx(vpW, vpH),
+      topInset: lt,
       gapCss: METER_FIELD_GAP,
     };
   };

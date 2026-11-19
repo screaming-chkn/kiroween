@@ -63,9 +63,10 @@ for (const dpr of [1, 2, 3]) {
 
     const edges = arenaSideEdges(cam, vpW, vpH, AW, {});
     const g = sideOutGeometry(vpW, vpH, {
-      scale: dpr, compact: true, topInset: stripBottom + 4 * dpr,
+      scale: dpr, compact: true, topInset: lineTop,
       arenaLeft: edges.left, arenaRight: edges.right, gapCss: METER_FIELD_GAP,
     });
+    assert.ok(Math.abs(g.top - lineTop) < 1e-6, 'meter top == arena top border');
     assert.ok(g.player.x + g.player.w <= edges.left - METER_FIELD_GAP * dpr + 1e-6,
       `player meter outside left: ${g.player.x + g.player.w} vs ${edges.left}`);
     assert.ok(g.enemy.x >= edges.right + METER_FIELD_GAP * dpr - 1e-6,
@@ -99,10 +100,9 @@ for (const dpr of [1, 2, 3]) {
     assert.ok(L.stick.xFrac * cssW + L.stick.wFrac * cssW <= gutter / dpr + 1e-6, 'stick in left gutter');
     assert.ok(L.stick.yFrac * cssH >= stripCss - 1e-6, 'stick below top bar');
 
-    // Meters sit in the upper gutter; stick zone starts at yFrac 0.25 — no overlap.
-    const meterBottomCss = (g.player.y + g.player.h) / dpr;
-    assert.ok(meterBottomCss <= L.stick.yFrac * cssH + 1e-6,
-      `player meter bottom ${meterBottomCss} overlaps stick at ${L.stick.yFrac * cssH}`);
+    // C9: meter tops align to arena top border; bars hug L/R edge (may share Y
+    // with the stick band — stick sits further out in the gutter than the bar).
+    assert.ok(g.top + 1e-6 >= Math.min(lineTop, stripBottom) - 1e-6, 'meter at/below strip');
     const fireTop = L.fire.cyFrac * cssH - L.fire.rFrac * min;
     const eMeterBottom = (g.enemy.y + g.enemy.h) / dpr;
     assert.ok(eMeterBottom <= fireTop + 1e-6 || g.enemy.x / dpr >= (vpW - gutter) / dpr,
