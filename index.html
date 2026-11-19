@@ -52,7 +52,11 @@
     }
 
     html, body {
-      width: 100%; height: 100%;
+      width: 100%;
+      height: 100%;
+      /* Prefer small/dynamic viewport so iOS Safari toolbar doesn't clip the title/arena */
+      height: 100dvh;
+      height: 100svh;
       background: var(--color-void);
       color: var(--color-bone);
       font-family: var(--font-body);

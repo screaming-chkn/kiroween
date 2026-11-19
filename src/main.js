@@ -146,6 +146,9 @@ function boot() {
   const renderer = createRenderer(canvas);
   resizeToDisplay(renderer);
   window.addEventListener('resize', () => resizeToDisplay(renderer));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => resizeToDisplay(renderer));
+  }
 
   const ctx = canvas.getContext('2d');
   if (!ctx) {
@@ -726,7 +729,13 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   let pauseBtn = null;
   if (touchUi) {
     touch = mountTouchControls(document.body, {
-      getViewport: () => ({ width: window.innerWidth, height: window.innerHeight }),
+      getViewport: () => {
+        const vv = window.visualViewport;
+        return {
+          width: (vv && vv.width) || window.innerWidth,
+          height: (vv && vv.height) || window.innerHeight,
+        };
+      },
     });
     pauseBtn = mountPauseButton(document.body, () => setPaused(true));
   }
