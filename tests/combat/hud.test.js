@@ -254,65 +254,50 @@ const FIGHT = {
   enemy: { hp: 272, maxHp: 440 },
 };
 
-test('topBarCells: all cells in order, HP green / HOUND red, timer text', () => {
+test('topBarCells: C4 timer + LV only (no HOUND/POWER/READY/HP)', () => {
   const cells = topBarCells(FIGHT, { hauntLv: 3 });
   assert.deepEqual(cells.map(c => c.id), [...TOP_BAR_ORDER]);
-  assert.deepEqual([...TOP_BAR_ORDER], ['hp', 'en', 'power', 'ready', 'timer', 'hound', 'lv']);
+  assert.deepEqual([...TOP_BAR_ORDER], ['timer', 'lv']);
   const by = Object.fromEntries(cells.map(c => [c.id, c]));
+  assert.equal(by.timer.text, '01:23');
+  assert.equal(by.lv.text, 'HAUNT LV 3');
   assert.equal(TOP_BAR_HP_PLAYER_COLOR, '#39FF88');
   assert.equal(TOP_BAR_HP_HOUND_COLOR, '#FF4D5E');
-  assert.equal(by.hp.color, TOP_BAR_HP_PLAYER_COLOR);
-  assert.equal(by.hound.color, TOP_BAR_HP_HOUND_COLOR);
-  assert.ok(by.hp.text.includes('77/140'), by.hp.text);
-  assert.ok(by.hound.text.includes('272/440'), by.hound.text);
-  assert.ok(by.en.text.includes('50/80'), by.en.text);
-  assert.equal(by.timer.text, '01:23');
-  assert.equal(by.power.text, 'POWER OK');
-  assert.equal(by.lv.text, 'HAUNT LV 3');
-  assert.equal(by.ready.text, 'READY');
 });
 
-test('topBarCells: stutter and reload read as words, not colour alone', () => {
-  const s = topBarCells({ ...FIGHT, player: { ...FIGHT.player, powerBalance: -3, fireCooldown: 150 } });
-  const by = Object.fromEntries(s.map(c => [c.id, c]));
-  assert.ok(by.power.text.includes('STUTTER'));
-  assert.equal(by.power.stutter, true);
-  assert.equal(by.ready.text, 'RELOAD');
-});
-
-test('topBarCells: narrow drops prefixes so phone cells fit', () => {
+test('topBarCells: narrow LV drops HAUNT prefix', () => {
   const by = Object.fromEntries(topBarCells(FIGHT, { hauntLv: 2, narrow: true }).map(c => [c.id, c]));
-  assert.equal(by.hp.text, '77/140');
-  assert.equal(by.hound.text, '272/440');
   assert.equal(by.lv.text, 'LV 2');
+  assert.equal(by.timer.text, '01:23');
 });
 
-test('topBarLayout: desktop is one row, order left to right, timer centred', () => {
+test('topBarLayout: desktop is one slim row, timer centred', () => {
   const L = topBarLayout(1280, 1);
   assert.equal(L.narrow, false);
   assert.equal(L.rows.length, 1);
-  assert.deepEqual(L.cells.map(c => c.id), [...TOP_BAR_ORDER]);
-  for (let i = 1; i < L.cells.length; i++) {
-    assert.ok(L.cells[i].x >= L.cells[i - 1].x + L.cells[i - 1].w, `cell ${L.cells[i].id} overlaps`);
-  }
+  assert.ok(L.cells.every(c => c.id === 'timer' || c.id === 'lv'));
   const t = L.cells.find(c => c.id === 'timer');
   assert.ok(approxEq(t.x + t.w / 2, 640, 1e-6));
   assert.equal(L.h, TOP_BAR.rowH);
   for (const c of L.cells) assert.ok(c.x >= 0 && c.x + c.w <= 1280);
 });
 
-test('topBarLayout: phone is two rows, clears the pause button, includes safe inset', () => {
+test('topBarLayout: phone is one slim row, clears the pause button', () => {
   assert.equal(isNarrowTopBar(390, 1), true);
   const L = topBarLayout(390 * 3, 3, { insetTop: 10, pauseReserve: TOP_BAR.pauseReserve });
   assert.equal(L.narrow, true);
-  assert.equal(L.rows.length, 2);
-  assert.equal(L.h, (10 + TOP_BAR.narrowRow0H + TOP_BAR.narrowRow1H) * 3);
+  assert.equal(L.rows.length, 1);
+  assert.equal(L.h, (10 + TOP_BAR.rowH) * 3);
   assert.equal(topBarHeight(390 * 3, 3, { insetTop: 10, pauseReserve: TOP_BAR.pauseReserve }), L.h);
-  const hound = L.cells.find(c => c.id === 'hound');
-  assert.ok(hound.x + hound.w <= (390 - TOP_BAR.pauseReserve) * 3 + 1e-6, 'HOUND HP clear of pause');
   const t = L.cells.find(c => c.id === 'timer');
   assert.ok(approxEq(t.x + t.w / 2, 390 * 3 / 2, 1e-6));
-  assert.deepEqual(L.cells.map(c => c.id), [...TOP_BAR_ORDER]);
+  for (const c of L.cells) {
+    assert.ok(c.x + c.w <= (390 - TOP_BAR.pauseReserve) * 3 + TOP_BAR.pauseReserve * 3 + 1e-6
+      || c.id === 'timer');
+  }
+  // LV (if present) stays clear of pause reserve
+  const lv = L.cells.find(c => c.id === 'lv');
+  if (lv) assert.ok(lv.x + lv.w <= (390 - TOP_BAR.pauseReserve) * 3 + 1e-6);
 });
 
 test('top strip font is Orbitron; strip text is at least 14px', () => {

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {
   TAUNTS, WINDUP_COOLDOWN_MS, tauntBaselineY, ENEMY_LABEL_TOP_WU, specTauntLine as specLineForFix, DEMO_SPAWN, DEMO_DEATH, isDemoTaunts, pickTaunt,
   createTauntMachine, drawPossessedTaunt, specTauntLine,
-  tauntUnderLineY, tauntSpeaker, tauntColor, TAUNT_COLOR_HOUND, TAUNT_COLOR_PLAYER,
+  tauntUnderLineY, tauntAboveLineY, tauntSpeaker, tauntColor, TAUNT_COLOR_HOUND, TAUNT_COLOR_PLAYER,
 } from '../../src/ui/possessedTaunts.js';
 
 let passed = 0;
@@ -328,6 +328,14 @@ test('tauntUnderLineY sits just under the green line', () => {
   const y2 = tauntUnderLineY({ lineBottom: 200, scale: 2, gap: 6 });
   assert.equal(y2, 200 + 12 + 28);
 });
+
+test('tauntAboveLineY sits just above the green field top', () => {
+  const y = tauntAboveLineY({ lineTop: 100, scale: 1, gap: 6 });
+  assert.equal(y, 94);
+  const y2 = tauntAboveLineY({ lineTop: 200, scale: 2, gap: 6 });
+  assert.equal(y2, 200 - 12);
+});
+
 
 test('drawPossessedTaunt uses HOUND red fill', () => {
   const fills = [];

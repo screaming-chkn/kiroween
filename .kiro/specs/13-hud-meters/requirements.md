@@ -127,3 +127,29 @@ Canvas 2D.
   confirm: meters under the green line, orange and red states, a visible ghost,
   and a coloured taunt under the line that covers neither the tell nor the
   controls.
+
+
+### R10 C4 landscape-first side-out meters + slim strip
+- Landscape phone (844×390) is the primary layout; desktop 1280×720; portrait must not break.
+- `SCREEN_HP_LAYOUT` SHALL be `'side-out'`. Player and enemy meter groups SHALL sit
+  entirely outside the arena green L/R borders with a gap of at least 4 CSS px
+  (`METER_FIELD_GAP`). Player label `P1 · RUSTBIT` (green); enemy `CHOPPER` (red);
+  HP as `cur/max` via `formatHudStat`. No player-facing HUD text SHALL say "HOUND".
+- In-fight taunts SHALL sit just ABOVE the green field top (`tauntAboveLineY`),
+  centred, in the speaker colour, clear of the slim top strip and side meters.
+- The top strip (`TOP_BAR_ORDER`) SHALL be timer-centric: `timer` and optional `lv`.
+  POWER, READY, HP, and HOUND cells SHALL NOT appear on the live strip. Pause stays.
+- Control gutters (`LANDSCAPE_GUTTER_FRAC`) and strip row height MAY be nudged ~20%
+  smaller than C3 so the fight field grows ~20%; stick/fire diameters stay ≥44 CSS px.
+- Module `src/combat/mechNames.js` exports `PLAYER_MECH_NAME`, `ENEMY_MECH_NAME`,
+  `playerHudLabel`, `enemyHudLabel`.
+- Field-edge probe `__HH_HUD_Y__` / `__HH_HUD_FIELD__` reports meter gaps outside
+  the borders and taunt gap above the line.
+- Ghost perk (R5), Sever Wall + label, Orbitron, dotted frames, TANK_DRAW_SCALE 1.5,
+  and orange→red@25% stay. No balance / HAUNT_LEVELS retune.
+
+### R11 Mirror-fair barriers and spawns
+- Every wall/obstacle segment SHALL sit on the arena mid-X or have a left/right
+  mirror about mid-X. Player and enemy spawn X SHALL be symmetric about mid-X.
+- Sever Wall remains a single centred vertical wall at `ARENA_WIDTH/2` (already
+  mirror-fair). Do not build 2P.

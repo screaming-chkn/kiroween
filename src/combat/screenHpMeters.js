@@ -1,41 +1,37 @@
 /**
- * src/combat/screenHpMeters.js — fixed screen-space HP meters (away from mechs).
+ * src/combat/screenHpMeters.js — fixed screen-space HP meters (C4 side-out).
  *
- * Layout C ('corner-v'): short vertical bars at the top-left (player) and
- * top-right (HOUND) of the arena view. Every part of a meter group (bar, dotted
- * frame, fill, label) sits strictly BELOW the arena's green top border: the
- * group's top edge is at least METER_LINE_GAP px under the line's bottom edge.
- * The label is drawn under the bar, never above it. The HP numbers live in the
- * top strip (topBarHud.js); the meters carry the name plus the fill height.
+ * Layout 'side-out': vertical bars + labels sit JUST OUTSIDE the arena green
+ * border (player left of left edge, enemy right of right edge). Never overlap
+ * the playable field. Labels use mech names (P1 · RUSTBIT / CHOPPER) plus
+ * cur/max via formatHudStat. Fill is orange; turns red at ≤25%.
  *
- * Fill is orange; turns red at ≤25% of that bar's max.
- * Labels use Orbitron (self-hosted, SIL OFL). Frames are dotted phosphor to
- * match the wireframe blueprint UI.
+ * Legacy corner-v-inside helpers remain for older tests; live fight uses side-out.
  */
 import { formatHudStat } from './hud.js';
 import { worldToScreen } from '../engine/camera.js';
+import { playerHudLabel, enemyHudLabel } from './mechNames.js';
 
-export const SCREEN_HP_LAYOUT = 'corner-v';
+export const SCREEN_HP_LAYOUT = 'side-out';
 
-/** Fill is orange until ≤25%, then red. */
 export const METER_ORANGE = '#FF8A3D';
 export const METER_RED = '#FF4D5E';
 export const METER_RED_PCT = 0.25;
-export const METER_FRAME = '#39FF88'; // phosphor — matches wireframe neon
+export const METER_FRAME = '#39FF88';
 export const METER_FONT = 'Orbitron, "Share Tech Mono", monospace';
-
-/** Minimum CSS px between the green line's bottom edge and any meter pixel. */
 export const METER_LINE_GAP = 6;
-/** Arena border stroke width in world units (combatRenderer.drawWorld). */
+/** Minimum CSS px between a meter group and the arena green border outer edge. */
+export const METER_FIELD_GAP = 4;
 export const ARENA_BORDER_WU = 2;
 
 const C = {
   void: '#0A0D0B',
   bone: '#E8E2D0',
   track: '#0F1A14',
+  player: '#39FF88',
+  enemy: '#FF4D5E',
 };
 
-/** Orange above 25%; red at ≤25%. */
 export function meterFillColor(pct) {
   return pct <= METER_RED_PCT ? METER_RED : METER_ORANGE;
 }
@@ -46,26 +42,14 @@ function pctOf(ent) {
   return Math.max(0, Math.min(1, (ent.hp ?? 0) / max));
 }
 
-/** CSS-px reserved under the top edge so the tell caption clears the meters. */
 export function screenHpTopReserve(layout = SCREEN_HP_LAYOUT) {
   if (layout === 'top') return 36;
   if (layout === 'corner-v') return 28;
+  if (layout === 'side-out') return 8;
   return 0;
 }
 
-/**
- * Bottom edge (canvas px) of the arena's green top border: the border is a 2 wu
- * stroke whose top is world y = 0. x does not matter (the edge is horizontal).
- * Returns 0 when the camera yields a non-finite value.
- *
- * @param {{x:number,y:number,zoom:number}} camera
- * @param {number} vpW
- * @param {number} vpH
- * @param {number} [shakeX]
- * @param {number} [shakeY]
- * @param {number} [arenaCx]  world x of the arena centre (any x works)
- * @returns {number}
- */
+/** Bottom edge (canvas px) of the arena's green top border. */
 export function arenaTopLineSy(camera, vpW, vpH, shakeX = 0, shakeY = 0, arenaCx = 0) {
   if (!camera || !Number.isFinite(camera.x) || !Number.isFinite(camera.y) || !Number.isFinite(camera.zoom)) {
     return 0;
@@ -75,17 +59,30 @@ export function arenaTopLineSy(camera, vpW, vpH, shakeX = 0, shakeY = 0, arenaCx
   return Number.isFinite(bottom) ? bottom : 0;
 }
 
+/** Top edge (canvas px) of the arena's green top border. */
+export function arenaTopLineTopSy(camera, vpW, vpH, shakeX = 0, shakeY = 0, arenaCx = 0) {
+  if (!camera || !Number.isFinite(camera.x) || !Number.isFinite(camera.y) || !Number.isFinite(camera.zoom)) {
+    return 0;
+  }
+  const { sy } = worldToScreen(arenaCx, 0, camera, vpW, vpH, shakeX, shakeY);
+  return Number.isFinite(sy) ? sy : 0;
+}
+
 /**
- * Landscape: left/right insets (canvas px) that put the meters in the ARENA's
- * top corners (inside the border) instead of the screen corners, so they stay
- * out of the control gutters.
- * @param {{x:number,y:number,zoom:number}} camera
- * @param {number} vpW
- * @param {number} vpH
- * @param {number} arenaW  world width
- * @param {{shakeX?:number, shakeY?:number, scale?:number, pad?:number}} [o]
- * @returns {{left:number, right:number}}
+ * Outer canvas-px x of the arena's green left/right borders.
+ * @returns {{ left: number, right: number }}
  */
+export function arenaSideEdges(camera, vpW, vpH, arenaW, o = {}) {
+  const l = worldToScreen(0, 0, camera, vpW, vpH, o.shakeX ?? 0, o.shakeY ?? 0).sx;
+  const r = worldToScreen(arenaW, 0, camera, vpW, vpH, o.shakeX ?? 0, o.shakeY ?? 0).sx;
+  const half = (ARENA_BORDER_WU * (camera?.zoom ?? 1)) / 2;
+  return {
+    left: Number.isFinite(l) ? l - half : 0,
+    right: Number.isFinite(r) ? r + half : vpW,
+  };
+}
+
+/** Legacy: insets that put meters inside the arena corners (C3). */
 export function arenaSideInsets(camera, vpW, vpH, arenaW, o = {}) {
   const s = o.scale > 0 ? o.scale : 1;
   const pad = (o.pad ?? 8) * s;
@@ -97,37 +94,30 @@ export function arenaSideInsets(camera, vpW, vpH, arenaW, o = {}) {
   };
 }
 
-/**
- * topInset for the meter groups: line bottom plus METER_LINE_GAP, scaled the
- * same way the overlay scales its CSS px (hudScale / dpr).
- *
- * @param {number} lineBottom  canvas px (from arenaTopLineSy, or the top strip bottom if lower)
- * @param {number} [scale]
- */
 export function meterTopInset(lineBottom, scale = 1) {
   const s = scale > 0 ? scale : 1;
   return (Number.isFinite(lineBottom) ? lineBottom : 0) + METER_LINE_GAP * s;
 }
 
+export function meterFieldGapCss() {
+  return METER_FIELD_GAP;
+}
+
 /**
- * Corner-v geometry (pure). Each group box covers bar + label.
- * @param {number} vpW
- * @param {number} vpH
- * @param {{topInset?:number, leftInset?:number, rightInset?:number, scale?:number}} [opts]
+ * Legacy corner-v geometry (inside field). Kept for older tests / helpers.
  */
 export function cornerVGeometry(vpW, vpH, opts = {}) {
   const s = opts.scale > 0 ? opts.scale : 1;
   const top = Math.max(8, opts.topInset ?? 12);
   const thick = Math.max(12, Math.min(18, Math.round((vpW / s) * 0.014))) * s;
-  // compact (landscape phone): shorter bar so group + label stay small.
   const h = (opts.compact ? 56 : Math.max(72, Math.min(120, Math.round((vpH / s) * 0.14)))) * s;
   const leftX = Math.max(8 * s, opts.leftInset ?? 10);
   const rightEdge = vpW - Math.max(8 * s, opts.rightInset ?? 10);
   const fontPx = 16 * s;
   const gap = 4 * s;
   const labelH = fontPx * 1.2;
-  const pw = Math.max(thick, 'HP'.length * fontPx * 0.9);
-  const ew = Math.max(thick, 'HOUND'.length * fontPx * 0.9);
+  const pw = Math.max(thick, 2 * fontPx);
+  const ew = Math.max(thick, 5 * fontPx);
   const gh = h + gap + labelH;
   return {
     top, thick, h, fontPx, gap, scale: s,
@@ -137,34 +127,95 @@ export function cornerVGeometry(vpW, vpH, opts = {}) {
 }
 
 /**
- * Horizontal space (canvas px) each side is taken by a meter group, so the
- * centred taunt can keep clear of it.
+ * C4 side-out geometry: groups entirely outside the arena left/right edges.
+ * @param {number} vpW
+ * @param {number} vpH
+ * @param {{arenaLeft?:number, arenaRight?:number, topInset?:number, scale?:number, compact?:boolean, gapCss?:number}} [opts]
  */
+export function sideOutGeometry(vpW, vpH, opts = {}) {
+  const s = opts.scale > 0 ? opts.scale : 1;
+  const gap = (opts.gapCss ?? METER_FIELD_GAP) * s;
+  const top = Math.max(8 * s, opts.topInset ?? 12);
+  // Compact (landscape): short bar so the group stays above the stick zone.
+  const thick = Math.max(10, Math.min(14, Math.round((vpW / s) * 0.012))) * s;
+  const h = (opts.compact ? 48 : Math.max(72, Math.min(130, Math.round((vpH / s) * 0.15)))) * s;
+  const fontPx = 14 * s;
+  const gapX = 4 * s;
+  // Labels sit BESIDE the bar (outward), so group height ≈ bar height.
+  const labelW = Math.max(4 * fontPx, 7.2 * fontPx); // fits "P1 · RUSTBIT"
+  const groupW = thick + gapX + labelW;
+  const gh = h;
+  const arenaLeft = Number.isFinite(opts.arenaLeft) ? opts.arenaLeft : vpW * 0.2;
+  const arenaRight = Number.isFinite(opts.arenaRight) ? opts.arenaRight : vpW * 0.8;
+
+  // Player: bar nearest the field; labels to the left (outward).
+  let pRight = arenaLeft - gap;
+  let pX = pRight - groupW;
+  if (pX < 2 * s) {
+    pX = 2 * s;
+    pRight = Math.min(arenaLeft - gap, pX + groupW);
+  }
+  const pBarX = pRight - thick;
+  const player = { x: pX, y: top, w: pRight - pX, h: gh, barX: pBarX, labelX: pX, labelAlign: 'left' };
+
+  // Enemy: bar nearest the field; labels to the right (outward).
+  let eLeft = arenaRight + gap;
+  let eRight = eLeft + groupW;
+  if (eRight > vpW - 2 * s) {
+    eRight = vpW - 2 * s;
+    eLeft = Math.max(arenaRight + gap, eRight - groupW);
+  }
+  const enemy = {
+    x: eLeft, y: top, w: eRight - eLeft, h: gh,
+    barX: eLeft, labelX: eRight, labelAlign: 'right',
+  };
+
+  return {
+    top, thick, h, fontPx, gap: gapX, scale: s, layout: 'side-out',
+    fieldGap: gap, arenaLeft, arenaRight,
+    player, enemy,
+  };
+}
+
+/** Horizontal reserve so centred taunt clears side meters. */
 export function meterSideReserve(vpW, vpH, opts = {}) {
-  const g = cornerVGeometry(vpW, vpH, opts);
+  const layout = opts.layout ?? SCREEN_HP_LAYOUT;
+  const g = layout === 'side-out'
+    ? sideOutGeometry(vpW, vpH, opts)
+    : cornerVGeometry(vpW, vpH, opts);
   const s = g.scale;
   return Math.max(g.player.x + g.player.w, vpW - g.enemy.x) + 8 * s;
 }
 
-/**
- * @param {CanvasRenderingContext2D} ctx
- * @param {{ player?: object, enemy?: object }} state
- * @param {number} vpW
- * @param {number} vpH
- * @param {{ layout?: string, topInset?: number, bottomInset?: number, leftInset?: number, rightInset?: number, sidePad?: number, scale?: number }} [opts]
- */
 export function drawScreenHpMeters(ctx, state, vpW, vpH, opts = {}) {
   const layout = opts.layout ?? SCREEN_HP_LAYOUT;
-  if (layout === 'corner-v') drawCornerV(ctx, state, vpW, vpH, opts);
+  if (layout === 'side-out') drawSideOut(ctx, state, vpW, vpH, opts);
+  else if (layout === 'corner-v') drawCornerV(ctx, state, vpW, vpH, opts);
   else if (layout === 'top') drawTop(ctx, state, vpW, vpH, opts);
   else drawVertical(ctx, state, vpW, vpH, opts);
 }
 
-/** Layout C: short vertical bars under the green line, label under each bar. */
+function drawSideOut(ctx, state, vpW, vpH, opts) {
+  const g = sideOutGeometry(vpW, vpH, opts);
+  const pHp = formatHudStat(Math.ceil(state.player?.hp ?? 0), state.player?.maxHp ?? 0);
+  const eHp = formatHudStat(Math.ceil(state.enemy?.hp ?? 0), state.enemy?.maxHp ?? 0);
+  drawSideOutGroup(ctx, g, g.player, pctOf(state.player), playerHudLabel(), pHp, C.player);
+  drawSideOutGroup(ctx, g, g.enemy, pctOf(state.enemy), enemyHudLabel(), eHp, C.enemy);
+}
+
+/** Name + HP beside the bar (outward), bar hugs the field edge. */
+function drawSideOutGroup(ctx, g, box, pct, name, hpText, nameColor) {
+  fillBar(ctx, box.barX, box.y, g.thick, g.h, pct);
+  const lx = box.labelX;
+  const align = box.labelAlign || 'left';
+  drawColoredLabel(ctx, name, lx, box.y, align, g.fontPx, nameColor);
+  drawColoredLabel(ctx, hpText, lx, box.y + g.fontPx * 1.2, align, g.fontPx, C.bone);
+}
+
 function drawCornerV(ctx, state, vpW, vpH, opts) {
   const g = cornerVGeometry(vpW, vpH, opts);
-  drawVBar(ctx, g, g.player.barX, pctOf(state.player), 'HP', 'left');
-  drawVBar(ctx, g, g.enemy.barX, pctOf(state.enemy), 'HOUND', 'right');
+  drawVBar(ctx, g, g.player.barX, pctOf(state.player), playerHudLabel(), 'left');
+  drawVBar(ctx, g, g.enemy.barX, pctOf(state.enemy), enemyHudLabel(), 'right');
 }
 
 function drawVertical(ctx, state, vpW, vpH, opts) {
@@ -174,14 +225,12 @@ function drawVertical(ctx, state, vpW, vpH, opts) {
   const leftX = Math.max(8, opts.leftInset ?? 10);
   const rightX = vpW - Math.max(8, opts.rightInset ?? 10) - thick;
   const h = bottom - top;
-
   drawSideBar(ctx, leftX, top, thick, h, pctOf(state.player),
-    `HP ${formatHudStat(state.player?.hp ?? 0, state.player?.maxHp ?? 0)}`, 'right');
+    `${playerHudLabel()} ${formatHudStat(state.player?.hp ?? 0, state.player?.maxHp ?? 0)}`, 'right');
   drawSideBar(ctx, rightX, top, thick, h, pctOf(state.enemy),
-    `HOUND ${formatHudStat(state.enemy?.hp ?? 0, state.enemy?.maxHp ?? 0)}`, 'left');
+    `${enemyHudLabel()} ${formatHudStat(state.enemy?.hp ?? 0, state.enemy?.maxHp ?? 0)}`, 'left');
 }
 
-/** Dotted phosphor frame — blueprint / wireframe look. */
 function strokeDottedRect(ctx, x, y, w, h) {
   ctx.save();
   ctx.strokeStyle = METER_FRAME;
@@ -203,18 +252,21 @@ function fillBar(ctx, x, y, w, h, pct) {
 }
 
 function drawLabel(ctx, text, x, y, align, fontPx) {
+  drawColoredLabel(ctx, text, x, y, align, fontPx, METER_FRAME);
+}
+
+function drawColoredLabel(ctx, text, x, y, align, fontPx, color) {
   ctx.font = `${fontPx}px ${METER_FONT}`;
   ctx.textBaseline = 'top';
   ctx.textAlign = align;
   ctx.lineJoin = 'round';
   ctx.lineWidth = 3;
   ctx.strokeStyle = C.void;
-  ctx.fillStyle = METER_FRAME;
+  ctx.fillStyle = color;
   ctx.strokeText(text, x, y);
   ctx.fillText(text, x, y);
 }
 
-/** corner-v bar: label BELOW the bar, hugging the screen edge side. */
 function drawVBar(ctx, g, x, pct, label, side) {
   fillBar(ctx, x, g.top, g.thick, g.h, pct);
   const ty = g.top + g.h + g.gap;
@@ -222,7 +274,6 @@ function drawVBar(ctx, g, x, pct, label, side) {
   else drawLabel(ctx, label, x + g.thick, ty, 'right', g.fontPx);
 }
 
-/** Legacy 'vertical' A/B layout: label beside the bar, top-aligned with it. */
 function drawSideBar(ctx, x, y, w, h, pct, label, labelSide) {
   fillBar(ctx, x, y, w, h, pct);
   const fontPx = Math.max(16, Math.min(22, Math.round(h * 0.14 + 12)));
@@ -240,11 +291,10 @@ function drawTop(ctx, state, vpW, vpH, opts) {
   const y = top;
   const leftX = sidePad;
   const rightX = vpW - sidePad - barW;
-
   drawHBar(ctx, leftX, y, barW, barH, pctOf(state.player),
-    `HP ${formatHudStat(state.player?.hp ?? 0, state.player?.maxHp ?? 0)}`);
+    `${playerHudLabel()} ${formatHudStat(state.player?.hp ?? 0, state.player?.maxHp ?? 0)}`);
   drawHBar(ctx, rightX, y, barW, barH, pctOf(state.enemy),
-    `HOUND ${formatHudStat(state.enemy?.hp ?? 0, state.enemy?.maxHp ?? 0)}`);
+    `${enemyHudLabel()} ${formatHudStat(state.enemy?.hp ?? 0, state.enemy?.maxHp ?? 0)}`);
   void vpH;
 }
 

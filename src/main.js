@@ -49,7 +49,8 @@ import { drawWorld,
   drawEntities,
 }                              from './combat/combatRenderer.js';
 import {
-  drawScreenHpMeters, SCREEN_HP_LAYOUT, arenaTopLineSy, meterTopInset, meterSideReserve, arenaSideInsets, cornerVGeometry,
+  drawScreenHpMeters, SCREEN_HP_LAYOUT, arenaTopLineSy, arenaTopLineTopSy, meterTopInset,
+  meterSideReserve, arenaSideEdges, sideOutGeometry, METER_FIELD_GAP,
 } from './combat/screenHpMeters.js';
 import { drawTopBarHud, topBarHeight, TOP_BAR } from './combat/topBarHud.js';
 import { drawGhostPerk } from './combat/ghostPerk.js';
@@ -78,7 +79,7 @@ import { SEANCE_DATA_URL }     from './ui/seance.js';
 import { drawEndCardView }     from './ui/endCardView.js';
 import {
   createTauntMachine, isDemoTaunts, drawPossessedTaunt, specTauntLine,
-  tauntUnderLineY,
+  tauntUnderLineY, tauntAboveLineY,
 }                              from './ui/possessedTaunts.js';
 import {
   readHauntLevel, setHauntLevel, bumpHauntLevel, applyHauntPressure, MAX_HAUNT_LEVEL,
@@ -407,15 +408,14 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   // (drawScreenHpMeters on OVERLAY). Legacy drawHUD/drawCompactHp remain for unit tests.
   registerLayer(renderer, LAYERS.HUD,     (_ctx, _st) => {});
 
-  // Top strip (HP / EN / POWER / READY / timer / HOUND / LV) sits ABOVE the
-  // arena's green line; the HP meters and the taunt sit strictly BELOW it.
-  // One scale for all of it: canvas px per CSS px (dpr on touch, 1 on desktop).
+  // C4: slim top strip (timer + LV) ABOVE the green field; HP meters OUTSIDE
+  // the L/R borders; taunt just ABOVE the field top. Scale = canvas/CSS px.
   const hudScale = touchUi ? uiDpr : 1;
   const stripOpts = () => ({
     scale: hudScale, hauntLv,
     insetTop: phonePortrait ? insetTop : 0,
     pauseReserve: touchUi ? TOP_BAR.pauseReserve : 0,
-    compact: landscapeTouch,   // one short row; EN/POWER dropped, HP + MM:SS kept
+    compact: landscapeTouch,   // one short timer-centric row
   });
   const stripBottomPx = (vpW) => topBarHeight(vpW, hudScale, stripOpts());
   /** Bottom edge of the green line (canvas px); never above the strip bottom. */
@@ -424,16 +424,21 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     stripBottomPx(vpW),
   );
   const meterGeomOpts = () => {
-    if (!landscapeTouch) {
-      return { scale: hudScale, leftInset: 10 * hudScale, rightInset: 10 * hudScale };
-    }
-    // Landscape: meters sit in the arena's top corners, between the control
-    // gutters, still below the green line (topInset comes from lineBottomPx).
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
-    const ins = arenaSideInsets(camera, vpW, vpH, aw,
-      { shakeX: shakeX + kickX, shakeY: shakeY + kickY, scale: hudScale });
-    return { scale: hudScale, leftInset: ins.left, rightInset: ins.right, compact: true };
+    const edges = arenaSideEdges(camera, vpW, vpH, aw,
+      { shakeX: shakeX + kickX, shakeY: shakeY + kickY });
+    // Place meter tops just under the slim strip so labels clear the above-field taunt.
+    const topInset = stripBottomPx(vpW) + 4 * hudScale;
+    return {
+      layout: SCREEN_HP_LAYOUT,
+      scale: hudScale,
+      compact: !!landscapeTouch,
+      arenaLeft: edges.left,
+      arenaRight: edges.right,
+      topInset,
+      gapCss: METER_FIELD_GAP,
+    };
   };
 
   registerLayer(renderer, LAYERS.OVERLAY, (ctx, st) => {
@@ -444,33 +449,38 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const vpH = renderer.canvas.height;
     drawTopBarHud(ctx, st, vpW, stripBottomPx(vpW), stripOpts());
 
-    // Corner-v HP meters, everything >= 6 CSS px under the green line.
+    // C4 side-out HP meters — outside the green L/R borders.
     const lineBottom = lineBottomPx(vpW, vpH);
-    const meterOpts = {
-      ...meterGeomOpts(),
-      topInset: meterTopInset(lineBottom, hudScale),
-    };
+    const lineTop = Math.min(
+      arenaTopLineTopSy(camera, vpW, vpH, shakeX + kickX, shakeY + kickY, aw / 2),
+      lineBottom,
+    );
+    const meterOpts = { ...meterGeomOpts() };
     drawScreenHpMeters(ctx, st, vpW, vpH, meterOpts);
 
-    // Debug probe for shots-hud-c3 y-check (canvas px; scale = canvas/CSS).
-    // Gaps in CSS px: (meterTop - lineBottom) / scale must be >= 6.
+    // Field-edge probe for shots-hud-c4 (meters outside; taunt above).
     if (st.phase === 'playing') {
-      const g = cornerVGeometry(vpW, vpH, meterOpts);
-      const tauntBaseline = tauntUnderLineY({ lineBottom, scale: hudScale, gap: 6 });
+      const g = sideOutGeometry(vpW, vpH, meterOpts);
+      const tauntBaseline = tauntAboveLineY({ lineTop, scale: hudScale, gap: 6 });
       const fontPx = Math.max(14, Math.round(14 * hudScale));
-      // alphabetic baseline → approximate glyph top
-      const tauntTop = Math.max(8 * hudScale, tauntBaseline - fontPx);
+      const tauntTop = Math.max(stripBottomPx(vpW) + 2 * hudScale, tauntBaseline - fontPx);
+      const tauntBottom = tauntBaseline; // alphabetic ≈ glyph bottom
       globalThis.__HH_HUD_Y__ = {
         unit: 'canvasPx',
         scale: hudScale,
+        lineTop,
         lineBottom,
-        playerMeterTop: g.player.y,
-        houndMeterTop: g.enemy.y,
+        playerMeterRight: g.player.x + g.player.w,
+        enemyMeterLeft: g.enemy.x,
+        arenaLeft: g.arenaLeft ?? meterOpts.arenaLeft,
+        arenaRight: g.arenaRight ?? meterOpts.arenaRight,
         tauntTop,
-        playerGapCss: (g.player.y - lineBottom) / hudScale,
-        houndGapCss: (g.enemy.y - lineBottom) / hudScale,
-        tauntGapCss: (tauntTop - lineBottom) / hudScale,
+        tauntBottom,
+        playerGapCss: ((g.arenaLeft ?? meterOpts.arenaLeft) - (g.player.x + g.player.w)) / hudScale,
+        enemyGapCss: (g.enemy.x - (g.arenaRight ?? meterOpts.arenaRight)) / hudScale,
+        tauntGapCss: ((g.arenaLeft != null ? lineTop : lineTop) - tauntBottom) / hudScale,
       };
+      globalThis.__HH_HUD_FIELD__ = globalThis.__HH_HUD_Y__;
     }
   });
 
@@ -538,19 +548,25 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       drawTellCaption(ctx, tellCaption.current(nowMs), { x: vpW / 2, y: capTop * hudScale, scale: hudScale });
     }
 
-    // Possessed taunt. In-fight (layout C): centered strictly under the green
-    // line (>= 6 CSS px), clear of the corner meters, coloured to the speaker.
-    // End card: near the top so the veil doesn't swallow the death line.
+    // Possessed taunt. C4 in-fight: centred just ABOVE the green field top,
+    // clear of side meters, coloured to the speaker. End card: near the top.
     const taunt = tauntMachine.current();
     let afterCard = null;
     if (taunt) {
       let tx = vpW / 2;
       let ty;
-      const sidePad = meterSideReserve(vpW, vpH, meterGeomOpts()); // clear of corner meters
+      const sidePad = meterSideReserve(vpW, vpH, meterGeomOpts());
       if (cardUp) {
         ty = (56 + insetTop) * hudScale;
       } else {
-        ty = tauntUnderLineY({ lineBottom, scale: hudScale, gap: 6 });
+        const lineTop = Math.min(
+          arenaTopLineTopSy(camera, vpW, vpH, shakeX + kickX, shakeY + kickY, aw / 2),
+          lineBottom,
+        );
+        ty = tauntAboveLineY({ lineTop, scale: hudScale, gap: 6 });
+        // Keep clear of the slim top strip.
+        const minBase = stripBottomPx(vpW) + 14 * hudScale;
+        if (ty < minBase) ty = minBase;
       }
       if (!cardUp) drawPossessedTaunt(ctx, taunt, { x: tx, y: ty, scale: hudScale, sidePad });
       else afterCard = { x: tx, y: ty, scale: hudScale, sidePad };

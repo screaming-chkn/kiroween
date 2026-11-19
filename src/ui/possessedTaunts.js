@@ -177,7 +177,7 @@ export const ENEMY_LABEL_TOP_WU = 58;
 /**
  * Legacy baseline y (screen px) above the enemy's old over-mech HP label.
  * Kept for unit tests and end-card fallback; in-fight draw uses
- * {@link tauntUnderLineY} (layout C: under the green HUD / arena line).
+ * {@link tauntAboveLineY} (C4: above the green field top); legacy under-line kept.
  *
  * @param {{enemyY:number, zoom:number, scale?:number, vpH:number, insetTop?:number}} o
  * @returns {number}
@@ -210,6 +210,22 @@ export function tauntUnderLineY({ lineBottom, scale = 1, gap = 6 }) {
   const g = (Number.isFinite(gap) ? gap : 6) * s;
   const y0 = Number.isFinite(lineBottom) ? lineBottom : 0;
   return y0 + g + px;
+}
+
+/**
+ * Alphabetic baseline y (screen px) for C4 in-fight trash talk: just ABOVE the
+ * green field top border. Glyph bottoms stay ≥ gap CSS px above lineTop; the
+ * line also stays clear of the slim top bar (caller clamps if needed).
+ *
+ * @param {{lineTop:number, scale?:number, gap?:number}} o
+ * @returns {number} alphabetic baseline
+ */
+export function tauntAboveLineY({ lineTop, scale = 1, gap = 6 }) {
+  const s = scale > 0 ? scale : 1;
+  const g = (Number.isFinite(gap) ? gap : 6) * s;
+  const y0 = Number.isFinite(lineTop) ? lineTop : 0;
+  // Alphabetic baseline ≈ bottom of capital glyphs; leave gap above the border.
+  return y0 - g;
 }
 
 /**

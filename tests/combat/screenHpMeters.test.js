@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {
   SCREEN_HP_LAYOUT, screenHpTopReserve, drawScreenHpMeters,
   meterFillColor, METER_ORANGE, METER_RED, METER_RED_PCT, METER_FRAME, METER_FONT,
-  METER_LINE_GAP, arenaTopLineSy, meterTopInset, cornerVGeometry, meterSideReserve,
+  METER_LINE_GAP, METER_FIELD_GAP, arenaTopLineSy, meterTopInset, cornerVGeometry,
+  sideOutGeometry, meterSideReserve, arenaSideEdges,
 } from '../../src/combat/screenHpMeters.js';
+import { playerHudLabel, enemyHudLabel } from '../../src/combat/mechNames.js';
 
 function fakeCtx() {
   const calls = [];
@@ -18,8 +20,8 @@ function fakeCtx() {
   return ctx;
 }
 
-test('SCREEN_HP_LAYOUT is corner-v (layout C)', () => {
-  assert.equal(SCREEN_HP_LAYOUT, 'corner-v');
+test('SCREEN_HP_LAYOUT is side-out (C4)', () => {
+  assert.equal(SCREEN_HP_LAYOUT, 'side-out');
 });
 
 test('meterFillColor: orange above 25%, red at ≤25%', () => {
@@ -30,49 +32,49 @@ test('meterFillColor: orange above 25%, red at ≤25%', () => {
   assert.equal(meterFillColor(0), METER_RED);
 });
 
-test('screenHpTopReserve: corner-v reserves a short strip', () => {
+test('screenHpTopReserve: side-out and legacy corner-v', () => {
+  assert.ok(screenHpTopReserve('side-out') >= 0);
   assert.ok(screenHpTopReserve('corner-v') >= 20);
   assert.equal(screenHpTopReserve('vertical'), 0);
   assert.ok(screenHpTopReserve('top') >= 28);
 });
 
-test('drawScreenHpMeters corner-v draws both short vertical bars + labels', () => {
+test('drawScreenHpMeters side-out draws mech names + HP cur/max', () => {
   const ctx = fakeCtx();
   drawScreenHpMeters(ctx, {
-    player: { hp: 120, maxHp: 300 },
+    player: { hp: 72, maxHp: 100 },
     enemy: { hp: 220, maxHp: 440 },
-  }, 1280, 800, { layout: 'corner-v', topInset: 40, leftInset: 10, rightInset: 10 });
-  const fills = ctx.calls.filter(c => c[0] === 'fillRect');
-  assert.ok(fills.length >= 4, `expected >=4 fillRect, got ${fills.length}`);
+  }, 1280, 800, {
+    layout: 'side-out', topInset: 40, arenaLeft: 200, arenaRight: 1080, scale: 1,
+  });
   const texts = ctx.calls.filter(c => c[0] === 'fillText').map(c => c[1]);
-  assert.ok(texts.some(t => String(t) === 'HP'), texts);
-  assert.ok(texts.some(t => String(t) === 'HOUND'), texts);
-  // Orange fill used when both >25%
+  assert.ok(texts.some(t => String(t) === playerHudLabel()), texts);
+  assert.ok(texts.some(t => String(t) === enemyHudLabel()), texts);
+  assert.ok(texts.some(t => String(t) === '72/100'), texts);
+  assert.ok(texts.some(t => String(t) === '220/440'), texts);
+  assert.ok(!texts.some(t => String(t).includes('HOUND')), texts);
   const setFills = ctx.calls.filter(c => c[0] === 'set' && c[1] === 'fillStyle').map(c => c[2]);
   assert.ok(setFills.includes(METER_ORANGE), setFills);
 });
 
-test('drawScreenHpMeters corner-v uses red fill at ≤25%', () => {
+test('drawScreenHpMeters side-out uses red fill at ≤25%', () => {
   const ctx = fakeCtx();
   drawScreenHpMeters(ctx, {
-    player: { hp: 30, maxHp: 300 }, // 10%
+    player: { hp: 10, maxHp: 100 },
     enemy: { hp: 400, maxHp: 440 },
-  }, 1280, 800, { layout: 'corner-v', topInset: 40 });
+  }, 1280, 800, { layout: 'side-out', topInset: 40, arenaLeft: 200, arenaRight: 1080 });
   const setFills = ctx.calls.filter(c => c[0] === 'set' && c[1] === 'fillStyle').map(c => c[2]);
   assert.ok(setFills.includes(METER_RED), setFills);
 });
 
-test('corner-v labels use phosphor digital color', () => {
+test('side-out labels use Orbitron', () => {
   const ctx = fakeCtx();
   drawScreenHpMeters(ctx, {
     player: { hp: 120, maxHp: 300 },
     enemy: { hp: 220, maxHp: 440 },
-  }, 1280, 800, { layout: 'corner-v', topInset: 40 });
+  }, 1280, 800, { layout: 'side-out', topInset: 40, arenaLeft: 180, arenaRight: 1100 });
   const fonts = ctx.calls.filter(c => c[0] === 'set' && c[1] === 'font').map(c => c[2]);
   assert.ok(fonts.some(f => String(f).includes('Orbitron')), fonts);
-  assert.ok(!fonts.some(f => String(f).includes('VT323')), fonts);
-  const fills = ctx.calls.filter(c => c[0] === 'set' && c[1] === 'fillStyle').map(c => c[2]);
-  assert.ok(fills.includes(METER_FRAME), fills);
 });
 
 test('METER_FONT leads with Orbitron', () => {
@@ -82,7 +84,6 @@ test('METER_FONT leads with Orbitron', () => {
 
 test('arenaTopLineSy: bottom edge of the 2 wu border in screen space', () => {
   const cam = { x: 600, y: 450, zoom: 0.8 };
-  // sy(0) = (0-450)*0.8 + 400 = 40; border adds 2 * 0.8.
   assert.ok(Math.abs(arenaTopLineSy(cam, 1280, 800, 0, 0, 600) - 41.6) < 1e-9);
   assert.ok(Math.abs(arenaTopLineSy(cam, 1280, 800, 0, 5, 600) - 46.6) < 1e-9);
   assert.equal(arenaTopLineSy({ x: NaN, y: 0, zoom: 1 }, 1280, 800), 0);
@@ -94,32 +95,42 @@ test('meterTopInset: line bottom + 6 CSS px scaled', () => {
   assert.equal(meterTopInset(100, 3), 118);
 });
 
-test('corner-v: every part of both groups sits >= 6px under the line', () => {
-  for (const [vpW, vpH, scale, lineBottom] of [[1280, 800, 1, 41.6], [1170, 2532, 3, 150], [1280, 800, 1, 0]]) {
-    const inset = meterTopInset(lineBottom, scale);
-    const g = cornerVGeometry(vpW, vpH, { topInset: inset, scale, leftInset: 10 * scale, rightInset: 10 * scale });
-    for (const grp of [g.player, g.enemy]) {
-      assert.ok(grp.y >= lineBottom + 6 * scale - 1e-9, `group top ${grp.y} vs line ${lineBottom}`);
-      assert.ok(grp.x >= 0 && grp.x + grp.w <= vpW);
-    }
+test('sideOutGeometry: groups stay outside arena edges by ≥4 CSS px', () => {
+  assert.equal(METER_FIELD_GAP, 4);
+  for (const [vpW, vpH, scale, left, right] of [
+    [1280, 800, 1, 160, 1120],
+    [1688, 780, 2, 300, 1388],
+    [844, 390, 1, 148, 696],
+  ]) {
+    const g = sideOutGeometry(vpW, vpH, {
+      scale, topInset: 40, arenaLeft: left, arenaRight: right, compact: true,
+    });
+    assert.ok(g.player.x + g.player.w <= left - METER_FIELD_GAP * scale + 1e-6,
+      `player ${g.player.x + g.player.w} vs ${left}`);
+    assert.ok(g.enemy.x >= right + METER_FIELD_GAP * scale - 1e-6,
+      `enemy ${g.enemy.x} vs ${right}`);
     assert.ok(g.fontPx / scale >= 14);
   }
 });
 
-test('corner-v draw: no rect, label or frame starts above topInset', () => {
-  const ctx = fakeCtx();
-  const topInset = 60;
-  drawScreenHpMeters(ctx, { player: { hp: 77, maxHp: 140 }, enemy: { hp: 272, maxHp: 440 } },
-    1280, 800, { topInset });
-  for (const c of ctx.calls) {
-    if (c[0] === 'fillRect' || c[0] === 'strokeRect') assert.ok(c[2] >= topInset, `${c[0]} y=${c[2]}`);
-    if (c[0] === 'fillText' || c[0] === 'strokeText') assert.ok(c[3] >= topInset, `${c[0]} y=${c[3]}`);
+test('legacy corner-v geometry still places groups under a topInset', () => {
+  for (const [vpW, vpH, scale, lineBottom] of [[1280, 800, 1, 41.6], [1170, 2532, 3, 150]]) {
+    const inset = meterTopInset(lineBottom, scale);
+    const g = cornerVGeometry(vpW, vpH, { topInset: inset, scale, leftInset: 10 * scale, rightInset: 10 * scale });
+    for (const grp of [g.player, g.enemy]) {
+      assert.ok(grp.y >= lineBottom + 6 * scale - 1e-9);
+    }
   }
-  const baselines = ctx.calls.filter(c => c[0] === 'set' && c[1] === 'textBaseline').map(c => c[2]);
-  assert.ok(baselines.every(b => b === 'top'), baselines);
 });
 
 test('meterSideReserve leaves room for the label groups', () => {
-  assert.ok(meterSideReserve(1280, 800, {}) > 40);
-  assert.ok(meterSideReserve(390, 844, {}) < 390 / 2);
+  assert.ok(meterSideReserve(1280, 800, { layout: 'side-out', arenaLeft: 200, arenaRight: 1080 }) > 40);
+  assert.ok(meterSideReserve(390, 844, { layout: 'side-out', arenaLeft: 40, arenaRight: 350 }) < 390 / 2);
+});
+
+test('arenaSideEdges returns finite left/right', () => {
+  const cam = { x: 600, y: 450, zoom: 0.5 };
+  const e = arenaSideEdges(cam, 1280, 800, 1200, {});
+  assert.ok(Number.isFinite(e.left) && Number.isFinite(e.right));
+  assert.ok(e.left < e.right);
 });

@@ -94,8 +94,11 @@ for (const vp of [PHONE, DESK]) {
     assert.equal(hitTestTouchControl(c.dash.x, c.dash.y, vp.width, vp.height), 'dash');
   });
   test(`${label}: bottom-left is stick, top-right is null`, () => {
-    assert.equal(hitTestTouchControl(vp.width * 0.2, vp.height * 0.8, vp.width, vp.height), 'stick');
-    assert.equal(hitTestTouchControl(vp.width * 0.9, vp.height * 0.05, vp.width, vp.height), null);
+    // Stick zone width follows the active layout (portrait ~0.4, landscape gutter).
+    const L = touchLayoutFor(vp.width, vp.height);
+    const sx = Math.min(0.15, L.stick.wFrac * 0.5) * vp.width;
+    assert.equal(hitTestTouchControl(sx, vp.height * 0.8, vp.width, vp.height), 'stick');
+    assert.equal(hitTestTouchControl(vp.width * 0.5, vp.height * 0.05, vp.width, vp.height), null);
   });
 }
 
@@ -433,7 +436,7 @@ test('touchLayoutFor picks by orientation', () => {
   assert.equal(touchLayoutFor(844, 390), TOUCH_LAYOUT_LANDSCAPE);
   assert.equal(touchLayoutFor(390, 844), TOUCH_LAYOUT);
   assert.equal(touchLayoutFor(500, 500), TOUCH_LAYOUT);
-  assert.equal(LANDSCAPE_GUTTER_FRAC, 0.22);
+  assert.equal(LANDSCAPE_GUTTER_FRAC, 0.176);
 });
 
 test('844x390: dash, fire and stick rest circles lie inside the gutters', () => {

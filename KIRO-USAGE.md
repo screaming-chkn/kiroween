@@ -304,3 +304,10 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Shipped S fixes:** title `.hh-title-keys` brighter/larger; `TELL_CAPTION_MS` 3500→5000; Sever Wall spawn label (`severWallLabelText`, 3.5s) drawn in `combatRenderer`. Deferred M/RISKY LV1 damage soften.
 - **Tests:** `npm test` green. No HAUNT_LEVELS / balance retune.
 - **Re-shots:** slim title + LV3 sever label; prior y-check still valid (`shots-hud-c3/REVISION.md`).
+
+## C4 HUD — landscape-first side meters + mech names (2026-11-19 ~12:30 PM PT) — branch feat/hud-c
+- **Kiro used: partial.** One `kiro-cli` v3 Auto run with `--trust-tools=fs_read,fs_write` started on the C4 prompt (incl. mirror-fair + ~20% field/gutter nudge). It read several HUD modules, then failed a non-fs locate tool in non-interactive mode. Build agent finished the implementation by hand to match the prompt. Transcript kept under the team deploy kiro-proof hud-c folder.
+- **Credits (GitHub / Kiro Pro):** 287.47 → 287.95 of 877 (~0.48 used this run). Reset 2026-12-01.
+- **Files (feature):** `src/combat/mechNames.js` (new), `topBarHud.js`, `screenHpMeters.js`, `src/ui/possessedTaunts.js` (`tauntAboveLineY`), `src/engine/touch.js` (gutter 0.176), `src/main.js` (side-out + above-field probe), tests (`landscapeHud`, `screenHpMeters`, `hud`, `touch`, `possessedTaunts`, new `mechNames` + `mirrorFair`), `.kiro/specs/13-hud-meters/` R10–R11, `build-review/shots-hud-c4.mjs` + shots.
+- **Out of scope kept:** no HAUNT_LEVELS / damage / balance retune; Sever Wall geometry unchanged (already mid-X); no merge; no game-title rename.
+- Hooks: not run (work outside IDE). `npm test` green by hand.

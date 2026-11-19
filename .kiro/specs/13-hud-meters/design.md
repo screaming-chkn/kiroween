@@ -174,3 +174,11 @@ Portrait is unchanged. Test: `tests/combat/landscapeHud.test.js`.
 - Taunt tests in `tests/ui/possessedTaunts.test.js` cover `tauntUnderLineY` and
   `tauntColor`.
 - Draw functions get no pixel tests. Layout is checked by screenshots (task 10).
+
+## C4 — landscape-first side-out (revision)
+Primary viewport is landscape phone. HP meters move into the side gutters just
+outside the green arena borders (`sideOutGeometry` / `arenaSideEdges`). Trash
+talk moves above the field top (`tauntAboveLineY`). Top strip drops POWER/READY/HP
+cells and keeps MM:SS (+ LV). Mech names replace player-facing HOUND. Gutter and
+strip height nudged ~20% smaller than C3 for a larger fight field. Mirror-fair
+Sever Wall + spawns asserted by `tests/combat/mirrorFair.test.js`.

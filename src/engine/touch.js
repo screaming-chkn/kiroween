@@ -69,16 +69,17 @@ export const TOUCH_LAYOUT = Object.freeze({
 
 /** Landscape phones: controls live in the side gutters, never over the arena. */
 export const TOUCH_LAYOUT_LANDSCAPE = Object.freeze({
-  stick: Object.freeze({ xFrac: 0, yFrac: 0.25, wFrac: 0.22, hFrac: 0.75 }),
+  // C4: gutters ~20% smaller than C3; stick/fire still ≥44 CSS px on 844×390.
+  stick: Object.freeze({ xFrac: 0, yFrac: 0.25, wFrac: 0.176, hFrac: 0.75 }),
   stickRadiusFrac: 0.14,
   deadzone: 0.18,
-  fire: Object.freeze({ cxFrac: 0.89, cyFrac: 0.74, rFrac: 0.15 }),
-  dash: Object.freeze({ cxFrac: 0.89, cyFrac: 0.36, rFrac: 0.11 }),
-  stickRest: Object.freeze({ xFrac: 0.11, yFrac: 0.72 }),
+  fire: Object.freeze({ cxFrac: 0.912, cyFrac: 0.74, rFrac: 0.15 }),
+  dash: Object.freeze({ cxFrac: 0.912, cyFrac: 0.36, rFrac: 0.11 }),
+  stickRest: Object.freeze({ xFrac: 0.088, yFrac: 0.72 }),
 });
 
 /** Width fraction of each side gutter reserved for controls in landscape. */
-export const LANDSCAPE_GUTTER_FRAC = 0.22;
+export const LANDSCAPE_GUTTER_FRAC = 0.176; // C4: ~20% smaller than C3 0.22
 
 /**
  * Pick the touch layout for a viewport.
