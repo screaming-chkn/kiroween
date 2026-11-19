@@ -77,8 +77,10 @@ import {
   createTauntMachine, isDemoTaunts, drawPossessedTaunt, specTauntLine, tauntBaselineY,
 }                              from './ui/possessedTaunts.js';
 import {
-  readHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel, MAX_HAUNT_LEVEL,
+  readHauntLevel, setHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel, MAX_HAUNT_LEVEL,
 }                              from './ui/hauntLevel.js';
+import { createTellCaption, drawTellCaption } from './ui/tellCaption.js';
+import { parseLevelParam } from './ui/levelParam.js';
 import { resetHpFx }           from './ui/phoneCombatUi.js';
 import {
   createHauntFx, tickHaunt, startGhost, gridAlpha, drawBorderFog,
@@ -156,6 +158,10 @@ function boot() {
   // First gesture unlocks Web Audio (iOS); DOM buttons get a UI click.
   installAudioGestures(document);
   applySettings(settings);
+
+  // ?lv=1..5 jumps straight to a HAUNT LV (judges can see the ramp). Absent or invalid: no change.
+  const lvParam = parseLevelParam(location.search);
+  if (lvParam !== null) setHauntLevel(lvParam);
 
   // Detect reduced-motion preference.
   const prefersReduced =
@@ -280,6 +286,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   tauntMachine.reset();
   tauntMachine.onSpawn(performance.now());
   let prevWindup = arenaState.enemy.windupRemainingMs ?? 0;
+  const tellCaption = createTellCaption({ touchUi: isTouchUi() });
   let cardShownAtMs = 0;     // when the end card first drew (count-up clock)
 
   // ── Input ──────────────────────────────────────────────────────────────────
@@ -507,6 +514,13 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     });
 
     const cardUp = shouldDrawEndCard();
+
+    // One-time tell caption (first windup ever), under the HUD row.
+    if (!cardUp) {
+      const hr = phonePortrait ? phoneHudRect(phoneHudScale(uiDpr)) : null;
+      const capTop = hr ? (hr.y + hr.h) / hudScale + 8 : 32 + insetTop;
+      drawTellCaption(ctx, tellCaption.current(nowMs), { x: vpW / 2, y: capTop * hudScale, scale: hudScale });
+    }
 
     // Possessed taunt. While playing it floats above the enemy (screen space,
     // clamped); once the end card is up it sits near the top so the veil
@@ -740,7 +754,10 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
 
     // Taunt on the enemy's windup edge (0 → >0).
     const windupNow = arenaState.enemy.windupRemainingMs ?? 0;
-    if (prevWindup <= 0 && windupNow > 0) tauntMachine.onWindup(performance.now());
+    if (prevWindup <= 0 && windupNow > 0) {
+      tauntMachine.onWindup(performance.now());
+      tellCaption.onWindup(performance.now());
+    }
     prevWindup = windupNow;
 
     // Taunts on player damage and on the first drop to 25% HP or less.
