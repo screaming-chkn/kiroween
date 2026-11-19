@@ -30,6 +30,7 @@
 
 import { endCardText } from './endcard.js';
 import { drawTank, updateHullHeading, TANK_DRAW_SCALE } from '../ui/tankWire.js';
+import { severWallLabelText } from './obstacle.js';
 import {
   formatHudStat,
   powerStateLabel,
@@ -102,14 +103,16 @@ export function drawWorld(ctx, state, gridAlpha = 0.12) {
   // Inset by 1 px so the stroke sits wholly inside the arena rect.
   ctx.strokeRect(1, 1, width - 2, height - 2);
 
-  if (state.arena.wall) drawSeverWall(ctx, state.arena.wall);
+  if (state.arena.wall) drawSeverWall(ctx, state.arena.wall, state.elapsedMs ?? 0);
 }
 
 /**
  * Sever Wall (LV3+): void-filled slab with a double wireframe stroke, bone
  * outside and phosphor inside, so it reads on a phone. World space, opaque.
+ * For the first SEVER_WALL_LABEL_MS of the fight, a centred "SEVER WALL"
+ * callout sits just above the slab (under the HUD / meters in screen space).
  */
-function drawSeverWall(ctx, wall) {
+function drawSeverWall(ctx, wall, elapsedMs = 0) {
   const half = wall.thickness / 2;
   const x = Math.min(wall.x1, wall.x2) - half;
   const y = Math.min(wall.y1, wall.y2) - half;
@@ -125,6 +128,20 @@ function drawSeverWall(ctx, wall) {
   ctx.strokeStyle = C.phosphor;
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+
+  const label = severWallLabelText(elapsedMs, wall);
+  if (label) {
+    const cx = x + w / 2;
+    const cy = y - 18; // just above the slab in world units
+    ctx.font = '700 14px Orbitron, "Share Tech Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = C.void;
+    ctx.fillStyle = C.bone;
+    ctx.strokeText(label, cx, cy);
+    ctx.fillText(label, cx, cy);
+  }
   ctx.restore();
 }
 

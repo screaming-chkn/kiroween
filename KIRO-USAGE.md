@@ -298,3 +298,9 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Kiro authored:** landscape compact top bar (HP/READY/timer/HOUND/LV; EN/POWER dropped), compact meters via arenaSideInsets, `tests/combat/landscapeHud.test.js`, package.json test:combat entry, design.md landscape note. Portrait path unchanged.
 - **Build-agent follow-up:** `globalThis.__HH_HUD_Y__` probe in `main.js` (canvas px + CSS gaps); `build-review/shots-hud-c3.mjs` + serve-hud-c.sh module list; captured shots under build-box `build-review/shots-hud-c3/` with **all required phone y-checks PASS** (gapCss 6.00). Shots are build-agent work (no Kiro credits).
 - **Tests:** `npm test` green (includes landscapeHud).
+
+## HUD C3 S-revision (2026-11-19 ~11:42 AM PT, build agent) — branch feat/hud-c, NOT merged
+- **Kiro used: no.** Build-agent only (0 credits). Source: Eggbot cold pass `build-host/crew/trials/eggbot-v2/cold-passes/2026-11-19-c3-60b60c5.md`.
+- **Shipped S fixes:** title `.hh-title-keys` brighter/larger; `TELL_CAPTION_MS` 3500→5000; Sever Wall spawn label (`severWallLabelText`, 3.5s) drawn in `combatRenderer`. Deferred M/RISKY LV1 damage soften.
+- **Tests:** `npm test` green. No HAUNT_LEVELS / balance retune.
+- **Re-shots:** slim title + LV3 sever label; prior y-check still valid (`shots-hud-c3/REVISION.md`).

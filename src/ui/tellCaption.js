@@ -10,7 +10,7 @@
  */
 
 export const TELL_CAPTION_KEY = 'hh-tell-caption-seen-v2';
-export const TELL_CAPTION_MS = 3500;
+export const TELL_CAPTION_MS = 5000;
 
 /** Caption text for the current controls (SHIFT on desktop, DASH button on touch). */
 export function tellCaptionText(touchUi) {

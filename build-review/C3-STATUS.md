@@ -1,22 +1,20 @@
-# C3 STATUS — landscape + shots done (2026-11-19 ~11:38 AM PT)
+# C3 STATUS — S-revision done (2026-11-19 ~11:45 AM PT)
 
 Branch `feat/hud-c` **not merged**. Main stays `925696d`.
 
 ## WIP tip
-Tip: `65f692db61522c2cec74a06cf5e4d4e8d1e74791` (landscape + shots docs pin; feature `959fdcf`). Worktree: feature branch only.
+Tip after S-revision commit (git log).
 
 ## Done
-- **C3b HUD:** below-line meters (≥6px), top bar HP + MM:SS, Orbitron — `47c7948`.
-- **Tanks (draw-only):** scale 1.5 + chamfer — `3875467`.
-- **Sever Wall:** LV3+ only — `1d95b44`.
-- **Landscape:** compact top bar + arena-corner meters; sticks clear; portrait regression OK. y-probe `__HH_HUD_Y__`.
-- **Shots + y-check:** `build-review/shots-hud-c3/` (build box) + `y-measurements.md` — **all required phone gaps PASS (6.00 CSS px)**.
-- **LV1 harness** (earlier): firstTimer 34.7%/26.2s; medium 66.7%/27.2s.
+- C3b HUD, tanks, Sever Wall, landscape, shots + y-check PASS.
+- Eggbot cold pass on `60b60c5` filed.
+- **S-revision shipped:** brighter/larger title keys; DASH caption 5s; SEVER WALL spawn label 3.5s. No HP/damage retune. M/RISKY deferred.
+- Playtest notes: `build-review/C3-PLAYTEST.md`. Orientation: support both, landscape first (inferred).
 
 ## Still open
-1. Two-bot playtest (harness + Eggbot v2) + one revision.
-2. Shots / playtest report to BotKing; owner lock / merge gate.
-3. Optional: full LV3–5 balance re-check with Sever Wall.
+1. Owner / BotKing lock + merge gate.
+2. Optional real 390×844 / 844×390 human feel pass.
+3. Optional LV3–5 balance re-check with wall.
 
 ## Do not
 - Merge to main / public deploy / spend

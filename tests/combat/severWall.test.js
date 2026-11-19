@@ -9,7 +9,7 @@ import { createArena, updateArena } from '../../src/combat/arena.js';
 import { createProjectile, stepProjectile } from '../../src/combat/projectile.js';
 import { moveMech, createMech } from '../../src/combat/mech.js';
 import { stepEnemy, createEnemy } from '../../src/combat/enemy.js';
-import { wallForLevel } from '../../src/combat/obstacle.js';
+import { wallForLevel, severWallLabelText, SEVER_WALL_LABEL_MS } from '../../src/combat/obstacle.js';
 import { SEVER_WALL_X, SEVER_WALL_Y } from '../../src/combat/config.js';
 
 let failed = 0;
@@ -85,6 +85,17 @@ test('bot head-on at the wall slides around instead of sticking', () => {
   const player = { x: 200, y: SEVER_WALL_Y, hp: 100 };
   for (let i = 0; i < 400; i++) e = stepEnemy(e, player, DT, arena, i).enemy;
   assert.ok(e.x < SEVER_WALL_X - 40, `passed the wall, x=${e.x}`);
+});
+
+
+test('severWallLabelText only while wall present and elapsed < window', () => {
+  const w = wallForLevel(3);
+  assert.equal(severWallLabelText(0, w), 'SEVER WALL');
+  assert.equal(severWallLabelText(SEVER_WALL_LABEL_MS - 1, w), 'SEVER WALL');
+  assert.equal(severWallLabelText(SEVER_WALL_LABEL_MS, w), '');
+  assert.equal(severWallLabelText(100, null), '');
+  assert.equal(severWallLabelText(100, undefined), '');
+  assert.equal(SEVER_WALL_LABEL_MS, 3500);
 });
 
 if (failed) { console.error(`${failed} failed`); process.exit(1); }

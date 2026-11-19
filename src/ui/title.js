@@ -29,7 +29,7 @@ const CSS = `
 .hh-title-garage{background:transparent;border:1px solid #8F9A92;color:#E8E2D0;cursor:pointer;
   font-family:inherit;font-size:20px;letter-spacing:.12em;padding:8px 20px;min-width:44px;min-height:44px}
 .hh-title-garage:focus-visible,.hh-title-go:focus-visible{outline:2px solid #FF8A3D;outline-offset:2px}
-.hh-title-keys{font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:13px;color:#8F9A92;letter-spacing:.06em}
+.hh-title-keys{font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(15px,3.2vw,18px);color:#E8E2D0;letter-spacing:.06em}
 .hh-title-lv{position:absolute;top:calc(10px + env(safe-area-inset-top));right:14px;font-size:18px;color:#FF8A3D;letter-spacing:.1em}
 @keyframes hh-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.97)}}
 @keyframes hh-fog{from{transform:translate(-4%,2%) scale(1)}to{transform:translate(4%,-3%) scale(1.08)}}
