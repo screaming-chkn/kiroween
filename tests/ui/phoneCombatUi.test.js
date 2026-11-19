@@ -13,6 +13,7 @@ import {
   EDGE_ARROW, edgeArrowPlacement, drawEdgeArrow,
   hitFlash, shouldPulseHp, hpPulseAlpha, resetHpFx,
 } from '../../src/ui/phoneCombatUi.js';
+import { TANK_DRAW_SCALE, TANK_SPECS } from '../../src/ui/tankWire.js';
 
 let passed = 0;
 let failed = 0;
@@ -174,7 +175,8 @@ test('compactHpLayout', () => {
 });
 
 test('compactHpLayout offsets: enemy lifted by scaled hull radius, player unchanged', () => {
-  near(compactHpLayout('enemy').offsetY, 30 + 1.3 * (40 / 2 + 28 / 2));
+  const e = TANK_SPECS.enemy;
+  near(compactHpLayout('enemy').offsetY, 30 + TANK_DRAW_SCALE * (e.hull.L / 2 + e.barrelLen / 2));
   assert.equal(compactHpLayout('player').offsetY, 30);
 });
 test('drawCompactHp enemy label uses a 1 px outline', () => {

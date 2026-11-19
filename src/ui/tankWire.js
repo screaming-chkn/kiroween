@@ -12,7 +12,7 @@ import { shouldDrawEnemy } from './killMoment.js';
 export const TILT = { x: 0.35, y: 0.7 };
 
 /** Draw-time scale around the tank origin (hitboxes unchanged). */
-export const TANK_DRAW_SCALE = 1.3;
+export const TANK_DRAW_SCALE = 1.5;
 
 /** Edge look: 'solid' | 'dashed' | 'tech' | 'dashed-tech'. Render only; default dashed-tech. */
 export let EDGE_STYLE = 'dashed-tech';
@@ -75,13 +75,39 @@ export function boxCorners(cx, cy, z0, L, W, H, heading) {
   ];
 }
 
+/** Octagon prism edges: bottom loop 0-7, top loop 8-15, verticals i -> i+8. */
+export const PRISM_EDGES = [];
+for (let i = 0; i < 8; i++) {
+  PRISM_EDGES.push([i, (i + 1) % 8], [8 + i, 8 + ((i + 1) % 8)], [i, i + 8]);
+}
+
+/**
+ * Chamfered (cut-corner) prism: the rectangle footprint with each corner cut
+ * by `cut` along both sides. 8 points at z0 then 8 at z0 + H, projected.
+ */
+export function prismCorners(cx, cy, z0, L, W, H, heading, cut) {
+  const hl = L / 2, hw = W / 2, c = Math.min(cut, hl * 0.9, hw * 0.9);
+  const loc = [
+    [hl - c, hw], [hl, hw - c], [hl, -hw + c], [hl - c, -hw],
+    [-hl + c, -hw], [-hl, -hw + c], [-hl, hw - c], [-hl + c, hw],
+  ];
+  const fx = Math.cos(heading), fy = Math.sin(heading);
+  const lx = Math.sin(heading), ly = -Math.cos(heading);
+  const ground = loc.map(([a, b]) => ({ x: cx + fx * a + lx * b, y: cy + fy * a + ly * b }));
+  return [...ground.map(p => project(p.x, p.y, z0)), ...ground.map(p => project(p.x, p.y, z0 + H))];
+}
+
+/** Chamfer size as a fraction of the shorter side. */
+export const HULL_CUT = 0.28;
+export const TURRET_CUT = 0.34;
+
 export const TANK_SPECS = {
   player: {
-    hull: { L: 34, W: 24, H: 9 }, turret: { L: 16, W: 13, H: 7 }, barrelLen: 24, twin: false,
+    hull: { L: 34, W: 24, H: 9 }, turret: { L: 16, W: 13, H: 7 }, barrelLen: 27, twin: false,
     stroke: '#47FF9A', turretStroke: '#47FF9A', fill: '#47FF9A', fillAlpha: 0.14, base: 'hover',
   },
   enemy: {
-    hull: { L: 40, W: 32, H: 12 }, turret: { L: 20, W: 17, H: 8 }, barrelLen: 28, twin: true,
+    hull: { L: 40, W: 32, H: 12 }, turret: { L: 20, W: 17, H: 8 }, barrelLen: 31, twin: true,
     stroke: '#FF3B5C', turretStroke: '#FF3B5C', fill: '#FF3B5C', fillAlpha: 0.16, base: 'treads',
   },
 };
@@ -107,7 +133,11 @@ export function tankGeometry(kind, x, y, hullHeading, turretAngle) {
     const b = project(sx + fx * s.barrelLen, sy + fy * s.barrelLen, z);
     return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
   });
-  return { hull, turret, barrels, footprint };
+  const hullPrism = prismCorners(x, y, 0, s.hull.L, s.hull.W, s.hull.H, hullHeading,
+    HULL_CUT * Math.min(s.hull.L, s.hull.W));
+  const turretPrism = prismCorners(x, y, s.hull.H, s.turret.L, s.turret.W, s.turret.H, turretAngle,
+    TURRET_CUT * Math.min(s.turret.L, s.turret.W));
+  return { hull, turret, hullPrism, turretPrism, barrels, footprint };
 }
 
 /**
@@ -127,7 +157,7 @@ export function updateHullHeading(prev, prevPos, pos, fallback) {
 
 function strokeEdges(ctx, pts) {
   ctx.beginPath();
-  for (const [i, j] of BOX_EDGES) {
+  for (const [i, j] of PRISM_EDGES) {
     ctx.moveTo(pts[i].x, pts[i].y);
     ctx.lineTo(pts[j].x, pts[j].y);
   }
@@ -136,14 +166,14 @@ function strokeEdges(ctx, pts) {
 
 function fillTop(ctx, pts) {
   ctx.beginPath();
-  ctx.moveTo(pts[4].x, pts[4].y);
-  for (let k = 5; k <= 7; k++) ctx.lineTo(pts[k].x, pts[k].y);
+  ctx.moveTo(pts[8].x, pts[8].y);
+  for (let k = 9; k <= 15; k++) ctx.lineTo(pts[k].x, pts[k].y);
   ctx.closePath();
   ctx.fill();
 }
 
 /** Edges on the front face (corner indices 0,1,4,5). */
-const FRONT_EDGES = [[0, 1], [4, 5], [0, 4], [1, 5]];
+const FRONT_EDGES = [[1, 2], [9, 10], [1, 9], [2, 10]];
 
 function strokeSome(ctx, pts, edges) {
   ctx.beginPath();
@@ -206,10 +236,10 @@ function drawMuzzle(ctx, px, py, ang, flash, color, glow) {
 function drawCornerTicks(ctx, pts, box) {
   const len = 0.14 * Math.min(box.L, box.W);
   ctx.beginPath();
-  for (let i = 0; i < 8; i++) {
-    const base = i < 4 ? 0 : 4;
-    const loopNb = base + ((i - base + 1) % 4);
-    const vertNb = i < 4 ? i + 4 : i - 4;
+  for (let i = 0; i < 16; i++) {
+    const base = i < 8 ? 0 : 8;
+    const loopNb = base + ((i - base + 1) % 8);
+    const vertNb = i < 8 ? i + 8 : i - 8;
     for (const j of [loopNb, vertNb]) {
       const dx = pts[j].x - pts[i].x, dy = pts[j].y - pts[i].y;
       const d = Math.hypot(dx, dy) || 1;
@@ -273,10 +303,10 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   // b) faint hull top fill
   ctx.globalAlpha = s.fillAlpha;
   ctx.fillStyle = s.fill;
-  fillTop(ctx, g.hull);
+  fillTop(ctx, g.hullPrism);
 
   // c) wide additive glow, then crisp 1px with brighter front edges
-  for (const [pts, col] of [[g.hull, s.stroke], [g.turret, s.turretStroke]]) {
+  for (const [pts, col] of [[g.hullPrism, s.stroke], [g.turretPrism, s.turretStroke]]) {
     widePass(ctx, s.glow, 8, 0.12, () => strokeEdges(ctx, pts)); // under-halo
     widePass(ctx, s.glow, 5.5, 0.38, () => strokeEdges(ctx, pts)); // mid halo
     ctx.lineWidth = 1;
@@ -287,7 +317,7 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
     if (dashed) ctx.setLineDash([]);
     if (tech) {
       ctx.strokeStyle = s.tick ?? s.turretStroke;
-      drawCornerTicks(ctx, pts, pts === g.hull ? s.hull : s.turret);
+      drawCornerTicks(ctx, pts, pts === g.hullPrism ? s.hull : s.turret);
     }
     ctx.strokeStyle = tint(col, 0.35);
     strokeSome(ctx, pts, FRONT_EDGES);
@@ -302,6 +332,13 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   const barrelPath = () => {
     ctx.beginPath();
     for (const b of bs) {
+      const dx = b.x2 - b.x1, dy = b.y2 - b.y1, d = Math.hypot(dx, dy) || 1;
+      const nx = -dy / d, ny = dx / d, w0 = 2.2, w1 = 0.4;
+      // two converging edges (sharp taper) plus the centre line
+      ctx.moveTo(b.x1 + nx * w0, b.y1 + ny * w0);
+      ctx.lineTo(b.x2 + nx * w1, b.y2 + ny * w1);
+      ctx.moveTo(b.x1 - nx * w0, b.y1 - ny * w0);
+      ctx.lineTo(b.x2 - nx * w1, b.y2 - ny * w1);
       ctx.moveTo(b.x1, b.y1);
       ctx.lineTo(b.x2, b.y2);
     }
@@ -309,11 +346,25 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   };
   widePass(ctx, s.glow, 5, 0.18, barrelPath);
   ctx.globalAlpha = 1;
-  ctx.lineWidth = 2.4;
+  ctx.lineWidth = 1.4;
   ctx.strokeStyle = s.turretStroke;
   if (dashed) ctx.setLineDash(dash);
   barrelPath();
   if (dashed) ctx.setLineDash([]);
+
+  // antenna spike: thin needle rising from the rear of the turret
+  {
+    const rear = project(x - Math.cos(turretAngle) * s.turret.L * 0.3, y - Math.sin(turretAngle) * s.turret.L * 0.3,
+      s.hull.H + s.turret.H);
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = s.turretStroke;
+    ctx.beginPath();
+    ctx.moveTo(rear.x - 1.2, rear.y);
+    ctx.lineTo(rear.x + 1.5, rear.y - 10.5);
+    ctx.lineTo(rear.x + 1.2, rear.y);
+    ctx.stroke();
+  }
 
   // muzzle flash at the recoiled tip of the firing barrel
   if (fx0.flash > 0) {
@@ -325,8 +376,8 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   if (flashIntensity > 0) {
     ctx.globalAlpha = flashIntensity;
     ctx.fillStyle = '#E8E2D0';
-    fillTop(ctx, g.hull);
-    fillTop(ctx, g.turret);
+    fillTop(ctx, g.hullPrism);
+    fillTop(ctx, g.turretPrism);
   }
   ctx.restore();
 }
@@ -334,7 +385,8 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
 /** Hull-only wireframe afterimage. */
 export function drawTankGhost(ctx, kind, x, y, heading, alpha) {
   const s = TANK_SPECS[kind];
-  const pts = boxCorners(x, y, 0, s.hull.L, s.hull.W, s.hull.H, heading);
+  const pts = prismCorners(x, y, 0, s.hull.L, s.hull.W, s.hull.H, heading,
+    HULL_CUT * Math.min(s.hull.L, s.hull.W));
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(TANK_DRAW_SCALE, TANK_DRAW_SCALE);

@@ -121,11 +121,11 @@ test('drawTank flash adds a fill', () => {
   assert.ok(b.fills > a.fills);
 });
 
-test('drawTankGhost draws 12 hull edges, balanced', () => {
+test('drawTankGhost draws 24 chamfered hull edges, balanced', () => {
   const c = fakeCtx();
   drawTankGhost(c, 'player', 0, 0, 0, 0.3);
   assert.equal(c.saves, c.restores);
-  assert.equal(c.segs, 24);
+  assert.equal(c.segs, 48);
 });
 
 function dashCtx() {

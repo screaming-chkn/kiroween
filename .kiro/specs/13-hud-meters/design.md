@@ -139,6 +139,8 @@ Pure helpers over a plain state `{ active, grabbed, spawned, x, y }`:
 - Tests: `tests/combat/screenHpMeters.test.js` (line helper, ≥6 px, Orbitron),
   `tests/combat/hud.test.js` (clock, cell order, colours, layout).
 
+- Mech art (C3): `TANK_DRAW_SCALE` 1.3 to 1.5 (draw only; `mech.js` collision radii untouched). Hull and turret are chamfered octagon prisms (`prismCorners`, `PRISM_EDGES`), the barrel is a tapered dual-edge stroke (3 px longer) and a needle antenna sits on the turret. `boxCorners`, `footprint` and palettes are unchanged; `drawTankGhost` uses the same chamfered hull and scale.
+
 ## Budgets and safety
 - No per-frame allocation is added by the meters. The ghost perk is one small
   object, replaced only on spawn and grab.

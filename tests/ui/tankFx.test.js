@@ -38,8 +38,8 @@ const st = (elapsedMs, projectiles = [], phase = 'playing') => ({ elapsedMs, pro
 
 console.log('\nsrc/ui/tankFx.js\n');
 
-test('TANK_DRAW_SCALE is 1.3; geometry sizes unchanged', () => {
-  assert.equal(TANK_DRAW_SCALE, 1.3);
+test('TANK_DRAW_SCALE is 1.5; hull footprint sizes unchanged', () => {
+  assert.equal(TANK_DRAW_SCALE, 1.5);
   const { footprint } = tankGeometry('player', 50, 60, 0.7, 0);
   for (const p of footprint) assert.ok(Math.hypot(p.x - 50, p.y - 60) <= 1.1 * 20);
 });
