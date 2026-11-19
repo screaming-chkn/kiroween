@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import {
   TILT, project, BOX_EDGES, boxCorners, TANK_SPECS, tankGeometry,
   updateHullHeading, drawTank, drawTankGhost, EDGE_STYLE, setEdgeStyle, TANK_PALETTE, setTankPalette,
+  TANK_STYLE, TANK_STYLE_NAMES, setTankStyle, visualSpecs, TANK_DRAW_SCALE,
 } from '../../src/ui/tankWire.js';
 
 let passed = 0;
@@ -39,6 +40,18 @@ function fakeCtx() {
 }
 
 console.log('\nsrc/ui/tankWire.js\n');
+
+test('default TANK_STYLE is wheeled; hitbox footprint uses TANK_SPECS not visual', () => {
+  assert.equal(TANK_STYLE, 'wheeled');
+  assert.ok(TANK_STYLE_NAMES.includes('wheeled'));
+  assert.equal(TANK_DRAW_SCALE, 1.5);
+  const { footprint } = tankGeometry('player', 50, 60, 0.7, 0);
+  const col = TANK_SPECS.player.hull;
+  // Footprint half-diagonal of collision hull (not the taller visual 8x8)
+  const maxR = Math.hypot(col.L / 2, col.W / 2) * 1.15;
+  for (const p of footprint) assert.ok(Math.hypot(p.x - 50, p.y - 60) <= maxR);
+});
+
 
 test('project() applies the 3/4 tilt', () => {
   assert.deepEqual(TILT, { x: 0.35, y: 0.7 });
@@ -79,12 +92,16 @@ test('enemy hull is bigger than player in L, W and H', () => {
 });
 
 test('turret front direction matches turretAngle', () => {
-  for (const ang of [0, Math.PI / 2, Math.PI]) {
-    const g = tankGeometry('player', 100, 100, 0.3, ang);
-    const mid = { x: (g.turret[0].x + g.turret[1].x) / 2, y: (g.turret[0].y + g.turret[1].y) / 2 };
-    const c = project(100, 100, TANK_SPECS.player.hull.H);
-    near(Math.atan2(mid.y - c.y, mid.x - c.x), Math.atan2(Math.sin(ang), Math.cos(ang)), 1e-6);
-  }
+  const prev = TANK_STYLE;
+  try {
+    setTankStyle('mech');
+    for (const ang of [0, Math.PI / 2, Math.PI]) {
+      const g = tankGeometry('player', 100, 100, 0.3, ang);
+      const mid = { x: (g.turret[0].x + g.turret[1].x) / 2, y: (g.turret[0].y + g.turret[1].y) / 2 };
+      const c = project(100, 100, TANK_SPECS.player.hull.H);
+      near(Math.atan2(mid.y - c.y, mid.x - c.x), Math.atan2(Math.sin(ang), Math.cos(ang)), 1e-6);
+    }
+  } finally { setTankStyle(prev); }
 });
 
 test('enemy has 2 barrels, player 1', () => {
@@ -156,7 +173,7 @@ test('dashed/tech/dashed-tech draws balanced; dashed styles reset lineDash', () 
       drawTank(c, 'enemy', 100, 100, 0.5, 1.0, 0);
       assert.equal(c.saves, c.restores, style);
       if (style !== 'tech') {
-        const L = TANK_SPECS.enemy.hull.L;
+        const L = visualSpecs('enemy').hull.L;
         assert.ok(c.dashes.length > 0, style);
         assert.deepEqual(c.dashes[0], [Math.max(4, 0.16 * L), Math.max(2, 0.06 * L)]);
         assert.deepEqual(c.dashes[c.dashes.length - 1], [], style);
@@ -166,14 +183,16 @@ test('dashed/tech/dashed-tech draws balanced; dashed styles reset lineDash', () 
 });
 
 test('tech draws more segments than solid; solid never dashes', () => {
+  const prev = TANK_STYLE;
   try {
+    setTankStyle('mech');
     setEdgeStyle('solid');
     const a = dashCtx(); drawTank(a, 'player', 0, 0, 0, 0, 0);
     assert.equal(a.dashes.length, 0);
     setEdgeStyle('tech');
     const b = dashCtx(); drawTank(b, 'player', 0, 0, 0, 0, 0);
     assert.ok(b.segs > a.segs, `${b.segs} > ${a.segs}`);
-  } finally { setEdgeStyle('dashed-tech'); }
+  } finally { setEdgeStyle('dashed-tech'); setTankStyle(prev); }
 });
 
 function colorCtx() {

@@ -29,7 +29,7 @@ export const TOUCH_CONTROLS_CSS = `
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  font-family: 'VT323', 'Share Tech Mono', monospace;
+  font-family: 'Press Start 2P', 'VT323', 'Share Tech Mono', monospace;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 .hh-touch[hidden] { display: none; }
@@ -38,27 +38,34 @@ export const TOUCH_CONTROLS_CSS = `
 .hh-touch__btn {
   position: absolute;
   border-radius: 50%;
-  border: 2px solid #39FF88;
-  background: rgba(57, 255, 136, 0.08);
   pointer-events: none;
   box-sizing: border-box;
 }
+/* Stick + knob + Fire/Dash — neon blue (C7; cut green chrome from controls) */
+.hh-touch__stick,
+.hh-touch__knob,
+.hh-touch__btn {
+  border: 2px solid #4DD8FF;
+  background: rgba(77, 216, 255, 0.08);
+  box-shadow: 0 0 8px rgba(127, 227, 255, 0.45);
+}
 .hh-touch__knob {
-  background: rgba(57, 255, 136, 0.22);
+  background: rgba(77, 216, 255, 0.22);
 }
 .hh-touch__btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #39FF88;
-  font-size: 22px;
-  letter-spacing: 0.08em;
+  color: #4DD8FF;
+  font-size: 14px;
+  letter-spacing: 0.06em;
   min-width: 44px;
   min-height: 44px;
 }
 .hh-touch__btn--held {
-  background: rgba(57, 255, 136, 0.40);
+  background: rgba(77, 216, 255, 0.40);
   color: #0A0D0B;
+  box-shadow: 0 0 10px rgba(127, 227, 255, 0.7);
   transform: scale(0.94);
 }
 .hh-touch__cd {
@@ -67,7 +74,7 @@ export const TOUCH_CONTROLS_CSS = `
   border-radius: 50%;
   pointer-events: none;
   --cd: 0;
-  background: conic-gradient(rgba(57, 255, 136, 0.55) calc(var(--cd) * 360deg), transparent 0);
+  background: conic-gradient(rgba(77, 216, 255, 0.55) calc(var(--cd) * 360deg), transparent 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
 }

@@ -67,18 +67,19 @@ test('drawScreenHpMeters side-out uses red fill at ≤25%', () => {
   assert.ok(setFills.includes(METER_RED), setFills);
 });
 
-test('side-out labels use Orbitron', () => {
+test('side-out labels use Press Start 2P / Orbitron', () => {
   const ctx = fakeCtx();
   drawScreenHpMeters(ctx, {
     player: { hp: 120, maxHp: 300 },
     enemy: { hp: 220, maxHp: 440 },
   }, 1280, 800, { layout: 'side-out', topInset: 40, arenaLeft: 180, arenaRight: 1100 });
   const fonts = ctx.calls.filter(c => c[0] === 'set' && c[1] === 'font').map(c => c[2]);
-  assert.ok(fonts.some(f => String(f).includes('Orbitron')), fonts);
+  assert.ok(fonts.some(f => String(f).includes('Press Start 2P') || String(f).includes('Orbitron')), fonts);
 });
 
-test('METER_FONT leads with Orbitron', () => {
-  assert.ok(METER_FONT.startsWith('Orbitron'), METER_FONT);
+test('METER_FONT leads with Press Start 2P (digital), keeps Orbitron fallback', () => {
+  assert.ok(METER_FONT.includes('Press Start 2P'), METER_FONT);
+  assert.ok(METER_FONT.includes('Orbitron'), METER_FONT);
   assert.ok(METER_FONT.includes('monospace'));
 });
 

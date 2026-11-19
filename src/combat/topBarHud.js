@@ -10,7 +10,7 @@
  */
 import { formatHauntLabel } from '../ui/hauntLevel.js';
 
-export const TOP_BAR_FONT = 'Orbitron, "Share Tech Mono", monospace';
+export const TOP_BAR_FONT = '"Press Start 2P", Orbitron, "Share Tech Mono", monospace';
 /** Kept for meters / legacy colour tokens (phosphor green / blood red). */
 export const TOP_BAR_HP_PLAYER_COLOR = '#39FF88';
 export const TOP_BAR_HP_HOUND_COLOR = '#FF4D5E';
@@ -121,7 +121,8 @@ function dotted(ctx, x, y, w, h) {
   ctx.save();
   ctx.strokeStyle = TOP_BAR_FRAME;
   ctx.lineWidth = 1.5;
-  ctx.setLineDash([2, 3]);
+  ctx.setLineDash([]);
+  ctx.lineJoin = 'miter';
   ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
   ctx.setLineDash([]);
   ctx.restore();

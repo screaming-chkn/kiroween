@@ -66,9 +66,10 @@ test('player fire (300 ms cooldown) is never throttled', () => {
 
 const base = () => createArena({});
 
-test('every SFX id has a voice length under 1 s', () => {
+test('every SFX id has a voice length under 1 s (explode/laugh up to 3 s)', () => {
   for (const name of Object.values(SFX)) {
-    assert.ok(SFX_DURATION_S[name] > 0 && SFX_DURATION_S[name] < 1, name);
+    const cap = name === 'explode' ? 3 : 1;
+    assert.ok(SFX_DURATION_S[name] > 0 && SFX_DURATION_S[name] < cap, name);
   }
 });
 

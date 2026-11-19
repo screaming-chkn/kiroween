@@ -36,6 +36,98 @@ export const TANK_PALETTES = {
 export let TANK_PALETTE = 'mono-green';
 export function setTankPalette(v) { TANK_PALETTE = v; }
 
+/**
+ * Visual tank silhouette styles (draw-only). Collision / TANK_SPECS footprint
+ * stays fixed; styles change what drawTank paints. Default 'wheeled' (owner C7 pick — 8x8).
+ * Names: mech | wedge | wheeled | heavy | stealth
+ */
+export const TANK_STYLE_NAMES = ['mech', 'wedge', 'wheeled', 'heavy', 'stealth'];
+export let TANK_STYLE = 'wheeled';
+export function setTankStyle(v) {
+  if (TANK_STYLE_NAMES.includes(v)) TANK_STYLE = v;
+}
+
+/**
+ * Visual overrides per style/kind. null fields inherit TANK_SPECS.
+ * cutHull/cutTurret override HULL_CUT/TURRET_CUT fractions when set.
+ * base: 'hover' | 'treads' | 'wheels'
+ */
+export const TANK_STYLE_DRAW = {
+  mech: null,
+  // Low wedge MBT — long low hull, sharp nose, compact turret, long gun
+  wedge: {
+    player: {
+      hull: { L: 44, W: 20, H: 7 }, turret: { L: 12, W: 10, H: 5 },
+      barrelLen: 36, twin: false, base: 'treads', cutHull: 0.48, cutTurret: 0.22,
+    },
+    enemy: {
+      hull: { L: 50, W: 26, H: 8 }, turret: { L: 14, W: 12, H: 6 },
+      barrelLen: 40, twin: false, base: 'treads', cutHull: 0.48, cutTurret: 0.22,
+    },
+  },
+  // Wheeled 8x8 — boxier hull, wheels as side ellipses, mid turret
+  // Wheeled 8x8 APC — boxy hull, flat cupola turret, long sensor mast (POP)
+  wheeled: {
+    player: {
+      hull: { L: 38, W: 24, H: 12 }, turret: { L: 16, W: 14, H: 8 },
+      barrelLen: 26, twin: false, base: 'wheels', cutHull: 0.08, cutTurret: 0.18,
+    },
+    enemy: {
+      hull: { L: 44, W: 30, H: 14 }, turret: { L: 20, W: 17, H: 9 },
+      barrelLen: 30, twin: true, base: 'wheels', cutHull: 0.08, cutTurret: 0.18,
+    },
+  },
+  // Boxy heavy — chunky plates, tall hull, thick/twin barrel
+  heavy: {
+    player: {
+      hull: { L: 32, W: 28, H: 14 }, turret: { L: 18, W: 16, H: 9 },
+      barrelLen: 22, twin: true, base: 'treads', cutHull: 0.14, cutTurret: 0.16,
+    },
+    enemy: {
+      hull: { L: 38, W: 34, H: 16 }, turret: { L: 22, W: 20, H: 10 },
+      barrelLen: 26, twin: true, base: 'treads', cutHull: 0.14, cutTurret: 0.16,
+    },
+  },
+  // Sleek light — narrow low stealth profile, short turret, thin barrel
+  stealth: {
+    player: {
+      hull: { L: 40, W: 16, H: 6 }, turret: { L: 10, W: 8, H: 4 },
+      barrelLen: 18, twin: false, base: 'hover', cutHull: 0.50, cutTurret: 0.40,
+    },
+    enemy: {
+      hull: { L: 46, W: 20, H: 7 }, turret: { L: 12, W: 10, H: 5 },
+      barrelLen: 22, twin: false, base: 'hover', cutHull: 0.50, cutTurret: 0.40,
+    },
+  },
+};
+
+/** Merge collision TANK_SPECS with the active style's visual overrides. */
+export function visualSpecs(kind) {
+  const base = TANK_SPECS[kind];
+  const style = TANK_STYLE_DRAW[TANK_STYLE];
+  if (!style || !style[kind]) {
+    return {
+      hull: { ...base.hull },
+      turret: { ...base.turret },
+      barrelLen: base.barrelLen,
+      twin: base.twin,
+      base: base.base,
+      cutHull: HULL_CUT,
+      cutTurret: TURRET_CUT,
+    };
+  }
+  const o = style[kind];
+  return {
+    hull: { ...o.hull },
+    turret: { ...o.turret },
+    barrelLen: o.barrelLen,
+    twin: o.twin,
+    base: o.base,
+    cutHull: o.cutHull ?? HULL_CUT,
+    cutTurret: o.cutTurret ?? TURRET_CUT,
+  };
+}
+
 function paletteFor(kind) {
   const p = (TANK_PALETTES[TANK_PALETTE] ?? TANK_PALETTES['mono-green'])[kind];
   return { stroke: p.line, turretStroke: p.line, tick: p.line, fill: p.line, glow: p.glow, fillAlpha: p.fillAlpha };
@@ -117,15 +209,18 @@ export const TANK_SPECS = {
  * @returns {{hull:Array,turret:Array,barrels:Array,footprint:Array}}
  */
 export function tankGeometry(kind, x, y, hullHeading, turretAngle) {
-  const s = TANK_SPECS[kind];
+  const col = TANK_SPECS[kind];
+  const s = visualSpecs(kind);
   const hull = boxCorners(x, y, 0, s.hull.L, s.hull.W, s.hull.H, hullHeading);
   const turret = boxCorners(x, y, s.hull.H, s.turret.L, s.turret.W, s.turret.H, turretAngle);
-  const footprint = footprintCorners(x, y, s.hull.L, s.hull.W, hullHeading);
+  // Footprint always from collision specs (hitbox unchanged).
+  const footprint = footprintCorners(x, y, col.hull.L, col.hull.W, hullHeading);
 
   const fx = Math.cos(turretAngle), fy = Math.sin(turretAngle);
   const lx = Math.sin(turretAngle), ly = -Math.cos(turretAngle);
   const z = s.hull.H + s.turret.H / 2;
-  const offsets = s.twin ? [-3, 3] : [0];
+  const twinOff = s.twin ? (s.turret.W > 16 ? 4 : 3) : 0;
+  const offsets = s.twin ? [-twinOff, twinOff] : [0];
   const barrels = offsets.map(o => {
     const sx = x + fx * (s.turret.L / 2) + lx * o;
     const sy = y + fy * (s.turret.L / 2) + ly * o;
@@ -134,9 +229,9 @@ export function tankGeometry(kind, x, y, hullHeading, turretAngle) {
     return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
   });
   const hullPrism = prismCorners(x, y, 0, s.hull.L, s.hull.W, s.hull.H, hullHeading,
-    HULL_CUT * Math.min(s.hull.L, s.hull.W));
+    s.cutHull * Math.min(s.hull.L, s.hull.W));
   const turretPrism = prismCorners(x, y, s.hull.H, s.turret.L, s.turret.W, s.turret.H, turretAngle,
-    TURRET_CUT * Math.min(s.turret.L, s.turret.W));
+    s.cutTurret * Math.min(s.turret.L, s.turret.W));
   return { hull, turret, hullPrism, turretPrism, barrels, footprint };
 }
 
@@ -255,7 +350,8 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   if (kind === 'enemy' && !shouldDrawEnemy()) return;
   ctx.save();
   const g = tankGeometry(kind, x, y, hullHeading, turretAngle);
-  const s = { ...TANK_SPECS[kind], ...paletteFor(kind) };
+  const vis = visualSpecs(kind);
+  const s = { ...TANK_SPECS[kind], ...vis, ...paletteFor(kind) };
   const clock = fxClock();
   const bob = hoverBob(kind, clock);
   const dashed = EDGE_STYLE === 'dashed' || EDGE_STYLE === 'dashed-tech';
@@ -276,7 +372,7 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   ctx.beginPath();
   ctx.ellipse(x, y + 5, s.hull.L * 0.62, s.hull.W * 0.6, hullHeading, 0, Math.PI * 2);
   ctx.fill();
-  if (s.base !== 'hover') {
+  if (s.base === 'treads') {
     const fx = Math.cos(hullHeading), fy = Math.sin(hullHeading);
     const lx = Math.sin(hullHeading), ly = -Math.cos(hullHeading);
     const hl = s.hull.L / 2, off = s.hull.W / 2 + 2;
@@ -295,6 +391,46 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
       }
     }
     ctx.stroke();
+  } else if (s.base === 'wheels') {
+    // 8x8 POP: four readable wheels/side with hub + tire ring, deeper shadow
+    const fx = Math.cos(hullHeading), fy = Math.sin(hullHeading);
+    const lx = Math.sin(hullHeading), ly = -Math.cos(hullHeading);
+    const hl = s.hull.L / 2, off = s.hull.W / 2 + 3.5;
+    const wr = Math.max(3.2, s.hull.H * 0.42);
+    // Soft ground shadow under the wheel line
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 7, s.hull.L * 0.7, s.hull.W * 0.55, hullHeading, 0, Math.PI * 2);
+    ctx.fill();
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < 4; i++) {
+        const tt = -hl + (hl * 2) * ((i + 0.5) / 4);
+        const cx = x + fx * tt + lx * off * side;
+        const cy = y + fy * tt + ly * off * side + 1.8;
+        // Outer tire (glow edge)
+        widePass(ctx, s.glow, 4.5, 0.35, () => {
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, wr * 1.05, wr * 0.7, hullHeading, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = s.turretStroke;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, wr * 1.05, wr * 0.7, hullHeading, 0, Math.PI * 2);
+        ctx.stroke();
+        // Hub ring + cross
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, wr * 0.45, wr * 0.3, hullHeading, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - lx * wr * 0.35 * side, cy - ly * wr * 0.35 * side);
+        ctx.lineTo(cx + lx * wr * 0.35 * side, cy + ly * wr * 0.35 * side);
+        ctx.stroke();
+      }
+    }
   }
 
   // everything below bobs (hull, turret, barrels, hit flash)
@@ -352,18 +488,73 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   barrelPath();
   if (dashed) ctx.setLineDash([]);
 
-  // antenna spike: thin needle rising from the rear of the turret
+  // antenna / sensor mast
   {
     const rear = project(x - Math.cos(turretAngle) * s.turret.L * 0.3, y - Math.sin(turretAngle) * s.turret.L * 0.3,
       s.hull.H + s.turret.H);
     ctx.globalAlpha = 1;
     ctx.lineWidth = 1;
     ctx.strokeStyle = s.turretStroke;
-    ctx.beginPath();
-    ctx.moveTo(rear.x - 1.2, rear.y);
-    ctx.lineTo(rear.x + 1.5, rear.y - 10.5);
-    ctx.lineTo(rear.x + 1.2, rear.y);
-    ctx.stroke();
+    if (TANK_STYLE === 'wheeled') {
+      // Tall sensor mast + dish (unique 8x8 silhouette)
+      const mastH = 16;
+      const tip = { x: rear.x + 1.2, y: rear.y - mastH };
+      widePass(ctx, s.glow, 3.5, 0.4, () => {
+        ctx.beginPath();
+        ctx.moveTo(rear.x, rear.y);
+        ctx.lineTo(tip.x, tip.y);
+        ctx.stroke();
+      });
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(rear.x, rear.y);
+      ctx.lineTo(tip.x, tip.y);
+      ctx.stroke();
+      // Small dish / sensor ball at tip
+      ctx.beginPath();
+      ctx.arc(tip.x, tip.y, 2.4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(tip.x - 4, tip.y + 1);
+      ctx.lineTo(tip.x + 4, tip.y - 1);
+      ctx.stroke();
+      // Cupola ridge on turret top (flat APC look)
+      const cup = project(x, y, s.hull.H + s.turret.H + 2);
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(cup.x, cup.y, s.turret.L * 0.28, s.turret.W * 0.18, turretAngle, 0, Math.PI * 2);
+      ctx.stroke();
+      // Accent lights — four hull corners (tiny bright ticks)
+      const fx = Math.cos(hullHeading), fy = Math.sin(hullHeading);
+      const lx = Math.sin(hullHeading), ly = -Math.cos(hullHeading);
+      const hl = s.hull.L / 2 - 2, hw = s.hull.W / 2 - 1;
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = tint(s.stroke, 0.55);
+      for (const [a, b] of [[hl, hw], [hl, -hw], [-hl, hw], [-hl, -hw]]) {
+        const px = x + fx * a + lx * b;
+        const py = y + fy * a + ly * b;
+        const pt = project(px, py, s.hull.H * 0.55);
+        ctx.beginPath();
+        ctx.moveTo(pt.x - 1.5, pt.y);
+        ctx.lineTo(pt.x + 1.5, pt.y);
+        ctx.stroke();
+      }
+      // Extra crisp layered outline pass (neon edge POP)
+      widePass(ctx, s.glow, 10, 0.16, () => strokeEdges(ctx, g.hullPrism));
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = 1.35;
+      ctx.strokeStyle = s.stroke;
+      strokeEdges(ctx, g.hullPrism);
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = s.turretStroke;
+      strokeEdges(ctx, g.turretPrism);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(rear.x - 1.2, rear.y);
+      ctx.lineTo(rear.x + 1.5, rear.y - 10.5);
+      ctx.lineTo(rear.x + 1.2, rear.y);
+      ctx.stroke();
+    }
   }
 
   // muzzle flash at the recoiled tip of the firing barrel
@@ -384,9 +575,9 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
 
 /** Hull-only wireframe afterimage. */
 export function drawTankGhost(ctx, kind, x, y, heading, alpha) {
-  const s = TANK_SPECS[kind];
+  const s = visualSpecs(kind);
   const pts = prismCorners(x, y, 0, s.hull.L, s.hull.W, s.hull.H, heading,
-    HULL_CUT * Math.min(s.hull.L, s.hull.W));
+    s.cutHull * Math.min(s.hull.L, s.hull.W));
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(TANK_DRAW_SCALE, TANK_DRAW_SCALE);

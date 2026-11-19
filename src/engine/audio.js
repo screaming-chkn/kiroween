@@ -156,7 +156,7 @@ export const SFX_DURATION_S = Object.freeze({
   hitPlayer:  0.20,
   dash:       0.21,
   windup:     0.43,
-  explode:    0.79,
+  explode:    2.15,  // maniacal laugh + echo (kill/KO)
   uiClick:    0.06,
 });
 
@@ -329,10 +329,78 @@ const RECIPES = {
     o.start(t); lfo.start(t);
     o.stop(t + dur + 0.03); lfo.stop(t + dur + 0.03);
   },
-  // Kill / death: falling filtered noise boom + sub drop.
+  // Kill / KO: original maniacal laugh (synth voice) + eerie echo. ~2.1 s.
+  // Crew-authored Web Audio only — no samples / stock / IP. Non-blocking.
   explode(t) {
-    noise(t, { type: 'lowpass', f0: 2400, f1: 120, q: 0.8, peak: 0.35, attack: 0.005, decay: 0.75 });
-    tone(t, { type: 'sine', f0: 110, f1: 30, peak: 0.35, decay: 0.6 });
+    const dur = 2.1;
+    const master = actx.createGain();
+    master.gain.setValueAtTime(0.0001, t);
+    master.gain.exponentialRampToValueAtTime(0.85, t + 0.04);
+    master.gain.setValueAtTime(0.85, t + 1.55);
+    master.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+    // Feedback delay = haunted hall echo (not a sample).
+    const delay = actx.createDelay(1.0);
+    delay.delayTime.value = 0.22;
+    const fb = actx.createGain();
+    fb.gain.value = 0.42;
+    const wet = actx.createGain();
+    wet.gain.value = 0.55;
+    const dry = actx.createGain();
+    dry.gain.value = 0.9;
+    master.connect(dry).connect(sfxGain);
+    master.connect(delay);
+    delay.connect(fb).connect(delay);
+    delay.connect(wet).connect(sfxGain);
+
+    // Soft sub thud under the first laugh (keeps the KO weight).
+    tone(t, { type: 'sine', f0: 90, f1: 36, peak: 0.22, attack: 0.008, decay: 0.45 });
+
+    // "Ha-ha-ha…" syllables: pitched formant buzz + breath noise.
+    const beats = [0.00, 0.18, 0.34, 0.52, 0.72, 0.95, 1.22, 1.48];
+    const pitches = [280, 340, 390, 460, 420, 510, 380, 300];
+    for (let i = 0; i < beats.length; i++) {
+      const start = t + beats[i];
+      const syl = 0.14 + (i % 3 === 2 ? 0.08 : 0);
+      const f0 = pitches[i];
+      const o = actx.createOscillator();
+      const o2 = actx.createOscillator();
+      const g = actx.createGain();
+      const bp = actx.createBiquadFilter();
+      o.type = 'sawtooth';
+      o2.type = 'square';
+      o.frequency.setValueAtTime(f0, start);
+      o.frequency.exponentialRampToValueAtTime(Math.max(80, f0 * 0.72), start + syl);
+      o2.frequency.setValueAtTime(f0 * 1.98, start);
+      o2.frequency.exponentialRampToValueAtTime(Math.max(120, f0 * 1.4), start + syl);
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(f0 * 2.2, start);
+      bp.Q.value = 2.4;
+      const peak = 0.11 + (i % 2) * 0.03;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(peak, start + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + syl);
+      o.connect(bp);
+      o2.connect(bp);
+      bp.connect(g).connect(master);
+      o.start(start); o2.start(start);
+      o.stop(start + syl + 0.04); o2.stop(start + syl + 0.04);
+
+      // Breath / throat noise on each syllable
+      const ns = actx.createBufferSource();
+      ns.buffer = noiseBuf;
+      const nf = actx.createBiquadFilter();
+      nf.type = 'bandpass';
+      nf.frequency.value = f0 * 3.1;
+      nf.Q.value = 1.1;
+      const ng = actx.createGain();
+      ng.gain.setValueAtTime(0.0001, start);
+      ng.gain.exponentialRampToValueAtTime(0.07, start + 0.01);
+      ng.gain.exponentialRampToValueAtTime(0.0001, start + syl * 0.9);
+      ns.connect(nf).connect(ng).connect(master);
+      ns.start(start);
+      ns.stop(start + syl + 0.04);
+    }
   },
   // Tiny CRT click for garage buttons.
   uiClick(t) {

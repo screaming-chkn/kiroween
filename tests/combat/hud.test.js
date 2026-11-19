@@ -300,8 +300,9 @@ test('topBarLayout: phone is one slim row, clears the pause button', () => {
   if (lv) assert.ok(lv.x + lv.w <= (390 - TOP_BAR.pauseReserve) * 3 + 1e-6);
 });
 
-test('top strip font is Orbitron; strip text is at least 14px', () => {
-  assert.ok(TOP_BAR_FONT.startsWith('Orbitron'));
+test('top strip font is Press Start 2P / Orbitron; strip text is at least 14px', () => {
+  assert.ok(TOP_BAR_FONT.includes('Press Start 2P') || TOP_BAR_FONT.startsWith('Orbitron'));
+  assert.ok(TOP_BAR_FONT.includes('Orbitron'));
   assert.ok(TOP_BAR.fontPx >= 14);
 });
 

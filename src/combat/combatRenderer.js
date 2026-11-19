@@ -57,6 +57,8 @@ const C = {
   ember:        '#FF8A3D',
   blood:        '#FF4D5E',
   ghost:        '#9FD8FF',
+  neonBlue:     '#4DD8FF',
+  neonBlueGlow: '#7FE3FF',
 };
 
 // ── WORLD layer ────────────────────────────────────────────────────────────────
@@ -97,11 +99,27 @@ export function drawWorld(ctx, state, gridAlpha = 0.12) {
 
   ctx.globalAlpha = 1;
 
-  // ── Border wall — 2 px phosphor-dim stroke rectangle (R11) ──────────────────
-  ctx.strokeStyle = C.phosphorDim;
-  ctx.lineWidth   = 2;
-  // Inset by 1 px so the stroke sits wholly inside the arena rect.
-  ctx.strokeRect(1, 1, width - 2, height - 2);
+  // ── Arena border — neon-blue double/inset (C7): outer glow + inner bevel ────
+  ctx.save();
+  ctx.lineJoin = 'miter';
+  ctx.lineCap = 'butt';
+  // Outer line + glow
+  ctx.strokeStyle = C.neonBlue;
+  ctx.shadowColor = C.neonBlueGlow;
+  ctx.shadowBlur = 8;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1.5, 1.5, width - 3, height - 3);
+  // Clear shadow for crisp inner stroke
+  ctx.shadowBlur = 0;
+  // Soft bevel highlight just inside the outer stroke
+  ctx.strokeStyle = 'rgba(127, 227, 255, 0.55)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(4.5, 4.5, width - 9, height - 9);
+  // Inner hard inset (3D channel)
+  ctx.strokeStyle = C.neonBlue;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(7, 7, width - 14, height - 14);
+  ctx.restore();
 
   if (state.arena.wall) drawSeverWall(ctx, state.arena.wall, state.elapsedMs ?? 0);
 }

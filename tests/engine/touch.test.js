@@ -378,7 +378,7 @@ test('overlay sits at z-index 40 (below garage 100) with touch-action none', () 
 });
 
 test('held press state: 0.40 fill + scale(0.94); DASH cooldown ring present', () => {
-  assert.ok(/hh-touch__btn--held\s*\{[^}]*rgba\(57,\s*255,\s*136,\s*0\.40\)/.test(TOUCH_CONTROLS_CSS));
+  assert.ok(/hh-touch__btn--held\s*\{[^}]*rgba\(77,\s*216,\s*255,\s*0\.40\)/.test(TOUCH_CONTROLS_CSS));
   assert.ok(/scale\(0\.94\)/.test(TOUCH_CONTROLS_CSS));
   assert.ok(/--cd/.test(TOUCH_CONTROLS_CSS));
   assert.ok(/conic-gradient/.test(TOUCH_CONTROLS_CSS));

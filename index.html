@@ -7,6 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <!-- Self-hosted OFL fonts (assets/fonts, licences alongside). Preload the
        two faces the title + HUD draw with; the others swap in when used. -->
+  <link rel="preload" href="assets/fonts/press-start-2p-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/vt323-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/share-tech-mono-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/orbitron-500.woff2" as="font" type="font/woff2" crossorigin />
@@ -14,6 +15,8 @@
   <title>HAUNT//HOUND</title>
   <style>
     /* ── Self-hosted fonts (SIL OFL 1.1) ───────────────────── */
+    @font-face { font-family: 'Press Start 2P'; font-style: normal; font-weight: 400; font-display: swap;
+      src: url('assets/fonts/press-start-2p-400.woff2') format('woff2'); }
     @font-face { font-family: 'VT323'; font-style: normal; font-weight: 400; font-display: swap;
       src: url('assets/fonts/vt323-400.woff2') format('woff2'); }
     @font-face { font-family: 'Share Tech Mono'; font-style: normal; font-weight: 400; font-display: swap;
@@ -44,8 +47,8 @@
       --color-blood:       #FF4D5E;
       --color-ghost:       #9FD8FF;
 
-      --font-display: 'VT323', monospace;
-      --font-hud:     'Share Tech Mono', monospace;
+      --font-display: 'Press Start 2P', 'VT323', monospace;
+      --font-hud:     'Press Start 2P', 'Share Tech Mono', monospace;
       --font-body:    'IBM Plex Mono', monospace;
 
       --focus-outline: 2px solid var(--color-ember);

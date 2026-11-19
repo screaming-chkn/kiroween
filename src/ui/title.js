@@ -25,11 +25,11 @@ const CSS = `
   background:radial-gradient(closest-side at 30% 60%,rgba(57,255,136,.10),transparent),radial-gradient(closest-side at 70% 40%,rgba(255,59,92,.08),transparent);
   animation:hh-fog 14s ease-in-out infinite alternate}
 .hh-logo{position:relative;margin:0;font-weight:400;letter-spacing:.08em;line-height:1;
-  font-size:clamp(44px,12vw,128px);color:#47FF9A;
+  font-size:clamp(28px,8vw,72px);color:#47FF9A;
   text-shadow:0 0 6px #20B05C,0 0 22px rgba(57,255,136,.55),3px 0 0 rgba(255,59,92,.55),-3px 0 0 rgba(62,246,255,.35);
   animation:hh-flicker 4.2s steps(1) infinite}
 .hh-logo span{color:#FF3B5C;text-shadow:0 0 8px #C01640,0 0 24px rgba(255,59,92,.6)}
-.hh-pitch{max-width:34em;font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(14px,3.6vw,20px);color:var(--color-ash,#8F9A92);letter-spacing:.04em}
+.hh-pitch{max-width:34em;font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(10px,2.6vw,14px);color:var(--color-ash,#8F9A92);letter-spacing:.04em}
 .hh-pitch b{color:var(--color-bone,#E8E2D0);font-weight:400}
 .hh-title-go{margin-top:10px;background:transparent;border:2px solid #47FF9A;color:#47FF9A;cursor:pointer;
   font-family:inherit;font-size:clamp(22px,6vw,34px);letter-spacing:.14em;padding:10px 26px;
@@ -48,9 +48,9 @@ const CSS = `
 /* Phone landscape with Safari toolbar: shrink so HAUNT//HOUND + CTA fit in the visible viewport */
 @media (orientation: landscape) and (max-height: 500px){
   .hh-title{gap:6px;padding:max(6px,env(safe-area-inset-top)) 16px max(6px,env(safe-area-inset-bottom));justify-content:safe center}
-  .hh-logo{font-size:clamp(26px,8vh,64px)}
+  .hh-logo{font-size:clamp(18px,6.5vh,40px)}
   .hh-pitch{font-size:clamp(11px,3.2vh,15px);max-width:42em}
-  .hh-title-go{margin-top:2px;font-size:clamp(16px,5.2vh,26px);padding:6px 18px}
+  .hh-title-go{margin-top:2px;font-size:clamp(10px,3.6vh,16px);padding:6px 18px}
   .hh-title-garage{font-size:15px;padding:5px 14px;min-height:36px}
   .hh-title-keys{font-size:clamp(11px,2.8vh,14px)}
   .hh-title-lv{top:calc(4px + env(safe-area-inset-top));right:10px;font-size:13px}

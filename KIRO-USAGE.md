@@ -349,3 +349,11 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Tests:** npm test **986** green. Hook log **182**. SÉANCE **228/205**.
 - **owner lock tip (S1+S2):** a3128e3; shots shots-hud-c5b/. Merge held.
 - **Claims file:** build-review/WONT-TO-CAN-CLAIM.md (and team build-review copy).
+
+## C7 HUD polish — wheeled default + neon + font (2026-11-19 ~3:10 PM PT) — branch feat/hud-c, NOT merged
+- **Run id:** C7.
+- **Command:** `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write` with `deploy/kiro-proof/hud-c7/runC7-prompt.txt` → `runC7-transcript.txt`.
+- **Credits (Kiro Pro / Auto):** short confirm-only run (border already applied by build-agent). Reset 2026-12-01.
+- **Kiro authored:** confirmed neon double/inset border in `combatRenderer.js`; no code rewrite needed. Steering `.kiro/steering/hud-c7-neon-border.md` + `tank-wire-styles.md` (default wheeled).
+- **Build-agent hand:** wheeled 8x8 POP (wheels/mast/lights/glow), neon blue Fire/Dash/stick, double border, HUD crisp frames, Press Start 2P (OFL) self-host, default `TANK_STYLE=wheeled`.
+- **Tests / shots:** see team-archive/hud-c7/.

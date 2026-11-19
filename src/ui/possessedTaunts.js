@@ -309,7 +309,7 @@ export function drawPossessedTaunt(ctx, line, pos) {
 }
 
 /** Canvas font stack for taunts (Orbitron, self-hosted OFL). */
-export const TAUNT_FONT = 'Orbitron, "Share Tech Mono", monospace';
+export const TAUNT_FONT = '"Press Start 2P", Orbitron, "Share Tech Mono", monospace';
 
 /** Greedy word wrap of `text` into at most `maxLines`; returns [{start,text}]. */
 function wrapLines(text, maxW, measure, maxLines) {

@@ -8,6 +8,7 @@
 
 /** Faces canvas text uses (see ctx.font across src/). */
 export const CANVAS_FONTS = Object.freeze([
+  '16px "Press Start 2P"',
   '20px "VT323"',
   '16px "Share Tech Mono"',
   'bold 16px "Share Tech Mono"',

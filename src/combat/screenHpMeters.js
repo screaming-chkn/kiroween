@@ -18,7 +18,7 @@ export const METER_ORANGE = '#FF8A3D';
 export const METER_RED = '#FF4D5E';
 export const METER_RED_PCT = 0.25;
 export const METER_FRAME = '#39FF88';
-export const METER_FONT = 'Orbitron, "Share Tech Mono", monospace';
+export const METER_FONT = '"Press Start 2P", Orbitron, "Share Tech Mono", monospace';
 export const METER_LINE_GAP = 6;
 /** Minimum CSS px between a meter group and the arena green border outer edge. */
 export const METER_FIELD_GAP = 4;
@@ -246,12 +246,25 @@ function drawVertical(ctx, state, vpW, vpH, opts) {
 }
 
 function strokeDottedRect(ctx, x, y, w, h) {
+  // C7: crisp solid chamfered plate (no dash mush / no blur)
   ctx.save();
   ctx.strokeStyle = METER_FRAME;
   ctx.lineWidth = 1.5;
-  ctx.setLineDash([2, 3]);
-  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  ctx.lineJoin = 'miter';
   ctx.setLineDash([]);
+  const r = 2; // sharp chamfer radius
+  const x0 = x + 0.5, y0 = y + 0.5, ww = w - 1, hh = h - 1;
+  ctx.beginPath();
+  ctx.moveTo(x0 + r, y0);
+  ctx.lineTo(x0 + ww - r, y0);
+  ctx.lineTo(x0 + ww, y0 + r);
+  ctx.lineTo(x0 + ww, y0 + hh - r);
+  ctx.lineTo(x0 + ww - r, y0 + hh);
+  ctx.lineTo(x0 + r, y0 + hh);
+  ctx.lineTo(x0, y0 + hh - r);
+  ctx.lineTo(x0, y0 + r);
+  ctx.closePath();
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -274,8 +287,8 @@ function drawColoredLabel(ctx, text, x, y, align, fontPx, color) {
   ctx.font = `${fontPx}px ${METER_FONT}`;
   ctx.textBaseline = 'top';
   ctx.textAlign = align;
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = 3;
+  ctx.lineJoin = 'miter';
+  ctx.lineWidth = 2;
   ctx.strokeStyle = C.void;
   ctx.fillStyle = color;
   ctx.strokeText(text, x, y);
