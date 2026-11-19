@@ -73,8 +73,11 @@ export const DEFAULT_MAX_SECONDS = 180;
  * much that fights stall. The lapses supply the losses; the shorter TTK keeps
  * medians under 120 s. Deterministic: the offset is drawn from the same seeded
  * RNG stream, so a given (build, seed) still replays identically.
+ *
+ * BALANCE_AIM_SIGMA (env) overrides it for a what-if run, e.g. 60 for a
+ * rougher, more human aim. Unset, the committed numbers use 36.
  */
-export const AIM_NOISE_SIGMA = 36;
+export const AIM_NOISE_SIGMA = Number(process.env.BALANCE_AIM_SIGMA) || 36;
 
 /**
  * Policy-lapse chance per tick (LEVER mix retune 11/5b, harness-only, NOT combat).
@@ -391,7 +394,7 @@ export function playerPolicy(state, rng, ctx) {
   const u1 = Math.max(rng(), 1e-9);
   const u2 = rng();
   const gauss = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-  const offset = gauss * AIM_NOISE_SIGMA;
+  const offset = gauss * (ctx.aimSigma ?? AIM_NOISE_SIGMA);
   let aim = {
     x: aimLead.x + apx * offset,
     y: aimLead.y + apy * offset,
@@ -504,6 +507,48 @@ const MECH_CORNER_MARGIN = 60;
 export const REACTIVE_DASH_WINDOW_MS = 150;
 
 /**
+ * Human skill profiles (harness-only, NOT combat). Owner target for LV1
+ * (2026-11-19): a first game is won about 1/3 of the time, a player who has
+ * learned the tell wins about 2/3, both in about 30 s.
+ *
+ * Each profile is the baseline policy (lead aim, sticky lapses, random dashes)
+ * plus three human habits:
+ *   aimSigma        lateral aim error in world units (baseline 36 is close to
+ *                   perfect lead; 60 is a rough first-timer).
+ *   tellDodgeChance share of red-ring tells the player reacts to. A reaction
+ *                   dashes along the strafe line after a delay drawn from
+ *                   N(reactMeanMs, reactSdMs); past the 450 ms windup it is too
+ *                   late. The dash cooldown still applies.
+ *   stillShare      share of ~0.75 s strafe beats spent standing still to aim
+ *                   (the scripted baseline never stops). A read tell overrides it.
+ *
+ * The two profiles share stillShare and differ mostly in tell-reading (the
+ * skill the LV1 caption teaches), plus a smaller aim gap. Their draws come
+ * from a second seeded stream, so baseline replays are unchanged.
+ */
+export const HUMAN_PROFILES = Object.freeze({
+  firstTimer: Object.freeze({ aimSigma: 60, tellDodgeChance: 0.25, reactMeanMs: 330, reactSdMs: 90, stillShare: 0.4 }),
+  medium:     Object.freeze({ aimSigma: 54, tellDodgeChance: 0.6,  reactMeanMs: 280, reactSdMs: 70, stillShare: 0.4 }),
+});
+
+function humanDash(profile, state, ctx) {
+  const w = state.enemy.windupRemainingMs ?? 0;
+  const prevW = ctx.prevWindupMs ?? 0;
+  ctx.prevWindupMs = w;
+  if (w <= 0) { ctx.tellPlan = null; return false; }
+  if (prevW <= 0 || !ctx.tellPlan) {
+    // New tell: decide once whether this ring gets read, and how fast.
+    const r = ctx.humanRng;
+    const reads = r() < profile.tellDodgeChance;
+    const u1 = Math.max(r(), 1e-9), u2 = r();
+    const g = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    ctx.tellPlan = { reads, delayMs: profile.reactMeanMs + g * profile.reactSdMs, startW: w };
+  }
+  const p = ctx.tellPlan;
+  return p.reads && (p.startW - w) >= p.delayMs;
+}
+
+/**
  * Dispatch a tick's actions for the requested policy.
  *
  * All four policies call playerPolicy (and consume the same seeded RNG draws
@@ -525,9 +570,23 @@ export const REACTIVE_DASH_WINDOW_MS = 150;
  * @returns {{ move:{dx:number,dy:number}, aim:{x:number,y:number}, fire:boolean, dash:boolean }}
  */
 export function policyActions(policy, state, rng, ctx) {
+  const profile = HUMAN_PROFILES[policy];
+  if (profile) ctx.aimSigma = profile.aimSigma;
   const base = playerPolicy(state, rng, ctx);
 
   if (policy === 'baseline') return base;
+
+  if (profile) {
+    const tellDash = humanDash(profile, state, ctx);
+    const dash = base.dash || tellDash;
+    // Humans don't strafe every second: each ~0.75 s strafe beat, roll once
+    // whether this beat is spent standing still to aim.
+    const beat = Math.floor(ctx.tick / 45);
+    if (ctx.stillBeat !== beat) { ctx.stillBeat = beat; ctx.still = ctx.humanRng() < profile.stillShare; }
+    // A read tell means moving: the dodge dashes along the strafe line.
+    if (tellDash) ctx.still = false;
+    return { ...base, move: ctx.still ? { dx: 0, dy: 0 } : base.move, dash };
+  }
 
   if (policy === 'dashSpam') {
     return { ...base, dash: true };
@@ -603,6 +662,7 @@ export function runFight(build, seed, opts = {}) {
   let tick = 0;
   let prevEnemy;
   const ctx = { tick: 0, prevEnemy: undefined, dt: FIXED_DT };
+  if (HUMAN_PROFILES[policy]) ctx.humanRng = mulberry32((seed ^ 0x85ebca6b) >>> 0);
   while (state.phase === 'playing' && tick < maxTicks) {
     ctx.tick = tick;
     ctx.prevEnemy = prevEnemy;

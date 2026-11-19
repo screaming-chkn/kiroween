@@ -7,19 +7,24 @@ fileMatchPattern: "src/combat/**"
 ## Ground rules
 - Numbers only. Balance tuning never adds logic, new files, or new content.
 - Single source of truth: all combat numbers live in `src/combat/config.js`.
-  `src/ui/hauntLevel.js` owns the HAUNT LV ramp (the `hauntPressure` multiplier
+  `src/ui/hauntLevel.js` owns the HAUNT LV ramp (the `HAUNT_LEVELS` table
   and `applyHauntPressure`). No other file shall embed magic numbers that affect
   win rate or duel length.
 - Never tune by feel alone. Every change needs a before/after matrix run; paste
   the table into `PLAN.md` before merging.
 
 ## HAUNT LV ramp
-`hauntPressure(lv)` reads the `HAUNT_PRESSURE` table: 0.8 / 1.0 / 1.1 / 1.17 / 1.2
-(LV 1–5, M4). Shot damage rounds, so watch hits-to-kill: LV4 must stay
-below 1.175 (23 dmg, 7 hits on 140 HP) or it falls onto LV5's 6-hit cliff.
-`applyHauntPressure(enemy, lv)` scales enemy `hp` and `shotDamage` by that
-multiplier. The ramp is applied at spawn in `main.js` (and in `runFight` via
-`opts.hauntLv`) so the headless sim matches live difficulty exactly.
+`HAUNT_LEVELS` in `src/ui/hauntLevel.js` sets enemy HP and shot damage per level:
+440/47, 626/40, 890/34, 1266/28, 1800/24 (LV 1–5). LV1 is tuned to an owner
+target (2026-11-19): about 30 s, a first-timer wins about 1/3, a player who
+reads the tell about 2/3, measured with the `firstTimer` and `medium` human
+profiles in `tests/combat/balanceCore.mjs`. LV2–LV5 are geometric steps to the
+unchanged LV5. Hits to kill a 140 HP mech: 3 / 4 / 5 / 5 / 6; never jump more
+than one hit per level. `applyHauntPressure(enemy, lv)` copies the row onto the
+enemy. The ramp is applied at spawn in `main.js` (and in `runFight` via
+`opts.hauntLv`) so the headless sim matches live difficulty exactly. The old
+multiplier ramp (0.8 / 1.0 / 1.1 / 1.17 / 1.2 of 1500 HP / 20 dmg) survives only
+as `applyPressure`, for golden replays.
 
 ## R6 target bands
 Run `npm run test:balance` after any combat number change and verify all five
@@ -27,16 +32,16 @@ rows pass before committing.
 
 Win rate = scripted player beats the bot (phase === 'win').
 
-| HAUNT LV | Player win rate | Median duel |
-|----------|----------------|-------------|
-| 1        | 85–100 %       | 30–45 s *   |
-| 2        | 75–95 %        | 45–120 s    |
-| 3        | 65–85 %        | 45–120 s    |
-| 4        | 50–80 %        | 45–120 s    |
-| 5        | 40–60 %        | 45–120 s    |
+| HAUNT LV | Baseline win rate | Baseline median | Human target |
+|----------|-------------------|-----------------|--------------|
+| 1        | 90–100 %          | 15–35 s         | firstTimer 25–40 %, medium 60–72 %, medians 25–35 s |
+| 2        | 90–100 %          | 30–120 s        | report only |
+| 3        | 80–100 %          | 30–120 s        | report only |
+| 4        | 60–85 %           | 30–120 s        | report only |
+| 5        | 40–60 %           | 30–120 s        | report only |
 
-\* LV1 is the first fight, so it is short on purpose (owner call, M7 #7:
-median was 56 s, now about 42 s at 0.6× pressure).
+The baseline is near-perfect lead aim and never reads the tell; it is a
+regression guard, not a player. LV1 is tuned to the human profiles.
 
 Additional constraints (all LVs):
 - No build's win rate may deviate more than 10 pp from its LV mean (no dominant
@@ -66,5 +71,5 @@ Additional constraints (all LVs):
 
 ## Phone is first-class
 Dash and fire timings are sized for touch latency. Any number change that moves
-the median duel length outside its band (LV1 30–45 s, LV2–LV5 45–120 s) must be reverted or
+the median duel length outside its band (baseline LV1 15–35 s, LV2–LV5 30–120 s) must be reverted or
 compensated before merge.

@@ -1,8 +1,8 @@
 /**
  * src/ui/hauntLevel.js — session difficulty ramp ("HAUNT LV n").
  *
- * Applied at spawn from main.js, outside createArena math. Each LV scales enemy
- * HP and shot damage by HAUNT_PRESSURE[lv − 1] (M4 balance, R6).
+ * Applied at spawn from main.js, outside createArena math. Each LV sets enemy
+ * HP and shot damage from HAUNT_LEVELS[lv − 1] (R6).
  *
  * Persistence: sessionStorage key 'hh-haunt-lv', with an in-memory fallback
  * when sessionStorage is missing or throws (Node tests, private modes).
@@ -31,19 +31,29 @@ function clampLevel(n) {
 }
 
 /**
- * HP / damage multiplier per HAUNT LV (index 0 = LV1). M4 balance (R6), tuned
- * against the seeded headless matrix (tests/combat/balance.mjs, PLAN.md):
- * LV2–LV4 were too easy (100 / 91 / 79 % scripted-player wins), so they move
- * up; LV1 (onboarding) and LV5 (cap) are unchanged. Shot damage rounds to
- * 12 / 20 / 22 / 23 / 24, i.e. 12 / 7 / 7 / 7 / 6 hits to kill a 140 HP mech —
- * keep LV4 below 1.175 or it rounds to 24 and lands on LV5's 6-hit cliff.
- * M7 #7: LV1 drops 0.8 → 0.6 (900 HP, 12 dmg) so the first win lands in
- * 30–45 s (median was 56 s); LV2–LV5 unchanged.
+ * Enemy stats per HAUNT LV (index 0 = LV1). The one table to edit for difficulty.
+ *
+ * LV1 is tuned to an owner target (2026-11-19): about a 30 s duel that a
+ * first-timer wins about 1/3 of the time and a player who has learned the tell
+ * wins about 2/3. The enemy is fragile (440 HP, ~25 of your shots) but its
+ * shot hurts (47: three hits kill a 140 HP mech), so dodging the red ring is
+ * what wins. Profiles and results: tests/combat/BALANCE.md.
+ *
+ * LV2–LV5 move geometrically to the unchanged LV5 cap (1800 / 24): HP x1.42
+ * and damage x0.85 per level. The enemy gets tankier and the duel longer, while
+ * single hits sting less: hits to kill a 140 HP mech run 3 / 4 / 5 / 5 / 6.
  */
-export const HAUNT_PRESSURE = Object.freeze([0.6, 1.0, 1.1, 1.17, 1.2]);
+export const HAUNT_LEVELS = Object.freeze([
+  Object.freeze({ hp: 440,  shotDamage: 47 }),  // LV1: tuned to the owner target
+  Object.freeze({ hp: 626,  shotDamage: 40 }),
+  Object.freeze({ hp: 890,  shotDamage: 34 }),
+  Object.freeze({ hp: 1266, shotDamage: 28 }),
+  Object.freeze({ hp: 1800, shotDamage: 24 }),  // LV5: cap, unchanged
+]);
 
-export function hauntPressure(level) {
-  return HAUNT_PRESSURE[clampLevel(level) - 1];
+/** Enemy { hp, shotDamage } for a HAUNT LV (clamped to 1–5). */
+export function hauntStats(level) {
+  return HAUNT_LEVELS[clampLevel(level) - 1];
 }
 
 export function readHauntLevel() {
@@ -84,18 +94,18 @@ export function hauntAdvancesOn(outcome, action = null) { // eslint-disable-line
 }
 
 /**
- * Shallow copy of `enemy` with scaled hp / maxHp and a shotDamage the enemy
- * fire site honours. Never mutates the input.
+ * Shallow copy of `enemy` with hp / maxHp and a shotDamage (honoured by the
+ * enemy fire site) from HAUNT_LEVELS. Never mutates the input.
  *
  * @param {object} enemy
  * @param {number} level
- * @param {{baseHp?:number, baseDamage?:number}} [base]
  */
-export function applyHauntPressure(enemy, level, bases = {}) {
-  return applyPressure(enemy, hauntPressure(level), bases);
+export function applyHauntPressure(enemy, level) {
+  const { hp, shotDamage } = hauntStats(level);
+  return { ...enemy, hp, maxHp: hp, shotDamage };
 }
 
-/** Same as applyHauntPressure but with an explicit multiplier (tests replay old tunings). */
+/** Old multiplier tuning (base 1500 HP / 20 dmg × p). Kept so golden replays can rerun pre-table fights. */
 export function applyPressure(enemy, p, { baseHp = ENEMY_MAX_HP ?? 1500, baseDamage = ENEMY_PROJECTILE_DAMAGE ?? 20 } = {}) {
   const hp = Math.round(baseHp * p);
   return { ...enemy, hp, maxHp: hp, shotDamage: Math.round(baseDamage * p) };

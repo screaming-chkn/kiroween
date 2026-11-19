@@ -252,6 +252,8 @@ test('flag-off fights are identical to pre-M4.5 totals (3 builds x 3 seeds)', ()
   }
 });
 
+const GOLDEN_PRESSURE = { 1: 0.8, 2: 1.0, 3: 1.1, 4: 1.17, 5: 1.2 };
+
 test('flag-off golden: builds without combatMods replay main 25887b3 exactly (36 fights)', () => {
   const golden = JSON.parse(readFileSync(new URL('./fixtures/flagoff-golden.json', import.meta.url), 'utf8')).rows;
   const byLabel = new Map(enumerateLoadouts().map((b) => [b.label, b]));
@@ -259,8 +261,9 @@ test('flag-off golden: builds without combatMods replay main 25887b3 exactly (36
   for (const [label, seed, lv, policy, phase, elapsedMs, playerHp, enemyHp] of golden) {
     const b = byLabel.get(label);
     const { combatMods, ...off } = b.totals;   // what main.js passes when the flag is off
-    // 25887b3 ran LV1 at 0.8x; M7 #7 moved live LV1 to 0.6x, so replay the old multiplier.
-    const r = runFight({ ...b, totals: off }, seed, lv === 1 ? { pressure: 0.8, policy } : { hauntLv: lv, policy });
+    // 25887b3 scaled the enemy by a multiplier per LV; live levels now use the
+    // HAUNT_LEVELS table, so replay the multipliers that recorded the golden.
+    const r = runFight({ ...b, totals: off }, seed, { pressure: GOLDEN_PRESSURE[lv], policy });
     assert.deepEqual([r.phase, r.elapsedMs, r.playerHp, r.enemyHp], [phase, elapsedMs, playerHp, enemyHp], `${label} seed ${seed} LV${lv} ${policy}`);
   }
 });

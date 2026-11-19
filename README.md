@@ -58,7 +58,7 @@ Each spooky element below has a job:
 - **CRT title and scanlines.** The title has a glitching logo, scanlines, fog and a pulsing "press to deploy". Static and fog stay under the opacity cap and never cover HUD numbers or menu text. Animations calm down under the system reduced-motion setting.
 - **Hit-stop and shake.** A hit freezes the sim for a few frames and shakes the camera, so you can feel that it landed. Shake is capped and drops to near zero under reduced motion.
 - **Haunted arena and garage** (`src/ui/haunting.js`). Fog drifts outside the arena wall, the grid lines flicker (at most twice a second, a little more during the bot's windup), an ectoplasm trail follows the bot, and a ghost rises from the wreck when you win. A faint vignette darkens the edges on desktop. In the garage, ghost wisps drift behind the mech preview and the panels carry a faint ghost tint. Every effect draws under the tell, shots and HP labels. Under reduced motion the fog and tint are static, and the trail, ghost rise, flicker and wisps are off. Phones skip the vignette and draw fewer fog puffs to hold 60 fps.
-- **HAUNT LV.** The difficulty ramp is the haunting: a possessed enemy gets more health and hits harder at each level.
+- **HAUNT LV.** The difficulty ramp is the haunting. LV 1 is a short, sharp duel (about 30 s): the possessed tank is fragile but three of its shots kill you, so reading the red ring is what wins. Each level after that it gets tankier and the duels run longer.
 - **Haunt words.** A win reads EXORCISED ("Spirit banished.") and warns THE HAUNT RISES as the level goes up; a loss reads POSSESSED; a win at LV 5 reads LAID TO REST. The bot's health bar is labelled HOUND. Buttons and controls stay plain.
 
 ## How we used Kiro

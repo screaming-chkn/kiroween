@@ -4,10 +4,11 @@
  */
 import assert from 'node:assert/strict';
 import {
-  MAX_HAUNT_LEVEL, hauntPressure, readHauntLevel, setHauntLevel, bumpHauntLevel,
+  MAX_HAUNT_LEVEL, hauntStats, readHauntLevel, setHauntLevel, bumpHauntLevel,
   applyHauntPressure, applyPressure, formatHauntLabel, drawHauntLevel, hauntAdvancesOn,
-  levelUpText, HAUNT_PRESSURE,
+  levelUpText, HAUNT_LEVELS,
 } from '../../src/ui/hauntLevel.js';
+import { PLAYER_MAX_HP } from '../../src/combat/config.js';
 
 let passed = 0;
 let failed = 0;
@@ -16,14 +17,21 @@ function test(name, fn) {
 }
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} !~ ${b}`);
 
-test('hauntPressure ramp and cap', () => {
-  near(hauntPressure(1), 0.6);   // M7 #7: faster first win
-  near(hauntPressure(2), 1.0);
-  near(hauntPressure(3), 1.1);
-  near(hauntPressure(4), 1.17);
-  near(hauntPressure(5), 1.2);
-  near(hauntPressure(9), 1.2);
+test('HAUNT_LEVELS table, clamp and cap', () => {
+  assert.deepEqual(HAUNT_LEVELS.map((l) => [l.hp, l.shotDamage]),
+    [[440, 47], [626, 40], [890, 34], [1266, 28], [1800, 24]]);
+  assert.deepEqual(hauntStats(9), HAUNT_LEVELS[4]);
+  assert.deepEqual(hauntStats(0), HAUNT_LEVELS[0]);
   assert.equal(MAX_HAUNT_LEVEL, 5);
+});
+
+test('ramp: HP rises every level, hits-to-kill rise at most 1 per level', () => {
+  const hits = HAUNT_LEVELS.map((l) => Math.ceil(PLAYER_MAX_HP / l.shotDamage));
+  assert.deepEqual(hits, [3, 4, 5, 5, 6]);
+  for (let i = 1; i < HAUNT_LEVELS.length; i++) {
+    assert.ok(HAUNT_LEVELS[i].hp > HAUNT_LEVELS[i - 1].hp);
+    assert.ok(hits[i] - hits[i - 1] <= 1);
+  }
 });
 
 test('level starts at 1 (in-memory fallback, no sessionStorage in node)', () => {
@@ -67,21 +75,14 @@ test('applyPressure takes an explicit multiplier', () => {
   assert.equal(a.hp, 1200); assert.equal(a.shotDamage, 16);
 });
 
-test('applyHauntPressure scales hp, maxHp, shotDamage on a copy', () => {
+test('applyHauntPressure sets hp, maxHp, shotDamage from the table on a copy', () => {
   const e = { x: 1, y: 2, hp: 1500, maxHp: 1500 };
-  const a = applyHauntPressure(e, 1, { baseHp: 1500, baseDamage: 20 });
-  assert.equal(a.hp, 900); assert.equal(a.maxHp, 900); assert.equal(a.shotDamage, 12);
+  const a = applyHauntPressure(e, 1);
+  assert.equal(a.hp, 440); assert.equal(a.maxHp, 440); assert.equal(a.shotDamage, 47);
   assert.equal(a.x, 1);
   assert.equal(e.hp, 1500); assert.equal(e.shotDamage, undefined);
-  const b = applyHauntPressure(e, 3, { baseHp: 1500, baseDamage: 20 });
-  assert.equal(b.hp, 1650); assert.equal(b.shotDamage, 22);
-  const c = applyHauntPressure(e, 5, { baseHp: 1500, baseDamage: 20 });
-  assert.equal(c.hp, 1800); assert.equal(c.shotDamage, 24);
-  const d = applyHauntPressure(e, 2);   // defaults 1500 / 20
-  assert.equal(d.hp, 1500); assert.equal(d.shotDamage, 20);
-  assert.equal(applyHauntPressure(e, 4, { baseHp: 1500, baseDamage: 20 }).shotDamage, 23);
-  // R6: LV4 must stay a 7-hit level (23 dmg vs 140 HP); 24 is LV5's 6-hit cliff.
-  assert.equal(applyHauntPressure(e, 4).shotDamage < 24, true);
+  const c = applyHauntPressure(e, 5);
+  assert.equal(c.hp, 1800); assert.equal(c.maxHp, 1800); assert.equal(c.shotDamage, 24);
 });
 
 test('hauntAdvancesOn: level goes up only after a win', () => {
@@ -112,7 +113,6 @@ test('levelUpText shows the new level, empty at or below LV 1', () => {
   assert.equal(levelUpText(1), '');
   assert.equal(levelUpText(0), '');
   assert.equal(levelUpText(undefined), '');
-  assert.deepEqual(Array.from(HAUNT_PRESSURE), [0.6, 1.0, 1.1, 1.17, 1.2]);
 });
 
 test('formatHauntLabel', () => {

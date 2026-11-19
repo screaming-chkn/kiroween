@@ -1,8 +1,8 @@
 # HAUNT//HOUND — Combat Balance Report
 
-> Headless AI-vs-AI balance tester. Scripted player policy (strafe + aim + fire + occasional dash) vs the built-in enemy AI, run over seeded deterministic duels. **Report only — no combat numbers were retuned.**
+> Headless AI-vs-AI balance tester. Scripted player policy (strafe + aim + fire + occasional dash) vs the built-in enemy AI, run over seeded deterministic duels. **Report for the HAUNT_LEVELS table (LV1 tuned to the owner target with the human profiles below).**
 
-- Generated: 2026-11-19T02:34:02.074Z
+- Generated: 2026-11-19T16:45:07.081Z
 - Builds: 16
 - Seeds per build: 16
 - Total fights: 256
@@ -81,17 +81,40 @@
 
 | LV | Win rate % | Median s | Max build dev pp | Timeouts |
 |---:|---:|---:|---:|---:|
-| 1 | 100.0 | 42.3 | 0.0 | 0 |
-| 2 | 94.6 | 70.0 | 5.1 | 0 |
-| 3 | 83.1 | 75.6 | 7.4 | 0 |
-| 4 | 74.9 | 80.2 | 7.9 | 0 |
+| 1 | 97.9 | 21.0 | 2.9 | 0 |
+| 2 | 98.5 | 29.4 | 2.5 | 0 |
+| 3 | 93.9 | 41.7 | 5.9 | 0 |
+| 4 | 73.1 | 57.6 | 12.6 | 0 |
 | 5 | 50.2 | 78.4 | 9.2 | 0 |
 ## Strategy probes
 
 | LV | baseline % | dashSpam % | camp % | reactive % | dashSpam − baseline pp | camp − baseline pp | dashSpam − reactive pp |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 100.0 | 100.0 | 0.0 | 100.0 | +0.0 | -100.0 | +0.0 |
-| 2 | 94.6 | 98.5 | 0.0 | 100.0 | +3.9 | -94.6 | -1.5 |
-| 3 | 83.1 | 95.5 | 0.0 | 99.4 | +12.4 | -83.1 | -3.9 |
-| 4 | 74.9 | 90.9 | 0.0 | 99.4 | +16.0 | -74.9 | -8.5 |
+| 1 | 97.9 | 100.0 | 0.0 | 100.0 | +2.1 | -97.9 | +0.0 |
+| 2 | 98.5 | 100.0 | 0.0 | 100.0 | +1.5 | -98.5 | +0.0 |
+| 3 | 93.9 | 99.8 | 0.0 | 99.6 | +5.9 | -93.9 | +0.2 |
+| 4 | 73.1 | 95.9 | 0.0 | 99.3 | +22.8 | -73.1 | -3.4 |
 | 5 | 50.2 | 63.3 | 0.0 | 85.0 | +13.1 | -50.2 | -21.7 |
+
+## Human profiles (LV1 target: ~30 s; first-timer wins ~1/3, medium ~2/3)
+
+Harness-only player models (`HUMAN_PROFILES` in `balanceCore.mjs`). Both run the baseline policy (lead aim, sticky lapses, random dashes) plus:
+
+| Profile | Aim sigma (wu) | Reads the tell | Reaction (ms) | Stands still to aim |
+|---|---:|---:|---:|---:|
+| baseline (reference) | 36 | never (random dashes only) | – | never |
+| firstTimer | 60 | 25 % of rings | 330 ± 90 | 40 % of 0.75 s beats |
+| medium | 54 | 60 % of rings | 280 ± 70 | 40 % of 0.75 s beats |
+
+- **firstTimer:** a first game. Rough aim (sigma 60 was the old "near-0 % wins" setting), reacts to a quarter of the red rings, a bit slow.
+- **medium:** has learned the tell (the LV1 caption teaches it). Slightly better aim, dashes on most rings.
+- A reaction dashes along the strafe line once the delay has passed; after the 450 ms windup it is too late. Dash cooldown still applies, so nobody dodges every shot.
+- The gap between the two is mostly tell-reading: at LV1, medium's tell habit with first-timer aim (sigma 60) already wins 63.8 %, so about 30 of the 36 pp gap is the dodge. Win rate is very sensitive to "stands still": at LV1, 30 % gives first-timer ~52 % / medium ~73 %, 50 % gives ~20 % / ~61 %. Treat these as models, not measurements; a real phone playtest is the check.
+
+| LV | firstTimer win % | firstTimer median s | medium win % | medium median s | baseline win % | baseline median s |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 33.4 | 25.8 | 69.2 | 27.7 | 97.9 | 21.0 |
+| 2 | 23.8 | 34.3 | 64.8 | 39.1 | 98.5 | 29.4 |
+| 3 | 7.4 | 39.5 | 39.3 | 51.8 | 93.9 | 41.7 |
+| 4 | 0.6 | 43.2 | 13.8 | 59.5 | 73.1 | 57.6 |
+| 5 | 0.0 | 49.8 | 4.5 | 69.5 | 50.2 | 78.4 |

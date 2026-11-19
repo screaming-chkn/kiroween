@@ -33,6 +33,8 @@ import {
   buildReport,
   median,
   DEFAULT_MAX_SECONDS,
+  HUMAN_PROFILES,
+  AIM_NOISE_SIGMA,
 } from './balanceCore.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -96,8 +98,8 @@ for (const b of flagged) {
 console.log('');
 
 // ── Per-level matrix (baseline + probes) ───────────────────────────────────────
-console.log('  Running per-LV matrix (baseline, dashSpam, camp, reactive)…');
-const policies = ['baseline', 'dashSpam', 'camp', 'reactive'];
+console.log('  Running per-LV matrix (baseline, dashSpam, camp, reactive, firstTimer, medium)…');
+const policies = ['baseline', 'dashSpam', 'camp', 'reactive', 'firstTimer', 'medium'];
 // Per-LV section uses its own seed list (not the ~200-fight list above).
 // Default 48 seeds (~1 min). Per-build deviation at 48 seeds is mostly
 // sampling noise (±7 pp per build), so the committed BALANCE.md comes from
@@ -155,8 +157,35 @@ for (const level of levels) {
 }
 probeLines.push('');
 
+// ── Human profiles (owner LV1 target) ────────────────────────────────────────
+const humanLines = [];
+humanLines.push('## Human profiles (LV1 target: ~30 s; first-timer wins ~1/3, medium ~2/3)');
+humanLines.push('');
+humanLines.push('Harness-only player models (`HUMAN_PROFILES` in `balanceCore.mjs`). Both run the baseline policy (lead aim, sticky lapses, random dashes) plus:');
+humanLines.push('');
+humanLines.push('| Profile | Aim sigma (wu) | Reads the tell | Reaction (ms) | Stands still to aim |');
+humanLines.push('|---|---:|---:|---:|---:|');
+humanLines.push(`| baseline (reference) | ${AIM_NOISE_SIGMA} | never (random dashes only) | – | never |`);
+for (const [name, p] of Object.entries(HUMAN_PROFILES)) {
+  humanLines.push(`| ${name} | ${p.aimSigma} | ${Math.round(p.tellDodgeChance * 100)} % of rings | ${p.reactMeanMs} ± ${p.reactSdMs} | ${Math.round(p.stillShare * 100)} % of 0.75 s beats |`);
+}
+humanLines.push('');
+humanLines.push('- **firstTimer:** a first game. Rough aim (sigma 60 was the old "near-0 % wins" setting), reacts to a quarter of the red rings, a bit slow.');
+humanLines.push('- **medium:** has learned the tell (the LV1 caption teaches it). Slightly better aim, dashes on most rings.');
+humanLines.push('- A reaction dashes along the strafe line once the delay has passed; after the 450 ms windup it is too late. Dash cooldown still applies, so nobody dodges every shot.');
+humanLines.push('- The gap between the two is mostly tell-reading. Win rate is very sensitive to "stands still": at LV1, 30 % gives first-timer ~52 % / medium ~73 %, 50 % gives ~20 % / ~61 %. Treat these as models, not measurements; a real phone playtest is the check.');
+humanLines.push('');
+humanLines.push('| LV | firstTimer win % | firstTimer median s | medium win % | medium median s | baseline win % | baseline median s |');
+humanLines.push('|---:|---:|---:|---:|---:|---:|---:|');
+for (const level of levels) {
+  const e = (pol) => levelMatrices[pol].find((x) => x.level === level);
+  const ft = e('firstTimer'), md = e('medium'), bl = e('baseline');
+  humanLines.push(`| ${level} | ${(ft.winRate * 100).toFixed(1)} | ${ft.medianDurationSec.toFixed(1)} | ${(md.winRate * 100).toFixed(1)} | ${md.medianDurationSec.toFixed(1)} | ${(bl.winRate * 100).toFixed(1)} | ${bl.medianDurationSec.toFixed(1)} |`);
+}
+humanLines.push('');
+
 // ── Append tables to BALANCE.md ───────────────────────────────────────────────
-const appendMd = '\n' + lvLines.join('\n') + probeLines.join('\n');
+const appendMd = '\n' + lvLines.join('\n') + probeLines.join('\n') + '\n' + humanLines.join('\n');
 for (const target of targets) {
   try {
     writeFileSync(target, report + appendMd, 'utf8');
@@ -168,3 +197,4 @@ for (const target of targets) {
 // ── Print tables to console ───────────────────────────────────────────────────
 console.log('\n' + lvLines.join('\n'));
 console.log(probeLines.join('\n'));
+console.log(humanLines.join('\n'));
