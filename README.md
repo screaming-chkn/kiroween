@@ -57,6 +57,7 @@ Each spooky element below has a job:
 - **SÉANCE terminal.** It is also the build ledger. It reads `public/seance-tasks.json`, which is built from the real spec task files, so the game shows the task list it was built from.
 - **CRT title and scanlines.** The title has a glitching logo, scanlines, fog and a pulsing "press to deploy". Static and fog stay under the opacity cap and never cover HUD numbers or menu text. Animations calm down under the system reduced-motion setting.
 - **Hit-stop and shake.** A hit freezes the sim for a few frames and shakes the camera, so you can feel that it landed. Shake is capped and drops to near zero under reduced motion.
+- **Haunted arena and garage** (`src/ui/haunting.js`). Fog drifts outside the arena wall, the grid lines flicker (at most twice a second, a little more during the bot's windup), an ectoplasm trail follows the bot, and a ghost rises from the wreck when you win. A faint vignette darkens the edges on desktop. In the garage, ghost wisps drift behind the mech preview and the panels carry a faint ghost tint. Every effect draws under the tell, shots and HP labels. Under reduced motion the fog and tint are static, and the trail, ghost rise, flicker and wisps are off. Phones skip the vignette and draw fewer fog puffs to hold 60 fps.
 - **HAUNT LV.** The difficulty ramp is the haunting: a possessed enemy gets more health and hits harder at each level.
 - **Haunt words.** A win reads EXORCISED ("Spirit banished.") and warns THE HAUNT RISES as the level goes up; a loss reads POSSESSED; a win at LV 5 reads LAID TO REST. The bot's health bar is labelled HOUND. Buttons and controls stay plain.
 
@@ -68,6 +69,8 @@ Each spooky element below has a job:
 - **M5:** the steering rewrite, spec reconcile, `build:site` script and README check.
 - **M4.5 (loadout effects):** the R8 spec, design and tasks, a steering note, the first implementation and a property-based test file.
 - **M6 (haunt words, on the CLI's v3 engine):** the `11-haunt-words` spec, the end-card copy, the 16 moment-tagged taunts with their tests and wiring, and the taunt steering. The workspace hooks fired on Kiro's own edits: tests, balance check and séance rebuild.
+- **M7:** title quick-deploy, the landscape phone layout, scaled garage stat bars and module preloads in the built site.
+- **M8 (haunting):** the `12-haunting` spec and steering, the haunting effects module with its tests, the arena wiring and the garage wisps and tint.
 
 Human and agent edits went in separate commits. The Kiro IDE was not used. The full per-run log, with commands, prompts, accounts, credits, and what Kiro wrote versus what we edited, is in [KIRO-USAGE.md](KIRO-USAGE.md).
 
@@ -101,7 +104,7 @@ Each hook command goes through `scripts/kiro-hook-run.mjs`, which logs every fir
 - A second, free-tier Kiro account (Google login) ran the first two M4 runs on a Mac mini: 4.81 credits.
 - The original Kiro Pro account (GitHub login) ran every later run on the build box: 1.56 credits for M4, 6.32 for M5 (steering rewrite and spec reconcile, the `build:site` script with its tests and the README check hook, and this README's first draft) and 8.51 for M4.5 (loadout-effects spec, steering, implementation draft, property-based tests).
 
-Another 0.62 Pro credits were metered between runs and aren't tied to any one run. Later Pro runs on the CLI's v3 engine (where the workspace hooks fire): 0.13 for the hook probe, 6.99 for M6 (haunt words and taunts) and 7.58 for M7 (title deploy, phone layout, stat bars, modulepreload). **Total: 36.52 credits metered** (Google 4.81, Pro 31.71). Per-run detail is in `KIRO-USAGE.md`.
+Another 0.62 Pro credits were metered between runs and aren't tied to any one run. Later Pro runs on the CLI's v3 engine (where the workspace hooks fire): 0.13 for the hook probe, 6.99 for M6 (haunt words and taunts), 7.58 for M7 (title deploy, phone layout, stat bars, modulepreload) and 5.20 for M8 (the haunting effects in the arena and garage). **Total: 41.72 credits metered** (Google 4.81, Pro 36.91). Per-run detail is in `KIRO-USAGE.md`.
 
 The first runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write` with one focused prompt each; from the probe on, the same command adds `--agent-engine v3 --trust-workspace`. No credits were bought.
 

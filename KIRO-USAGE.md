@@ -206,3 +206,30 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Credits (`/usage`):** Pro 248.59 → 249.99 (run 15) → 253.94 (run 16b, including the aborted run 16) → 255.26 (run 17) → 256.17 (run 18). **7.58 for M7.** About 621 left of 877; resets 2026-12-01. No credits bought, no plan or settings change, no new login, no IDE.
 - **Proof** (build box, not in the repo): `deploy/kiro-proof/run15-*`, `run16-aborted-*`, `run16b-*`, `run17-*`, `run18-*` (screen recording, scrubbed transcript, prompt).
 - **Account totals:** 28.94 + 7.58 = **36.52 credits metered** (Google 4.81, Pro 31.71).
+
+## M8: visible haunting in the arena and garage (win-review #5) (2026-11-18, build agent)
+- **Kiro used: yes**, 4 runs on the box, Pro (GitHub login), model **Auto**, kiro-cli 3.4.0, **engine v3** with workspace trust, file tools only (same command as M7). All four are in PR #21 (squash `fda6656`).
+- **Run 19 (18:55–18:56 PT):** Kiro wrote spec `.kiro/specs/12-haunting/` (requirements R1–R8, design, 10 tasks) and the Haunting rules in `ui-style.md` and `design-tokens.md` (task 9).
+  - Hooks fired: `seance-on-spec-save` ×1.
+- **Run 20 (18:57–18:59 PT):** tasks 1–6. `src/ui/haunting.js` (effect caps, reduced-motion flags, a 16-point trail ring buffer with a 700 ms life, kill ghost pose, grid flicker, border fog, cached sprites) and its tests.
+  - Hooks fired: `test-on-save` ×2 (green), `seance-on-spec-save` ×1.
+  - My fix (separate commit): one ghost test compared the reused pose object with itself; it now copies the pose first.
+- **Run 21 (19:00–19:02 PT):** task 7. The haunting is wired into the arena: grid flicker, border fog, the ectoplasm trail behind the enemy, the kill ghost from the wreck, and the vignette on the FOG layer.
+  - Hooks fired: `test-on-save` ×10 (green), `seance-on-spec-save` ×1.
+- **Run 22 (19:01–19:03 PT):** task 8. Garage ghost wisps behind the mech preview, a 5% ghost tint on the panels, and the reduced-motion off-switch, plus tests.
+  - Hooks fired: `test-on-save` ×2 (green), `seance-on-spec-save` ×1.
+- **What I edited (by hand, separate commits):**
+  - Tuning after screenshots: larger, softer fog puffs; a taller kill ghost (90 wu rise, 0.9 start alpha, a soft glow) so it reads before the end card; the vignette sprite scaled so its effective alpha is 0.25 under the FOG layer's 0.35 clamp.
+  - A phone lite set (touch UI): no vignette and 8 fog puffs instead of 14. With the full set, phone portrait at 4× CPU dropped to 45 fps. Spec R7, the design and the steering note this. Tests added.
+  - Task 10 (readability and fps check) was ticked by hand and the séance rebuilt.
+  - Before the haunting: PR #19 (usage-log wording) and PR #20 (the 844×390 garage scrolls as one body; the landscape arena clears the top-left HUD panel) were done by hand.
+- **FPS** (headless Chromium, 6 s of rAF; busy = CDP task time per frame), before → after:
+  - 1280×800: 60.2 → 60.0 fps, busy 2.40 → 3.89 ms.
+  - 390×844 DPR 2, 4× CPU throttle: 60.0 → 60.1 fps, busy 13.77 → 15.10 ms.
+  - 844×390 DPR 2, 4× CPU throttle: 60.1 → 59.8 fps, busy 8.41 → 10.85 ms.
+- **Readability:** before/after screenshots at 1280×800, 1024×640, 390×844 and 844×390 DPR 2, plus a reduced-motion pass, are in `build-review/shots-m8/` on the build box. The windup tell, shots and HP labels draw above the haunting layers and look the same as before. There were 0 console errors.
+- **Hook output and the agent:** as in M6 and M7, hook output did not reach Kiro. I ran `npm test` after every run.
+- **Credits (`/usage`):** Pro 256.17 → 257.15 (run 19) → 259.37 (run 20) → 260.62 (run 21) → 261.37 (run 22). **5.20 for M8.** About 616 left of 877; resets 2026-12-01. No credits bought, no plan or settings change, no new login, no IDE.
+- **Proof** (build box, not in the repo): `deploy/kiro-proof/run19-*` to `run22-*` (screen recording, scrubbed transcript, prompt).
+- **Tests:** `npm test` 953 passed, 0 failed.
+- **Account totals:** 36.52 + 5.20 = **41.72 credits metered** (Google 4.81, Pro 36.91).
