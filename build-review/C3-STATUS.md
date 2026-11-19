@@ -3,7 +3,7 @@
 Branch `feat/hud-c` **not merged**. Main stays `925696d`.
 
 ## WIP tip
-Tip after S-revision commit (git log).
+Tip: `0fe4c40d7115310cddca388228a335cfa7c044a6` (S-revision). Worktree: feature branch only.
 
 ## Done
 - C3b HUD, tanks, Sever Wall, landscape, shots + y-check PASS.
