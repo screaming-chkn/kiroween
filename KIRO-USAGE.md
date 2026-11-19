@@ -235,3 +235,14 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Proof** (build box, not in the repo): `deploy/kiro-proof/run19-*` to `run22-*` (screen recording, scrubbed transcript, prompt).
 - **Tests:** `npm test` 953 passed, 0 failed.
 - **Account totals:** 36.52 + 5.20 = **41.72 credits metered** (Google 4.81, Pro 36.91).
+
+
+## HUD C / C3 hold (2026-11-19 ~10:12 AM PT, build agent) — branch feat/hud-c, NOT merged
+- **Owner hold** until ~2:15 PM PT. WIP committed; main stays `925696d`.
+- **Kiro used this morning (before hold):**
+  - **Run A (spec):** kiro-cli v3 Auto, Pro (GitHub login), file tools only → `.kiro/specs/13-hud-meters/` (requirements, design, tasks). Commit on branch: `337f1ae`.
+  - **Orbitron (SIL OFL)** self-hosted under `assets/fonts/` (build-agent download + commit `8fb9cac`); not yet wired into draw calls.
+  - **Run C3 (implementation):** started with v3 Auto; interrupted by owner hold mid-run (transcript `deploy/kiro-proof/hud-c/runC3-*`). No C3 visual commits yet.
+- **Credits:** Pro read ~263.02 / 877 at hold (~30%). Exact per-run deltas to be finalized when C3 resumes.
+- **Open:** below-line ≥6px y-check, top bar dual HP + MM:SS, Orbitron HUD wire-up, bigger angular tanks + LV1 sanity, shots-hud-c3/, full KIRO-USAGE C3 section. Status: `build-review/C3-STATUS.md`.
+- **Standing rule (owner 10:07 AM PT):** prefer Kiro for remaining Kiroween build work until submit.
