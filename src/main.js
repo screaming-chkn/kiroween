@@ -92,6 +92,7 @@ import {
   createHauntFx, tickHaunt, startGhost, gridAlpha, drawBorderFog,
   drawEctoTrail, drawKillGhost, drawHauntVignette,
 }                              from './ui/haunting.js';
+import { readGutterHaunt, drawGutterHaunt } from './ui/gutterHaunt.js';
 
 // ── Session-level state shared across arena restarts ────────────────────────
 
@@ -102,6 +103,8 @@ let specStampText = null;
 let specStampRequested = false;
 /** Parsed seance JSON array for the spec-haunted player-death taunt; null until/unless loaded. */
 let seanceTasks = null;
+/** C9b gutter haunt style: 'silver' | 'purple' | 'off'. */
+let gutterHauntStyle = 'silver';
 
 /** Fetch the seance JSON once. Real counts only; any failure leaves null. */
 function loadSpecStamp() {
@@ -180,6 +183,16 @@ function boot() {
     if (raw && TANK_STYLE_NAMES.includes(raw)) setTankStyle(raw);
   } catch (_) { /* ignore */ }
   globalThis.__HH_SET_TANK_STYLE__ = (v) => { if (TANK_STYLE_NAMES.includes(v)) setTankStyle(v); };
+
+  // C9b gutter haunt: ?gutter=silver|purple|off (default silver, ~5% opacity).
+  gutterHauntStyle = readGutterHaunt(location.search);
+  try {
+    if (globalThis.__HH_GUTTER__) gutterHauntStyle = readGutterHaunt('gutter=' + globalThis.__HH_GUTTER__);
+    const ga = new URLSearchParams(location.search.startsWith('?') ? location.search.slice(1) : location.search).get('gutterAlpha');
+    if (ga != null && Number.isFinite(Number(ga))) globalThis.__HH_GUTTER_ALPHA__ = Number(ga);
+  } catch (_) { /* ignore */ }
+  globalThis.__HH_SET_GUTTER__ = (v) => { gutterHauntStyle = readGutterHaunt('gutter=' + v); };
+  globalThis.__HH_GUTTER_STYLE__ = () => gutterHauntStyle;
 
 
   // Detect reduced-motion preference.
@@ -484,6 +497,22 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (st.phase !== 'playing' && shouldDrawEndCard()) return;
     const vpW = renderer.canvas.width;
     const vpH = renderer.canvas.height;
+    // C9b: faint spectral filigree in letterbox gutters only (under HUD text).
+    // Use unshaken arena edges so the pattern doesn't jitter with kick/shake.
+    {
+      const edges = arenaSideEdges(camera, vpW, vpH, aw, {});
+      const top = arenaTopLineTopSy(camera, vpW, vpH, 0, 0, aw / 2);
+      const bottom = arenaBottomLineSy(camera, vpW, vpH, ah, 0, 0, aw / 2);
+      const gutterAlpha = Number(globalThis.__HH_GUTTER_ALPHA__);
+      drawGutterHaunt(ctx, {
+        vpW, vpH,
+        left: edges.left, right: edges.right,
+        top, bottom,
+        style: gutterHauntStyle,
+        tMs: st.elapsedMs ?? 0,
+        alpha: Number.isFinite(gutterAlpha) ? gutterAlpha : undefined,
+      });
+    }
     drawTopBarHud(ctx, st, vpW, stripBottomPx(vpW), stripOpts());
 
     // C4 side-out HP meters — outside the green L/R borders.
