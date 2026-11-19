@@ -3,7 +3,7 @@
 owner hold until ~2:15 PM PT (BotKing resume). Branch `feat/hud-c` **not merged**. Main stays `925696d`.
 
 ## WIP tip
-See latest commit on `feat/hud-c` after this hold commit. Worktree: repo feature branch only.
+Tip at hold: `b0b65fb` (includes C3-STATUS + KIRO-USAGE hold note). Worktree: repo feature branch only.
 
 ## Done (on branch)
 - **C / C2 gameplay HUD** (already on branch before C3): corner vertical meters under arena line; orange→red @ ≤25%; ghost perk (player-only, ~12s, +10% maxHp heal); top stats panel without HP; taunts centered under line in speaker color (HOUND red); damage pops kept.
