@@ -62,7 +62,7 @@ import {
   rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
 }                              from './ui/phoneCombatUi.js';
-import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW, compactHpLayout } from './ui/phoneCombatUi.js';
+import { edgeArrowPlacement, drawEdgeArrow, EDGE_ARROW, compactHpLayout, landscapeStripW } from './ui/phoneCombatUi.js';
 import { prefersTouchUi, mergeTouchActions, touchLayoutFor, stickRadiusPx, LANDSCAPE_GUTTER_FRAC } from './engine/touch.js';
 import { mountTouchControls }  from './ui/touchControls.js';
 import {
@@ -305,10 +305,11 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     width: window.innerWidth,
   });
   // Leave a small margin (factor 0.95) so the wall stroke is never cropped.
-  // Landscape phones fit the middle strip so the arena clears the control gutters.
+  // Landscape phones fit the middle strip so the arena clears the control gutters
+  // and the top-left HUD panel.
   const landscapeTouch = touchUi && (canvas.clientWidth || 0) > (canvas.clientHeight || 0);
   const fitZoom = (landscapeTouch
-    ? Math.min(vpW0 * (1 - 2 * LANDSCAPE_GUTTER_FRAC) / aw, vpH0 / ah)
+    ? Math.min(landscapeStripW(vpW0, vpW0 / (canvas.clientWidth || vpW0), LANDSCAPE_GUTTER_FRAC) / aw, vpH0 / ah)
     : Math.min(vpW0 / aw, vpH0 / ah)) * 0.95;
   // Portrait phone: zoom in so the mech is readable, and bias toward the enemy.
   const phonePortrait = isPortraitTouch({

@@ -40,6 +40,22 @@ export function phoneHudRect(s, top = PHONE_HUD_TOP) {
   return { x: HUD_MARGIN * s, y: top * s, w: HUD_PANEL_W * s, h: HUD_PANEL_H * s };
 }
 
+/** Right edge (CSS px) of the phone HUD panel, margin included. */
+export function phoneHudRightCss() {
+  return (HUD_MARGIN + HUD_PANEL_W) * PHONE_HUD_SCALE;
+}
+
+/**
+ * Landscape phone: width (canvas px) the arena may fill. It stays inside the
+ * control gutters AND clears the top-left HUD panel on both sides (8 CSS px
+ * gap), so the panel never covers the arena corner.
+ */
+export function landscapeStripW(vpW, uiDpr, gutterFrac) {
+  const byGutter = vpW * (1 - 2 * gutterFrac);
+  const byHud = vpW - 2 * (phoneHudRightCss() + 8) * uiDpr;
+  return Math.max(0, Math.min(byGutter, byHud));
+}
+
 export function hudPanelRect(vpH) {
   return { x: HUD_MARGIN, y: vpH - HUD_MARGIN - HUD_PANEL_H, w: HUD_PANEL_W, h: HUD_PANEL_H };
 }

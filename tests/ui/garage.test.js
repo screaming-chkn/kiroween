@@ -383,6 +383,14 @@ test('default loadout: speed bar is full, sensor bar is above 80', () => {
   assert.ok(statBarPct(stats.sensor, r.sensor) > 80);
 });
 
+test('landscape phones: the garage body is the only scroll pane (no inner panes)', () => {
+  const at = GARAGE_CSS.indexOf('@media (max-width: 959px) and (max-height: 500px)');
+  assert.ok(at >= 0, 'missing landscape-phone media query');
+  const blk = GARAGE_CSS.slice(at, GARAGE_CSS.indexOf('\n}\n', at));
+  assert.match(blk, /\.hh-garage__body\s*\{[^}]*overflow-y:\s*auto/);
+  assert.match(blk, /\.hh-preview\s*\{\s*overflow:\s*visible/);
+});
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);

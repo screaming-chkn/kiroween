@@ -7,7 +7,7 @@ import {
   END_CARD_W, END_CARD_BTN_H, TOUCH_MIN_PX, HUD_PANEL_W, HUD_PANEL_H,
   PHONE_HUD_TOP, PHONE_HUD_SCALE,
   endCardScale, scaleRects, phoneHudScale, phoneHudViewportH, hudPanelRect, phoneHudRect,
-  circleOverlapsRect, windupGlowStyle, drawWindupGlow, compactHpLayout, drawCompactHp,
+  circleOverlapsRect, windupGlowStyle, drawWindupGlow, compactHpLayout, drawCompactHp, landscapeStripW, phoneHudRightCss,
   rectsOverlap, playerHpBarScreenRect, playerOnlyState, unsquashTextCtx,
   drawEnemyShotGlow, pushAfterimage, drawDashAfterimages,
   EDGE_ARROW, edgeArrowPlacement, drawEdgeArrow,
@@ -157,6 +157,14 @@ test('drawCompactHp: enemy label names the HOUND', () => {
   });
   drawCompactHp(ctx, { player: { x: 0, y: 0, hp: 1, maxHp: 1 }, enemy: { x: 0, y: 0, hp: 1200, maxHp: 1200 } });
   assert.equal(txt[0], 'HOUND 1200');
+});
+test('landscapeStripW: the arena clears the HUD panel at 844x390 DPR 2', () => {
+  const vpW = 844 * 2;
+  const w = landscapeStripW(vpW, 2, 0.22);
+  const arenaLeftCss = (vpW - w * 0.95) / 2 / 2;   // fitZoom keeps a 0.95 margin
+  assert.ok(arenaLeftCss >= phoneHudRightCss() + 8, `arena left ${arenaLeftCss} vs HUD ${phoneHudRightCss()}`);
+  assert.ok(w <= vpW * (1 - 2 * 0.22));
+  assert.ok(w > 0);
 });
 test('compactHpLayout', () => {
   const p = compactHpLayout('player');

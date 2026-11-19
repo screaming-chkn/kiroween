@@ -674,6 +674,21 @@ export const GARAGE_CSS = `
   .hh-preview__svg { max-height: 150px; }
 }
 
+/* Landscape phones (844x390 and similar): one scroll for the whole body, no
+   inner panes (M8 leftover). Slots | picker stay side by side; the preview
+   and stats follow below. */
+@media (max-width: 959px) and (max-height: 500px) {
+  .hh-garage__body {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-content: start;
+  }
+  .hh-garage__slots,
+  .hh-picker,
+  .hh-preview { overflow: visible; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hh-bar-fill,
   .hh-slot,
