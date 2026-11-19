@@ -6,7 +6,7 @@ HAUNT//HOUND is a 1v1 tank duel that runs in the browser, shown through a haunte
 
 ## How to play
 
-The loop: title → garage → duel → kill moment and end card → REDEPLOY or GARAGE. HAUNT LV 1–5 rises only when you win.
+The loop: title → garage → duel → kill moment and end card → REDEPLOY or GARAGE. HAUNT LV 1–5 rises only when you win. Add `?lv=N` (1–5) to the URL to start at that HAUNT LV.
 
 In a duel, the bot shows a red windup telegraph before each shot. The tell lasts 450 ms and is a red halo that grows around the bot, with a sound cue. Dash out of the way before the shot lands. Your hits give hit-stop, camera shake and sparks.
 
@@ -63,7 +63,7 @@ Each spooky element below has a job:
 
 ## How we used Kiro
 
-**Specs.** `.kiro/specs/01-core-engine` to `08-phone-touch` and `haunted-spec` come from the first phase (Oct 30 – Nov 17). The specs for squad features (radar and relays, squad enemy, salvage) were cut in the 1v1 pivot and are marked as cut. `10-polish` covers milestones M1–M5. The 10-polish spec for M1–M3 was written by hand, outside the Kiro IDE. From M4 on, Kiro (kiro-cli, model Auto, headless, file read and write tools only) did the following:
+**Specs.** `.kiro/specs/01-core-engine` to `08-phone-touch` and `haunted-spec` come from the first phase (Oct 30 – Nov 12). The specs for squad features (radar and relays, squad enemy, salvage) were cut in the 1v1 pivot and are marked as cut. `10-polish` covers milestones M1–M5. The 10-polish spec for M1–M3 was written by hand, outside the Kiro IDE. From M4 on, Kiro (kiro-cli, model Auto, headless, file read and write tools only) did the following:
 
 - **M4:** the balance spec, steering, hooks and harness.
 - **M5:** the steering rewrite, spec reconcile, `build:site` script and README check.

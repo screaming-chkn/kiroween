@@ -128,7 +128,7 @@ export const PARTS = [
     powerDraw: 3,
     stats:    { armor: 0, speed: 0, damage: 6, sensor: 3 },
     roles:    ['LONGSHOT'],
-    flavor:   'Guided rail-lance. The targeting ghost takes over for the last 50 meters.',
+    flavor:   'Rail-lance. The targeting ghost whispers the lead; you still aim.',
   },
 
   // ── BACK (2) ────────────────────────────────────────────────────────────────
@@ -141,7 +141,7 @@ export const PARTS = [
     powerDraw: 1,
     stats:    { armor: 0, speed: 3, damage: 0, sensor: 2 },
     roles:    ['SCOUT'],
-    flavor:   'Releases static-laced smoke. Ghosts love the cover; so should you.',
+    flavor:   'COSMETIC: counts toward weight and power only, no combat effect yet. Static-laced smoke pack, for the look.',
   },
   {
     id:       'back-howitzer',
@@ -151,7 +151,7 @@ export const PARTS = [
     powerDraw: 4,
     stats:    { armor: 0, speed: 0, damage: 8, sensor: 1 },
     roles:    ['LONGSHOT', 'BRUISER'],
-    flavor:   'Indirect-fire mortar pod. Screams on the way down. Literally.',
+    flavor:   'COSMETIC: counts toward weight and power only, no combat effect yet. Mortar pod, for show. Still screams.',
   },
 
   // ── HEAD (2) ────────────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ export const PARTS = [
     powerDraw: 2,
     stats:    { armor: 0, speed: 0, damage: 0, sensor: 8 },
     roles:    ['SCOUT', 'LONGSHOT'],
-    flavor:   'Layered thermal-spectral lenses. Lets you see what shouldn\'t be visible.',
+    flavor:   'COSMETIC: counts toward weight and power only, no combat effect yet (Sensor is cosmetic on every part). Thermal-spectral lenses.',
   },
   {
     id:       'head-visor',
@@ -174,7 +174,7 @@ export const PARTS = [
     powerDraw: 1,
     stats:    { armor: 4, speed: 0, damage: 1, sensor: 2 },
     roles:    ['BRUISER'],
-    flavor:   'Blast-hardened faceplate with integrated threat reticle.',
+    flavor:   'COSMETIC: counts toward weight and power only, no combat effect yet. Blast-hardened faceplate.',
   },
 ];
 
