@@ -1,7 +1,8 @@
 /**
  * src/combat/endcard.js
  *
- * Pure text helpers for the R8 end card (VICTORY / DESTROYED panel).
+ * Pure text helpers for the end card (EXORCISED / POSSESSED / LAID TO REST,
+ * spec 11-haunt-words; was VICTORY / DESTROYED).
  *
  * No DOM, Canvas, or timing access — every function takes plain data and
  * returns plain data, so they are directly unit-testable with Node's assert.
@@ -36,34 +37,55 @@ export function formatTimeSurvived(ms) {
 // ── Phase → text helpers ──────────────────────────────────────────────────────
 
 /**
- * Big title for the given end phase.
+ * True for a win fought at the top HAUNT LV (LAID TO REST case).
+ * With missing/non-numeric options it is false (plain win).
  *
  * @param {'win'|'lose'|string} phase
- * @returns {string}  'VICTORY' on win, 'DESTROYED' otherwise.
+ * @param {{level?:number, maxLevel?:number}} [opts]
  */
-export function titleText(phase) {
-  return phase === 'win' ? 'VICTORY' : 'DESTROYED';
+function isMaxWin(phase, opts) {
+  const { level, maxLevel } = opts ?? {};
+  return phase === 'win'
+    && Number.isFinite(level) && Number.isFinite(maxLevel)
+    && level >= maxLevel;
 }
 
 /**
- * Optional subtitle for the given end phase.
+ * Big title for the given end phase.
  *
  * @param {'win'|'lose'|string} phase
- * @returns {string}  'MISSION COMPLETE' on win, 'MISSION FAILED' otherwise.
+ * @param {{level?:number, maxLevel?:number}} [opts]  HAUNT LV fought at, and the cap.
+ * @returns {string}  'EXORCISED', 'LAID TO REST' (max-level win) or 'POSSESSED'.
  */
-export function subtitleText(phase) {
-  return phase === 'win' ? 'MISSION COMPLETE' : 'MISSION FAILED';
+export function titleText(phase, opts) {
+  if (phase !== 'win') return 'POSSESSED';
+  return isMaxWin(phase, opts) ? 'LAID TO REST' : 'EXORCISED';
+}
+
+/**
+ * Subtitle for the given end phase.
+ *
+ * @param {'win'|'lose'|string} phase
+ * @param {{level?:number, maxLevel?:number}} [opts]
+ * @returns {string}
+ */
+export function subtitleText(phase, opts) {
+  if (phase !== 'win') return 'Your mech joins the haunt.';
+  return isMaxWin(phase, opts)
+    ? 'Nothing left to haunt. Yet.'
+    : 'The haunt retreats... for now.';
 }
 
 /**
  * One-line cause describing how the round ended.
  *
  * @param {'win'|'lose'|string} phase
+ * @param {{level?:number, maxLevel?:number}} [_opts]  Accepted for symmetry; the cause does not vary by level.
  * @returns {string}
  */
-export function causeText(phase) {
+export function causeText(phase, _opts) {
   return phase === 'win'
-    ? 'Enemy mech disabled.'
+    ? 'Spirit banished.'
     : 'Your mech was destroyed.';
 }
 
@@ -83,6 +105,7 @@ export function timeSurvivedLine(elapsedMs) {
  *
  * @param {'win'|'lose'|string} phase
  * @param {number} elapsedMs
+ * @param {{level?:number, maxLevel?:number}} [opts]
  * @returns {{
  *   isWin: boolean,
  *   title: string,
@@ -91,12 +114,12 @@ export function timeSurvivedLine(elapsedMs) {
  *   timeLine: string,
  * }}
  */
-export function endCardText(phase, elapsedMs) {
+export function endCardText(phase, elapsedMs, opts) {
   return {
     isWin:    phase === 'win',
-    title:    titleText(phase),
-    subtitle: subtitleText(phase),
-    cause:    causeText(phase),
+    title:    titleText(phase, opts),
+    subtitle: subtitleText(phase, opts),
+    cause:    causeText(phase, opts),
     timeLine: timeSurvivedLine(elapsedMs),
   };
 }

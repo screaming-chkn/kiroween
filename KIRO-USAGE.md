@@ -162,3 +162,26 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Proof** (crew box, not in the repo): `kiro-proof/ (team archive)` holds `probe-recording.mp4` (screen recording of the box desktop, 75 s, the run in a visible terminal), `probe-transcript.txt` (`script` capture), `probe-prompt.txt`, `run-probe.sh` and `frame-16s.png`.
 - **Tests:** `npm test` 877 passed, 0 failed (873 + 4 new).
 - **Account totals:** 21.82 + 0.13 = **21.95 credits metered** (Google 4.81, Pro 17.14).
+
+## M6: haunt words and taunts (win-review #2 + #6) (2026-11-18, build agent): branch m6-haunt-words
+- **Kiro used: yes**, 3 runs on the box, Pro (GitHub login), model **Auto**, kiro-cli 3.4.0, **engine v3** with workspace trust. Command for each run (prompts saved next to the proof files):
+  `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat runN-prompt.txt)"`
+- Copy source: the team's approved copy (end card, HUD label, 16 taunts, the spec-haunted pattern), used word for word.
+- **Before Kiro (build agent, commit 74743f6):** the hook wrapper now passes Kiro a short summary of hook output instead of the full ~1,300-line test log.
+- **Run 12 (17:56–17:57 PT):** Kiro wrote spec `.kiro/specs/11-haunt-words/` (requirements R1–R4, design, 11 tasks). It tried one shell command, which was denied (file tools only).
+  - Hooks fired: `seance-on-spec-save` ×1 (on Kiro creating `11-haunt-words/tasks.md`, exit 0).
+- **Run 13 (17:58–17:59 PT):** tasks 1–4. End-card copy EXORCISED / POSSESSED / LAID TO REST, the sublines, "Spirit banished.", the level-up line `levelUpText` in `hauntLevel.js`, the stamp drawn with a max width, the enemy bar label HOUND, plus tests.
+  - Hooks fired: `test-on-save` ×14 (12 failing while edits were half done, the last 2 green), `balance-on-combat-save` ×1 (on `src/ui/hauntLevel.js`, exit 0; no balance numbers changed), `seance-on-spec-save` ×4 (task ticks).
+- **Run 14 (18:00–18:03 PT):** tasks 5–10. 16 moment-tagged taunts (spawn, windup, hit, low HP, enemy death, player death), a shared windup/hit cooldown that never cuts off a line, a once-per-match low-HP latch, `specTauntLine` ("Task {id} done. So are you." from a real done task in `seance-tasks.json`), the `main.js` wiring, the steering rewrite, and tests. It tried shell commands 3 times and was denied each time.
+  - Hooks fired: `test-on-save` ×9 (2 failing mid-edit, the last 7 green), `seance-on-spec-save` ×1.
+- **Hook output and the agent:** every firing is in `.kiro/hook-runs.log`. In both implementation runs Kiro said it had not seen the hooks' summaries, so on v3 headless, PostFileSave command output does not appear to reach the agent's context. The hooks really ran, but Kiro did not use their results to fix things. I ran `npm test` after each run.
+- **Credits (`/usage`):** Pro 241.60 → 244.97 (after run 13; run 12's metering lagged into this reading) → 248.59 (after run 14). **6.99 for M6** (runs 12+13: 3.37, run 14: 3.62). About 628 left of 877; resets 2026-12-01. No credits bought, no plan or settings change, no new login, no IDE.
+- **What I edited (build agent, separate commits):**
+  - **Bug 2:** the in-fight taunt was drawn 56 world units above the enemy, right on its HP label (top at 58). The new `tauntBaselineY` puts it above the label with a gap, or below the enemy when the top edge is too close. Tests added.
+  - `specTauntLine` now drops a spec number's leading zero (`3.5`, not `03.5`).
+  - Task 11 (text-fit check) was ticked by hand and the séance rebuilt with `npm run build:seance` by hand. No hook fired for that edit.
+  - README spooky-elements and Kiro sections were updated.
+- **Text fit:** screenshots at 1280×800, 1024×640 and 390×844 DPR 2 (phone portrait) are in `build-review/ (team archive)shots-m6/`. They cover the spawn taunt, the low-HP taunt, and the end cards for an LV 2 win, an LV 5 win and an LV 1 loss. Every string fits and there were 0 console errors. On the phone, LAID TO REST fills the card width but is not clipped.
+- **Proof** (crew box): `kiro-proof/ (team archive)run12-*`, `run13-*`, `run14-*` (screen recording, scrubbed transcript, prompt).
+- **Tests:** `npm test` 900 passed, 0 failed.
+- **Account totals:** 21.95 + 6.99 = **28.94 credits metered** (Google 4.81, Pro 24.13).

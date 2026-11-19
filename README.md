@@ -53,11 +53,12 @@ Each spooky element below has a job:
 
 - **Windup telegraph ring.** The bot's shot is announced by a red halo that grows over the 450 ms windup. It is the tell you dash against. It is red plus a shape change plus a sound, never colour alone.
 - **Possession palette swap** (`src/ui/possession.js`). The UI has a cold, grey "sterile" palette and a haunted green phosphor palette. Opening the SÉANCE terminal flips the page to the possessed palette with one class on `<html>`, and closing it flips back. The colour change tells you the state changed.
-- **Possessed taunts** (`src/ui/possessedTaunts.js`). The enemy types short CRT lines when it spawns, when it winds up a shot, and when it dies. Windup lines are limited to one per 8 seconds. The lines are text only, and the first spawn and death lines can be forced for demos with `?demo=1`.
+- **Possessed taunts** (`src/ui/possessedTaunts.js`). The enemy types 16 short CRT lines across six moments: spawn, shot windup, hitting you, your HP dropping to a quarter, its death and yours. Windup and hit lines share one 8-second limit and never cut off a line. Sometimes your death line quotes the game's own build log: "Task 10.32 done. So are you.", using a real finished task from the specs. The lines are text only, and the first spawn and death lines can be forced for demos with `?demo=1`.
 - **SÉANCE terminal.** It is also the build ledger. It reads `public/seance-tasks.json`, which is built from the real spec task files, so the game shows the task list it was built from.
 - **CRT title and scanlines.** The title has a glitching logo, scanlines, fog and a pulsing "press to deploy". Static and fog stay under the opacity cap and never cover HUD numbers or menu text. Animations calm down under the system reduced-motion setting.
 - **Hit-stop and shake.** A hit freezes the sim for a few frames and shakes the camera, so you can feel that it landed. Shake is capped and drops to near zero under reduced motion.
 - **HAUNT LV.** The difficulty ramp is the haunting: a possessed enemy gets more health and hits harder at each level.
+- **Haunt words.** A win reads EXORCISED ("Spirit banished.") and warns THE HAUNT RISES as the level goes up; a loss reads POSSESSED; a win at LV 5 reads LAID TO REST. The bot's health bar is labelled HOUND. Buttons and controls stay plain.
 
 ## How we used Kiro
 
@@ -66,6 +67,7 @@ Each spooky element below has a job:
 - **M4:** the balance spec, steering, hooks and harness.
 - **M5:** the steering rewrite, spec reconcile, `build:site` script and README check.
 - **M4.5 (loadout effects):** the R8 spec, design and tasks, a steering note, the first implementation and a property-based test file.
+- **M6 (haunt words, on the CLI's v3 engine):** the `11-haunt-words` spec, the end-card copy, the 16 moment-tagged taunts with their tests and wiring, and the taunt steering. The workspace hooks fired on Kiro's own edits: tests, balance check and séance rebuild.
 
 Human and agent edits went in separate commits. The Kiro IDE was not used. The full per-run log, with commands, prompts, accounts, credits, and what Kiro wrote versus what we edited, is in [KIRO-USAGE.md](KIRO-USAGE.md).
 
@@ -89,7 +91,7 @@ Each hook command goes through `scripts/kiro-hook-run.mjs`, which logs every fir
 - `accessibility.md`: hard rules for contrast, static, settings, keyboard and colour.
 - `design-tokens.md`: colours, type, spacing, motion and effect limits.
 - `ui-style.md`: the haunted CRT mood, where every effect must do a job.
-- `possessed-taunts.md`: the 12 enemy taunt lines and how they are shown.
+- `possessed-taunts.md`: the 16 enemy taunt lines, the spec-haunted line, and how they are shown.
 - `loadout-effects.md`: rules for arm and core effects (one per part, stated cost, flag, tune with the harness).
 
 **The séance view.** `npm run build:seance` builds `public/seance-tasks.json` from every `tasks.md`. The game shows it from the garage SÉANCE button, so it literally shows its own Kiro task list.

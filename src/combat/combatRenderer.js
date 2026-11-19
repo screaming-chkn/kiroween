@@ -358,7 +358,7 @@ export function drawHUD(ctx, state) {
   );
 
   // Enemy bar — centred above enemy, ember fill.
-  // Label is "HP" (not "EN"): the bar tracks enemy hit-points (R9).
+  // Label is "HOUND" (spec 11 R2); the player bar keeps "HP".
   drawHPBar(
     ctx,
     enemy.x - HP_BAR_W / 2,
@@ -366,7 +366,7 @@ export function drawHUD(ctx, state) {
     enemy.hp,
     enemy.maxHp,
     C.ember,
-    'HP',
+    'HOUND',
   );
 }
 

@@ -95,6 +95,19 @@ export function applyHauntPressure(enemy, level, { baseHp = ENEMY_MAX_HP ?? 1500
   return { ...enemy, hp, maxHp: hp, shotDamage: Math.round(baseDamage * p) };
 }
 
+/**
+ * End-card level-up line shown after a win below max. `newLevel` is the level
+ * the player rises to. Returns '' at or below LV 1 (no rise happened).
+ *
+ * @param {number} newLevel
+ * @returns {string}
+ */
+export function levelUpText(newLevel) {
+  const n = Math.floor(Number(newLevel));
+  if (!Number.isFinite(n) || n <= MIN_HAUNT_LEVEL) return '';
+  return `THE HAUNT RISES \u00b7 HAUNT LV ${Math.min(n, MAX_HAUNT_LEVEL)}. It remembers you.`;
+}
+
 export function formatHauntLabel(level) {
   return `HAUNT LV ${clampLevel(level)}`;
 }

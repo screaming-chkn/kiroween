@@ -13,12 +13,15 @@ function test(name, fn) {
 }
 
 function fakeCtx() {
-  const log = { saves: 0, restores: 0, texts: [], fills: [] };
+  const log = { saves: 0, restores: 0, texts: [], fills: [], fillCalls: [], strokeCalls: [] };
   const target = {
     save() { log.saves++; },
     restore() { log.restores++; },
-    fillText(t) { log.texts.push(String(t)); },
-    strokeText() {},
+    fillText(t, x, y, w) {
+      log.texts.push(String(t));
+      log.fillCalls.push({ t: String(t), x, y, w, style: target.fillStyle, font: target.font });
+    },
+    strokeText(t, x, y, w) { log.strokeCalls.push({ t: String(t), x, y, w }); },
     fillRect() { log.fills.push(target.fillStyle); },
   };
   const ctx = new Proxy(target, {
@@ -69,11 +72,57 @@ test('stamp string drawn only when provided', () => {
   assert.ok(!draw(win, {}).log.texts.some(t => t.includes('built from')));
 });
 
-test('win/lose titles', () => {
-  assert.equal(stampText('win'), 'WIN');
-  assert.equal(stampText('lose'), 'LOSS');
-  assert.ok(draw(win, {}).log.texts.includes('WIN'));
-  assert.ok(draw(lose, {}).log.texts.includes('LOSS'));
+test('win/lose stamps and max-level stamp', () => {
+  assert.equal(stampText('win'), 'EXORCISED');
+  assert.equal(stampText('lose'), 'POSSESSED');
+  assert.equal(stampText('win', { level: 5, maxLevel: 5 }), 'LAID TO REST');
+  assert.equal(stampText('lose', { level: 5, maxLevel: 5 }), 'POSSESSED');
+  assert.ok(draw(win, {}).log.texts.includes('EXORCISED'));
+  assert.ok(draw(lose, {}).log.texts.includes('POSSESSED'));
+  assert.ok(draw(win, { level: 5, maxLevel: 5 }).log.texts.includes('LAID TO REST'));
+});
+
+test('sublines and cause line', () => {
+  const w = draw(win, {}).log.texts;
+  assert.ok(w.includes('The haunt retreats... for now.'));
+  assert.ok(w.includes('Spirit banished.'));
+  const m = draw(win, { level: 5, maxLevel: 5 }).log.texts;
+  assert.ok(m.includes('Nothing left to haunt. Yet.'));
+  const l = draw(lose, {}).log.texts;
+  assert.ok(l.includes('Your mech joins the haunt.'));
+  assert.ok(l.includes('Your mech was destroyed.'));
+});
+
+test('stamp uses max width cardW - 40 on fillText and strokeText', () => {
+  for (const [s, o] of [[win, {}], [lose, {}], [win, { level: 5, maxLevel: 5 }]]) {
+    const { log } = draw(s, o);
+    const stamp = stampText(s.phase, o);
+    assert.ok(log.fillCalls.some(c => c.t === stamp && c.w === 480), stamp);
+    assert.ok(log.strokeCalls.some(c => c.t === stamp && c.w === 480), stamp);
+  }
+});
+
+test('level-up line: win below max only, ember 15px, max width cardW - 24', () => {
+  const line = 'THE HAUNT RISES \u00b7 HAUNT LV 3. It remembers you.';
+  const { log } = draw(win, { level: 2, maxLevel: 5 });
+  const c = log.fillCalls.find(x => x.t === line);
+  assert.ok(c, log.texts.join('|'));
+  assert.equal(c.w, 496);
+  assert.equal(c.style, '#FF8A3D');
+  assert.ok(c.font.startsWith('15px "Share Tech Mono"'));
+  assert.ok(!draw(win, { level: 5, maxLevel: 5 }).log.texts.some(t => t.includes('HAUNT RISES')));
+  assert.ok(!draw(lose, { level: 2, maxLevel: 5 }).log.texts.some(t => t.includes('HAUNT RISES')));
+  assert.ok(!draw(win, {}).log.texts.some(t => t.includes('HAUNT RISES')));
+});
+
+test('level-up line sits between time line and spec stamp, above buttons', () => {
+  const s = 'built from .kiro/specs/03-arena-combat \u00b7 3/4 tasks [x]';
+  const { r, log } = draw(win, { level: 1, maxLevel: 5, specStamp: s });
+  const y = (t) => log.fillCalls.find(c => c.t === t).y;
+  const rise = y('THE HAUNT RISES \u00b7 HAUNT LV 2. It remembers you.');
+  assert.ok(y('Time survived  1:05') < rise);
+  assert.ok(rise < y(s));
+  assert.ok(y(s) < r.buttons[0].y);
 });
 
 test('no throw without opts; null while playing; null in grace', () => {

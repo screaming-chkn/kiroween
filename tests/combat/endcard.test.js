@@ -84,28 +84,38 @@ test('Infinity input clamps to 0:00', () => {
 
 console.log('\nsrc/combat/endcard.js — phase text\n');
 
-test('win title is VICTORY', () => {
-  assert.equal(titleText('win'), 'VICTORY');
+test('win title is EXORCISED', () => {
+  assert.equal(titleText('win'), 'EXORCISED');
+  assert.equal(titleText('win', { level: 2, maxLevel: 5 }), 'EXORCISED');
 });
 
-test('lose title is DESTROYED', () => {
-  assert.equal(titleText('lose'), 'DESTROYED');
+test('lose title is POSSESSED', () => {
+  assert.equal(titleText('lose'), 'POSSESSED');
+  assert.equal(titleText('lose', { level: 5, maxLevel: 5 }), 'POSSESSED');
 });
 
-test('non-win phase title is DESTROYED (safe default)', () => {
-  assert.equal(titleText('playing'), 'DESTROYED');
+test('non-win phase title is POSSESSED (safe default)', () => {
+  assert.equal(titleText('playing'), 'POSSESSED');
 });
 
-test('win subtitle is MISSION COMPLETE', () => {
-  assert.equal(subtitleText('win'), 'MISSION COMPLETE');
+test('max-level win is LAID TO REST', () => {
+  assert.equal(titleText('win', { level: 5, maxLevel: 5 }), 'LAID TO REST');
+  assert.equal(subtitleText('win', { level: 5, maxLevel: 5 }), 'Nothing left to haunt. Yet.');
+  assert.equal(causeText('win', { level: 5, maxLevel: 5 }), 'Spirit banished.');
+  assert.equal(titleText('win', { level: 4, maxLevel: 5 }), 'EXORCISED');
+  assert.equal(titleText('win', { level: 5 }), 'EXORCISED');
 });
 
-test('lose subtitle is MISSION FAILED', () => {
-  assert.equal(subtitleText('lose'), 'MISSION FAILED');
+test('win subtitle', () => {
+  assert.equal(subtitleText('win'), 'The haunt retreats... for now.');
+});
+
+test('lose subtitle', () => {
+  assert.equal(subtitleText('lose'), 'Your mech joins the haunt.');
 });
 
 test('win cause line', () => {
-  assert.equal(causeText('win'), 'Enemy mech disabled.');
+  assert.equal(causeText('win'), 'Spirit banished.');
 });
 
 test('lose cause line', () => {
@@ -129,19 +139,26 @@ test('win aggregate', () => {
   const t = endCardText('win', 65000);
   assert.deepEqual(t, {
     isWin:    true,
-    title:    'VICTORY',
-    subtitle: 'MISSION COMPLETE',
-    cause:    'Enemy mech disabled.',
+    title:    'EXORCISED',
+    subtitle: 'The haunt retreats... for now.',
+    cause:    'Spirit banished.',
     timeLine: 'Time survived  1:05',
   });
+});
+
+test('max-level win aggregate', () => {
+  const t = endCardText('win', 0, { level: 5, maxLevel: 5 });
+  assert.equal(t.title, 'LAID TO REST');
+  assert.equal(t.subtitle, 'Nothing left to haunt. Yet.');
+  assert.equal(t.cause, 'Spirit banished.');
 });
 
 test('lose aggregate', () => {
   const t = endCardText('lose', 0);
   assert.deepEqual(t, {
     isWin:    false,
-    title:    'DESTROYED',
-    subtitle: 'MISSION FAILED',
+    title:    'POSSESSED',
+    subtitle: 'Your mech joins the haunt.',
     cause:    'Your mech was destroyed.',
     timeLine: 'Time survived  0:00',
   });

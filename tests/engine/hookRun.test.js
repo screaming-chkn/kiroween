@@ -12,7 +12,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { eventFilePath, eventName } from '../../scripts/kiro-hook-run.mjs';
+import { eventFilePath, eventName, summarizeOutput } from '../../scripts/kiro-hook-run.mjs';
 
 let passed = 0;
 function test(name, fn) {
@@ -45,6 +45,15 @@ test('every hook command runs through the logging wrapper', () => {
       assert.match(h.action.command, new RegExp(`^node scripts/kiro-hook-run\\.mjs ${f.replace('.json', '')} -- `), f);
     }
   }
+});
+
+test('summarizeOutput keeps success short and failures visible', () => {
+  const ok = summarizeOutput('a\nb\n\nc\nd\n', { ok: true });
+  assert.equal(ok, 'b\nc\nd\n');
+  const bad = summarizeOutput(['x', 'FAIL  thing', ...Array.from({ length: 50 }, (_, i) => `l${i}`)].join('\n'), { ok: false });
+  assert.match(bad, /FAIL {2}thing/);
+  assert.match(bad, /l49/);
+  assert.doesNotMatch(bad, /l10\n/);
 });
 
 console.log(`hookRun: ${passed} passed`);

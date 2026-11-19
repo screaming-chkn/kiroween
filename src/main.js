@@ -74,10 +74,10 @@ import { formatArenaSpecStamp } from './ui/specStamp.js';
 import { SEANCE_DATA_URL }     from './ui/seance.js';
 import { drawEndCardView }     from './ui/endCardView.js';
 import {
-  createTauntMachine, isDemoTaunts, drawPossessedTaunt,
+  createTauntMachine, isDemoTaunts, drawPossessedTaunt, specTauntLine, tauntBaselineY,
 }                              from './ui/possessedTaunts.js';
 import {
-  readHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel,
+  readHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel, MAX_HAUNT_LEVEL,
 }                              from './ui/hauntLevel.js';
 import { resetHpFx }           from './ui/phoneCombatUi.js';
 
@@ -88,6 +88,8 @@ let advanceHaunt = false;
 /** End-card spec stamp from the build-time seance JSON; null until/unless real data loads. */
 let specStampText = null;
 let specStampRequested = false;
+/** Parsed seance JSON array for the spec-haunted player-death taunt; null until/unless loaded. */
+let seanceTasks = null;
 
 /** Fetch the seance JSON once. Real counts only; any failure leaves null. */
 function loadSpecStamp() {
@@ -95,8 +97,11 @@ function loadSpecStamp() {
   specStampRequested = true;
   fetch(SEANCE_DATA_URL)
     .then(res => (res.ok ? res.json() : null))
-    .then(json => { specStampText = formatArenaSpecStamp(json); })
-    .catch(() => { specStampText = null; });
+    .then(json => {
+      specStampText = formatArenaSpecStamp(json);
+      seanceTasks = Array.isArray(json) ? json : null;
+    })
+    .catch(() => { specStampText = null; seanceTasks = null; });
 }
 
 // ── Audio settings (M2): SFX / music volume + mute, persisted ──────────────
@@ -482,7 +487,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         const sp = worldToScreen(st.enemy.x, st.enemy.y, camera, vpW, vpH,
           shakeX + kickX, shakeY + kickY);
         tx = sp.sx;
-        ty = Math.max(48 * hudScale, Math.min(vpH - 140 * hudScale, sp.sy - 56 * camera.zoom));
+        // Above the enemy's HOUND label with a gap (bug 2: it used to sit on it).
+        ty = tauntBaselineY({ enemyY: sp.sy, zoom: camera.zoom, scale: hudScale, vpH, insetTop });
       }
       if (!cardUp) drawPossessedTaunt(ctx, taunt, { x: tx, y: ty, scale: hudScale });
       else afterCard = { x: tx, y: ty, scale: hudScale };
@@ -495,7 +501,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       cueMusic(st.phase === 'win' ? 'win' : 'lose');
     }
     const restartReady = canRestart(phaseEndedAtMs, nowMs, null);
-    const cardOpts = { shownAtMs: cardShownAtMs, nowMs, specStamp: specStampText };
+    const cardOpts = { shownAtMs: cardShownAtMs, nowMs, specStamp: specStampText,
+      level: hauntLv, maxLevel: MAX_HAUNT_LEVEL };
     if (touchUi) {
       const { sx, sy } = endCardScale({
         touchUi, dpr: uiDpr, cssW: canvas.clientWidth || window.innerWidth,
@@ -695,6 +702,14 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (prevWindup <= 0 && windupNow > 0) tauntMachine.onWindup(performance.now());
     prevWindup = windupNow;
 
+    // Taunts on player damage and on the first drop to 25% HP or less.
+    const hpBefore = prevState.player.hp;
+    const hpNow = arenaState.player.hp;
+    if (arenaState.phase === 'playing') {
+      if (hpNow < hpBefore) tauntMachine.onHit(performance.now());
+      if (hpNow > 0 && hpNow <= 0.25 * arenaState.player.maxHp) tauntMachine.onLowHp(performance.now());
+    }
+
     // Playing → win/lose: start the kill moment (the early return above
     // freezes combat for the hit-stop). The restart grace starts later, with
     // the end card (see the non-playing branch above).
@@ -706,6 +721,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       if (arenaState.phase === 'win') {
         advanceHaunt = true;
         tauntMachine.onDeath(killNow);
+      } else if (arenaState.phase === 'lose') {
+        tauntMachine.onPlayerDeath(killNow, specTauntLine(seanceTasks));
       }
       if (touch) touch.setActive(false);
     }

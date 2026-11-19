@@ -5,8 +5,8 @@
  *   node scripts/kiro-hook-run.mjs <hook-name> -- <command...>
  *
  * Kiro passes the hook event as JSON on stdin. This wrapper reads it, runs the
- * real command in the repo root (stdout/stderr pass through, so Kiro still
- * sees them), then appends one line to .kiro/hook-runs.log:
+ * real command in the repo root, prints a short summary of its output (Kiro
+ * adds hook stdout to the agent context), then appends one line to .kiro/hook-runs.log:
  *
  *   <UTC ISO time> <hook-name> event=<hook_event_name> file=<path> exit=<code> ms=<duration>
  *
@@ -42,6 +42,20 @@ export function eventFilePath(event) {
   return '';
 }
 
+/**
+ * Short hook output for the agent's context. Success: the last 3 non-empty
+ * lines. Failure: every line that mentions FAIL/Error/✗ (max 30) plus the last
+ * 20 lines.
+ * @param {string} text
+ * @param {{ok:boolean}} o
+ */
+export function summarizeOutput(text, { ok }) {
+  const lines = String(text ?? '').split('\n').filter((l) => l.trim());
+  if (ok) return lines.slice(-3).join('\n') + '\n';
+  const bad = lines.filter((l) => /FAIL|Error|✗|not ok/.test(l)).slice(0, 30);
+  return [...bad, '…', ...lines.slice(-20)].join('\n') + '\n';
+}
+
 /** Pick the event name Kiro reports, if any. */
 export function eventName(event) {
   if (!event || typeof event !== 'object') return '';
@@ -69,8 +83,15 @@ function main() {
   if (file && isAbsolute(file)) file = relative(REPO_ROOT, file) || file;
 
   const t0 = Date.now();
-  const r = spawnSync(cmd, { cwd: REPO_ROOT, shell: true, stdio: ['ignore', 'inherit', 'inherit'] });
+  const r = spawnSync(cmd, {
+    cwd: REPO_ROOT, shell: true, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+  });
   const code = r.status ?? 1;
+  // Kiro adds hook stdout to the agent's context, so keep it short: a summary
+  // on success, the failing lines plus the tail on failure.
+  const out = `${r.stdout ?? ''}${r.stderr ?? ''}`;
+  if (code === 0) process.stdout.write(summarizeOutput(out, { ok: true }));
+  else process.stderr.write(summarizeOutput(out, { ok: false }));
   const line = `${new Date().toISOString()} ${name} event=${eventName(event) || '-'} file=${file || '-'} exit=${code} ms=${Date.now() - t0}\n`;
   appendFileSync(LOG_FILE, line);
   process.exit(code);

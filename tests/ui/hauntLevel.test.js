@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {
   MAX_HAUNT_LEVEL, hauntPressure, readHauntLevel, setHauntLevel, bumpHauntLevel,
   applyHauntPressure, formatHauntLabel, drawHauntLevel, hauntAdvancesOn,
+  levelUpText, HAUNT_PRESSURE,
 } from '../../src/ui/hauntLevel.js';
 
 let passed = 0;
@@ -98,6 +99,15 @@ test('policy applied to the level: loss keeps LV, win bumps once', () => {
   } finally {
     setHauntLevel(1);
   }
+});
+
+test('levelUpText shows the new level, empty at or below LV 1', () => {
+  assert.equal(levelUpText(2), 'THE HAUNT RISES \u00b7 HAUNT LV 2. It remembers you.');
+  assert.equal(levelUpText(5), 'THE HAUNT RISES \u00b7 HAUNT LV 5. It remembers you.');
+  assert.equal(levelUpText(1), '');
+  assert.equal(levelUpText(0), '');
+  assert.equal(levelUpText(undefined), '');
+  assert.deepEqual(Array.from(HAUNT_PRESSURE), [0.8, 1.0, 1.1, 1.17, 1.2]);
 });
 
 test('formatHauntLabel', () => {

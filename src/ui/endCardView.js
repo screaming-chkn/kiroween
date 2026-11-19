@@ -9,11 +9,13 @@
  * Pure ES module: no DOM at load, only the ctx passed in.
  */
 
-import { formatTimeSurvived, subtitleText, causeText } from '../combat/endcard.js';
+import { formatTimeSurvived, titleText, subtitleText, causeText } from '../combat/endcard.js';
+import { levelUpText } from './hauntLevel.js';
 
 export const COUNT_UP_MS = 600;
-export const STAMP_WIN = 'WIN';
-export const STAMP_LOSS = 'LOSS';
+export const STAMP_WIN = 'EXORCISED';
+export const STAMP_LOSS = 'POSSESSED';
+export const STAMP_MAX = 'LAID TO REST';
 export const BTN_W = 200;
 export const BTN_H = 52;
 
@@ -27,9 +29,22 @@ const C = {
   loss:    '#FF4D5E',
 };
 
-/** Big stamp text for a phase. */
-export function stampText(phase) {
-  return phase === 'win' ? STAMP_WIN : STAMP_LOSS;
+/**
+ * Big stamp text for a phase. Pass { level, maxLevel } (the LV fought at) to
+ * get LAID TO REST on a max-level win.
+ */
+export function stampText(phase, opts) {
+  return titleText(phase, opts);
+}
+
+/**
+ * Level-up line for a win below max, else ''. `level` is the LV fought at.
+ */
+export function levelUpLine(phase, opts) {
+  const { level, maxLevel } = opts ?? {};
+  if (phase !== 'win' || !Number.isFinite(level) || !Number.isFinite(maxLevel)) return '';
+  if (level >= maxLevel) return '';
+  return levelUpText(level + 1);
 }
 
 /**
@@ -55,7 +70,8 @@ export function countUpMs(elapsedMs, shownAtMs, nowMs) {
  * @param {number} vpH
  * @param {boolean} [restartReady]
  * @param {number} [focusIndex]  0 = REDEPLOY, 1 = GARAGE
- * @param {{shownAtMs?:number, nowMs?:number, specStamp?:string|null}} [opts]
+ * @param {{shownAtMs?:number, nowMs?:number, specStamp?:string|null, level?:number, maxLevel?:number}} [opts]
+ *        level = HAUNT LV the duel was fought at; maxLevel = the cap.
  * @returns {{ buttons: Array<{id:string,label:string,x:number,y:number,w:number,h:number}> } | null}
  */
 export function drawEndCardView(ctx, state, _camera, vpW, vpH, restartReady = false, focusIndex = 0, opts = {}) {
@@ -91,31 +107,37 @@ export function drawEndCardView(ctx, state, _camera, vpW, vpH, restartReady = fa
   ctx.textBaseline = 'alphabetic';
 
   // Big stamp.
-  const stamp = stampText(state.phase);
+  const stamp = stampText(state.phase, o);
   ctx.font = '90px "VT323", monospace';
   ctx.lineWidth = 1;
   ctx.strokeStyle = C.void;
-  ctx.strokeText(stamp, cx, cardY + 96);
+  ctx.strokeText(stamp, cx, cardY + 96, cardW - 40);
   ctx.fillStyle = accent;
-  ctx.fillText(stamp, cx, cardY + 96);
+  ctx.fillText(stamp, cx, cardY + 96, cardW - 40);
 
   // Subtitle + cause.
   ctx.fillStyle = C.bone;
   ctx.font = '20px "VT323", monospace';
-  ctx.fillText(subtitleText(state.phase), cx, cardY + 130);
+  ctx.fillText(subtitleText(state.phase, o), cx, cardY + 130);
   ctx.fillStyle = C.ash;
   ctx.font = '15px "Share Tech Mono", monospace';
-  ctx.fillText(causeText(state.phase), cx, cardY + 164);
+  ctx.fillText(causeText(state.phase, o), cx, cardY + 164);
 
-  // Time (counting up) + dim spec line.
+  // Time (counting up), level-up line (win below max), dim spec line.
   ctx.fillStyle = C.bone;
   ctx.font = '16px "Share Tech Mono", monospace';
   ctx.fillText(timeLine, cx, cardY + 194);
+  const rise = levelUpLine(state.phase, o);
+  if (rise) {
+    ctx.fillStyle = C.ember;
+    ctx.font = '15px "Share Tech Mono", monospace';
+    ctx.fillText(rise, cx, cardY + 222, cardW - 24);
+  }
   if (typeof o.specStamp === 'string' && o.specStamp.length > 0) {
     ctx.globalAlpha = 0.8;
     ctx.fillStyle = C.ash;
     ctx.font = '13px "Share Tech Mono", monospace';
-    ctx.fillText(o.specStamp, cx, cardY + 218, cardW - 24);
+    ctx.fillText(o.specStamp, cx, cardY + 250, cardW - 24);
     ctx.globalAlpha = 1;
   }
 
