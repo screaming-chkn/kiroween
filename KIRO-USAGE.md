@@ -319,3 +319,16 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Kiro authored:** `src/engine/touch.js` (gutter 0.144 + initial arc), `src/main.js` (landscape strip fit), `tests/engine/touch.test.js`, `tests/combat/landscapeHud.test.js`, `.kiro/specs/13-hud-meters/design.md`.
 - **Build-agent follow-up:** capped strip growth to ~10% intent (height-bound ~+5% on 844×390 / 1200×900 arena); applied Digger brief up-left Fire/Dash (~72/64 CSS px) clamped into gutter; shots + FIELD-CHECK PASS; no balance / Sever change.
 - **Tests:** `npm test` green. Digger brief used (up-left arc).
+
+## HOT RUN — HOT-1 phone-landscape spec + steering (2026-11-19 ~1:57 PM PT) — branch feat/hud-c
+- **Run id:** HOT1.
+- **Command:** `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write` with `deploy/kiro-proof/hud-c/runHOT1-prompt.txt` → `runHOT1-transcript.txt`.
+- **Credits (GitHub / Kiro Pro):** 291.67 → 293.05 of 877 (~**1.38** this run). Reset 2026-12-01.
+- **Kiro authored:** `.kiro/specs/14-phone-landscape/{requirements,design,tasks}.md`, `.kiro/steering/phone-landscape.md`. Hook `seance-on-spec-save` fired on tasks.md (hook-runs.log +1 → 175).
+- **Build-agent follow-up:** none for HOT-1 files. Commit `c102728`.
+
+## HOT RUN — C5b Eggbot S1+S2 (2026-11-19 ~2:00 PM PT) — branch feat/hud-c, tip for owner lock
+- **Kiro used: no** for S1/S2 source (build-agent hand; priority tip). Prefer-Kiro deferred to HOT-2 hook exercise.
+- **Credits:** 0 for S1/S2.
+- **Shipped:** `TAUNT_ABOVE_GAP=10` + dark plate (`possessedTaunts.js`); compact side-out thicker bar + `hpFontPx` 18 (`screenHpMeters.js`); main.js wiring; tests. Commit `a3128e3` (tip).
+- **Shots:** `build-review/shots-hud-c5b/` FIELD-CHECK PASS (gaps 4/4/10). `npm test` 979 green. No Fire/Dash/gutter/balance/Sever change.
