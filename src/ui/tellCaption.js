@@ -13,8 +13,8 @@ export const TELL_CAPTION_MS = 3500;
 /** Caption text for the current controls (SHIFT on desktop, DASH button on touch). */
 export function tellCaptionText(touchUi) {
   return touchUi
-    ? 'RED RING = INCOMING SHOT \u00b7 TAP DASH NOW'
-    : 'RED RING = INCOMING SHOT \u00b7 SHIFT TO DASH NOW';
+    ? 'RED RING = INCOMING SHOT - TAP DASH NOW'
+    : 'RED RING = INCOMING SHOT - SHIFT TO DASH NOW';
 }
 
 function defaultStore() {

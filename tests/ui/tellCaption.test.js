@@ -57,6 +57,8 @@ test('text names the real dash control per input', () => {
   assert.match(tellCaptionText(false), /SHIFT/);
   assert.match(tellCaptionText(true), /DASH/);
   assert.doesNotMatch(tellCaptionText(true), /SHIFT/);
+  assert.equal(tellCaptionText(false), 'RED RING = INCOMING SHOT - SHIFT TO DASH NOW');
+  assert.equal(tellCaptionText(true), 'RED RING = INCOMING SHOT - TAP DASH NOW');
   assert.equal(createTellCaption({ storage: memStore(), touchUi: true }).onWindup(0), true);
 });
 

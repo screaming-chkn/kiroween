@@ -80,7 +80,7 @@ import {
   readHauntLevel, setHauntLevel, bumpHauntLevel, applyHauntPressure, drawHauntLevel, MAX_HAUNT_LEVEL,
 }                              from './ui/hauntLevel.js';
 import { createTellCaption, drawTellCaption } from './ui/tellCaption.js';
-import { parseLevelParam } from './ui/levelParam.js';
+import { applyLevelParam } from './ui/levelParam.js';
 import { resetHpFx }           from './ui/phoneCombatUi.js';
 import {
   createHauntFx, tickHaunt, startGhost, gridAlpha, drawBorderFog,
@@ -159,9 +159,10 @@ function boot() {
   installAudioGestures(document);
   applySettings(settings);
 
-  // ?lv=1..5 jumps straight to a HAUNT LV (judges can see the ramp). Absent or invalid: no change.
-  const lvParam = parseLevelParam(location.search);
-  if (lvParam !== null) setHauntLevel(lvParam);
+  // ?lv=1..5 jumps straight to a HAUNT LV (judges can see the ramp), for that visit only.
+  let session = null;
+  try { session = globalThis.sessionStorage ?? null; } catch (_) { /* blocked */ }
+  applyLevelParam(location.search, { set: setHauntLevel, storage: session });
 
   // Detect reduced-motion preference.
   const prefersReduced =
