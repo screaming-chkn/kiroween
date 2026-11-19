@@ -209,6 +209,29 @@ export function screenToWorld(sx, sy, cam, vpW, vpH, shakeX = 0, shakeY = 0) {
 // ── Arena framing helpers ─────────────────────────────────────────────────────
 
 /**
+ * Camera centre Y so the letterbox under the field matches the taunt↔field gap
+ * above it (CSS gap converted to canvas px by the caller).
+ *
+ * Field bottom (world y = arenaH) maps to:
+ *   sy = (arenaH - cy) * zoom + vpH / 2
+ * Want: vpH - sy === gapCanvas  ⇒  cy = arenaH - (vpH/2 - gapCanvas) / zoom
+ *
+ * When the arena does not fit the viewport vertically, returns arenaH / 2
+ * (caller should use the follow/clamp path instead).
+ *
+ * @param {{ arenaH:number, zoom:number, vpH:number, gapCanvas:number }} p
+ * @returns {number}
+ */
+export function cameraYForEqualTauntBottomGap({ arenaH, zoom, vpH, gapCanvas }) {
+  if (!(zoom > 0) || !Number.isFinite(arenaH) || !Number.isFinite(vpH)) {
+    return Number.isFinite(arenaH) ? arenaH / 2 : 0;
+  }
+  const g = Number.isFinite(gapCanvas) ? Math.max(0, gapCanvas) : 0;
+  if (arenaH * zoom > vpH) return arenaH / 2;
+  return arenaH - (vpH / 2 - g) / zoom;
+}
+
+/**
  * Pin the camera to the arena centre when the whole arena fits the viewport
  * at the current zoom level (i.e. the arena is not larger than the view).
  *
@@ -271,9 +294,11 @@ export function clampToArena(cam, arena, vpW, vpH) {
  * @param {{ width: number, height: number } | null} [arena]  Optional arena bounds.
  * @param {number} [vpW]  Viewport width in pixels (required when arena supplied).
  * @param {number} [vpH]  Viewport height in pixels (required when arena supplied).
+ * @param {{ bottomGapCanvas?: number } | null} [opts]  When arena fits and
+ *   bottomGapCanvas is set, pin Y so bottom letterbox equals that gap (canvas px).
  * @returns {{ camera: CameraState, shakeX: number, shakeY: number }}
  */
-export function updateCamera(cam, target, dt, arena = null, vpW = 0, vpH = 0) {
+export function updateCamera(cam, target, dt, arena = null, vpW = 0, vpH = 0, opts = null) {
   let followed;
 
   if (arena && vpW > 0 && vpH > 0) {
@@ -281,8 +306,20 @@ export function updateCamera(cam, target, dt, arena = null, vpW = 0, vpH = 0) {
     const arenaScreenH = arena.height * cam.zoom;
 
     if (arenaScreenW <= vpW && arenaScreenH <= vpH) {
-      // Arena fits — keep camera pinned on the arena centre.
+      // Arena fits — pin X to centre; Y is either arena centre or the
+      // equal taunt/bottom-gap Y when opts.bottomGapCanvas is set (C6).
       followed = pinArenaCentre(cam, arena);
+      if (opts && Number.isFinite(opts.bottomGapCanvas)) {
+        followed = {
+          ...followed,
+          y: cameraYForEqualTauntBottomGap({
+            arenaH: arena.height,
+            zoom: cam.zoom,
+            vpH,
+            gapCanvas: opts.bottomGapCanvas,
+          }),
+        };
+      }
     } else {
       // Arena larger than viewport — follow player, then clamp.
       const f = followTarget(cam, target, dt);

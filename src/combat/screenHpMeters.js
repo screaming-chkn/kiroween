@@ -68,6 +68,16 @@ export function arenaTopLineTopSy(camera, vpW, vpH, shakeX = 0, shakeY = 0, aren
   return Number.isFinite(sy) ? sy : 0;
 }
 
+/** Bottom edge (canvas px) of the arena floor (world y = arenaH). */
+export function arenaBottomLineSy(camera, vpW, vpH, arenaH, shakeX = 0, shakeY = 0, arenaCx = 0) {
+  if (!camera || !Number.isFinite(camera.x) || !Number.isFinite(camera.y) || !Number.isFinite(camera.zoom)) {
+    return Number.isFinite(vpH) ? vpH : 0;
+  }
+  const h = Number.isFinite(arenaH) ? arenaH : 0;
+  const { sy } = worldToScreen(arenaCx, h, camera, vpW, vpH, shakeX, shakeY);
+  return Number.isFinite(sy) ? sy : (Number.isFinite(vpH) ? vpH : 0);
+}
+
 /**
  * Outer canvas-px x of the arena's green left/right borders.
  * @returns {{ left: number, right: number }}

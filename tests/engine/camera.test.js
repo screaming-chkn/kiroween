@@ -33,6 +33,7 @@ import {
   phoneCameraZoom,
   phoneFollowPoint,
   phoneFrame,
+  cameraYForEqualTauntBottomGap,
 } from '../../src/engine/camera.js';
 
 // ── Minimal test harness ─────────────────────────────────────────────────────
@@ -596,6 +597,58 @@ console.log('\nsrc/engine/camera.js — phoneFrame\n');
     assert.deepEqual(phoneFrame({ ...base, player }), { x: 600, y: 1000, zoom: 2.6 });
   });
 }
+
+
+// ── cameraYForEqualTauntBottomGap / equal bottom letterbox ───────────────────
+
+console.log('\nsrc/engine/camera.js — equal taunt/bottom gap\n');
+
+test('cameraYForEqualTauntBottomGap places field bottom gapCanvas above viewport bottom', () => {
+  const arenaH = 900;
+  const zoom = 0.7;
+  const vpH = 780;
+  const gapCanvas = 20; // 10 CSS @ 2x
+  const cy = cameraYForEqualTauntBottomGap({ arenaH, zoom, vpH, gapCanvas });
+  const fieldBottom = (arenaH - cy) * zoom + vpH / 2;
+  assert.ok(approxEq(vpH - fieldBottom, gapCanvas, 1e-6),
+    `bottomGap=${vpH - fieldBottom} expected ${gapCanvas}`);
+  // Shifted down vs centre pin (smaller cy).
+  assert.ok(cy < arenaH / 2, `cy=${cy} should be < ${arenaH / 2}`);
+});
+
+test('cameraYForEqualTauntBottomGap falls back to centre when arena taller than viewport', () => {
+  const cy = cameraYForEqualTauntBottomGap({ arenaH: 900, zoom: 2, vpH: 400, gapCanvas: 20 });
+  assert.ok(approxEq(cy, 450, 1e-6), `cy=${cy}`);
+});
+
+test('updateCamera with bottomGapCanvas pins equal-gap Y when arena fits', () => {
+  const arena = { width: 1200, height: 900 };
+  const vpW = 1688;
+  const vpH = 780;
+  const zoom = Math.min(vpW / arena.width, vpH / arena.height) * 0.95;
+  const gapCanvas = 20;
+  const cam = createCamera({ x: 0, y: 0, zoom });
+  const { camera: next } = updateCamera(
+    cam, { x: 200, y: 450 }, 1 / 60, arena, vpW, vpH, { bottomGapCanvas: gapCanvas },
+  );
+  assert.ok(approxEq(next.x, 600, 0.01), `x=${next.x}`);
+  const expectY = cameraYForEqualTauntBottomGap({
+    arenaH: arena.height, zoom, vpH, gapCanvas,
+  });
+  assert.ok(approxEq(next.y, expectY, 0.01), `y=${next.y} expected ${expectY}`);
+  const fieldBottom = (arena.height - next.y) * zoom + vpH / 2;
+  assert.ok(approxEq(vpH - fieldBottom, gapCanvas, 0.01));
+});
+
+test('updateCamera without opts still pins arena centre Y', () => {
+  const arena = { width: 1200, height: 900 };
+  const vpW = 1280;
+  const vpH = 800;
+  const zoom = Math.min(vpW / arena.width, vpH / arena.height) * 0.95;
+  const cam = createCamera({ x: 0, y: 0, zoom });
+  const { camera: next } = updateCamera(cam, { x: 200, y: 450 }, 1 / 60, arena, vpW, vpH);
+  assert.ok(approxEq(next.y, 450, 0.01), `y=${next.y}`);
+});
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 

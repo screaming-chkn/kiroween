@@ -19,7 +19,7 @@
 
 import { startLoop }           from './engine/loop.js';
 import { createInputState }    from './engine/input.js';
-import { createCamera, updateCamera, addTrauma, isPortraitTouch, phoneCameraZoom, phoneFrame } from './engine/camera.js';
+import { createCamera, updateCamera, addTrauma, isPortraitTouch, phoneCameraZoom, phoneFrame, cameraYForEqualTauntBottomGap } from './engine/camera.js';
 import {
   createRenderer,
   registerLayer,
@@ -49,7 +49,7 @@ import { drawWorld,
   drawEntities,
 }                              from './combat/combatRenderer.js';
 import {
-  drawScreenHpMeters, SCREEN_HP_LAYOUT, arenaTopLineSy, arenaTopLineTopSy, meterTopInset,
+  drawScreenHpMeters, SCREEN_HP_LAYOUT, arenaTopLineSy, arenaTopLineTopSy, arenaBottomLineSy, meterTopInset,
   meterSideReserve, arenaSideEdges, sideOutGeometry, METER_FIELD_GAP,
 } from './combat/screenHpMeters.js';
 import { drawTopBarHud, topBarHeight, TOP_BAR } from './combat/topBarHud.js';
@@ -362,9 +362,21 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         dpr: canvas.width / (canvas.clientWidth || canvas.width),
       })
     : fitZoom;
+  // C6: landscape/desktop — bottom letterbox matches taunt↔field gap (shift field down).
+  // Portrait phoneFrame path keeps arena-centre Y.
+  const hudScale0 = touchUi ? (canvas.width / (canvas.clientWidth || canvas.width)) : 1;
+  const equalBottomGapCanvas = phonePortrait ? null : TAUNT_ABOVE_GAP * hudScale0;
+  const startCamY = equalBottomGapCanvas == null
+    ? ah / 2
+    : cameraYForEqualTauntBottomGap({
+        arenaH: ah,
+        zoom: startZoom,
+        vpH: vpH0,
+        gapCanvas: equalBottomGapCanvas,
+      });
   let camera = createCamera({
     x:            aw / 2,
-    y:            ah / 2,
+    y:            startCamY,
     zoom:         startZoom,
     reducedMotion,
   });
@@ -472,11 +484,15 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       const fontPx = Math.max(14, Math.round(14 * hudScale));
       const tauntTop = Math.max(stripBottomPx(vpW) + 2 * hudScale, tauntBaseline - fontPx);
       const tauntBottom = tauntBaseline; // alphabetic ≈ glyph bottom
+      const fieldBottom = arenaBottomLineSy(
+        camera, vpW, vpH, ah, shakeX + kickX, shakeY + kickY, aw / 2,
+      );
       globalThis.__HH_HUD_Y__ = {
         unit: 'canvasPx',
         scale: hudScale,
         lineTop,
         lineBottom,
+        fieldBottom,
         playerMeterRight: g.player.x + g.player.w,
         enemyMeterLeft: g.enemy.x,
         arenaLeft: g.arenaLeft ?? meterOpts.arenaLeft,
@@ -486,6 +502,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         playerGapCss: ((g.arenaLeft ?? meterOpts.arenaLeft) - (g.player.x + g.player.w)) / hudScale,
         enemyGapCss: (g.enemy.x - (g.arenaRight ?? meterOpts.arenaRight)) / hudScale,
         tauntGapCss: (lineTop - tauntBottom) / hudScale,
+        bottomGapCss: (vpH - fieldBottom) / hudScale,
       };
       globalThis.__HH_HUD_FIELD__ = globalThis.__HH_HUD_Y__;
     }
@@ -863,6 +880,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       arenaState.arena,
       vpW,
       vpH,
+      equalBottomGapCanvas == null ? null : { bottomGapCanvas: equalBottomGapCanvas },
     );
     camera = cameraResult.camera;
     shakeX = cameraResult.shakeX;

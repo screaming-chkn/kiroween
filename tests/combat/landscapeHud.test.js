@@ -5,11 +5,12 @@
 import assert from 'node:assert/strict';
 import { topBarLayout, topBarHeight, TOP_BAR, TOP_BAR_ORDER } from '../../src/combat/topBarHud.js';
 import {
-  arenaTopLineSy, arenaTopLineTopSy, arenaSideEdges, sideOutGeometry,
+  arenaTopLineSy, arenaTopLineTopSy, arenaBottomLineSy, arenaSideEdges, sideOutGeometry,
   METER_FIELD_GAP, SCREEN_HP_LAYOUT,
 } from '../../src/combat/screenHpMeters.js';
 import { tauntAboveLineY, TAUNT_ABOVE_GAP } from '../../src/ui/possessedTaunts.js';
 import { landscapeStripW } from '../../src/ui/phoneCombatUi.js';
+import { cameraYForEqualTauntBottomGap } from '../../src/engine/camera.js';
 import { touchLayoutFor, LANDSCAPE_GUTTER_FRAC, stickRadiusPx } from '../../src/engine/touch.js';
 import { playerHudLabel, enemyHudLabel } from '../../src/combat/mechNames.js';
 
@@ -52,7 +53,9 @@ for (const dpr of [1, 2, 3]) {
     const stripBase = landscapeStripW(vpW, dpr, LANDSCAPE_GUTTER_FRAC);
     const stripW = Math.min(vpW * (1 - 2 * LANDSCAPE_GUTTER_FRAC), stripBase * 1.1);
     const zoom = Math.min(stripW / AW, (vpH - reserve) / AH) * 0.95;
-    const cam = { x: AW / 2, y: AH / 2, zoom };
+    const gapCanvas = TAUNT_ABOVE_GAP * dpr;
+    const camY = cameraYForEqualTauntBottomGap({ arenaH: AH, zoom, vpH, gapCanvas });
+    const cam = { x: AW / 2, y: camY, zoom };
     const stripBottom = bar.h;
     const lineBottom = Math.max(arenaTopLineSy(cam, vpW, vpH, 0, 0, AW / 2), stripBottom);
     const lineTop = Math.min(arenaTopLineTopSy(cam, vpW, vpH, 0, 0, AW / 2), lineBottom);
@@ -71,6 +74,11 @@ for (const dpr of [1, 2, 3]) {
     const tauntBase = tauntAboveLineY({ lineTop, scale: dpr, gap: TAUNT_ABOVE_GAP });
     assert.ok(tauntBase <= lineTop - TAUNT_ABOVE_GAP * dpr + 1e-6, 'taunt baseline above line');
     assert.ok(TAUNT_ABOVE_GAP >= 6, 'taunt field gap floor');
+    const fieldBottom = arenaBottomLineSy(cam, vpW, vpH, AH, 0, 0, AW / 2);
+    const bottomGapCss = (vpH - fieldBottom) / dpr;
+    const tauntGapCss = (lineTop - tauntBase) / dpr;
+    assert.ok(Math.abs(bottomGapCss - tauntGapCss) <= 2 + 1e-6,
+      `bottom/taunt gap mismatch: ${bottomGapCss} vs ${tauntGapCss} @ ${cssW}x${cssH} dpr=${dpr}`);
 
     // Controls ≥44 CSS px and clear of meters / strip.
     const L = touchLayoutFor(cssW, cssH);
