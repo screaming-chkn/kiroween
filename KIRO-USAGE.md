@@ -341,3 +341,11 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Hook firings:** manual invoke + Kiro PostFileSave on touch.js (`landscape-hud-on-save`, exit=0). Log ~180→182+.
 - **Build-agent:** ran PBT (7/7), npm test; task 5 ticked after exercise.
 - **Tests:** `npm test` green (includes touchLayout.pbt).
+
+## HOT RUN — wrap (2026-11-19 ~2:10 PM PT) — branch feat/hud-c tip ebd57fb
+- **Credits (Pro):** 291.67 → 294.14 of 877 (~**2.47** HOT-1/2/2b). Reset 2026-12-01.
+- **Kiro:** HOT1 spec 14 + steering; HOT2 hook + touchLayout.pbt (7 props); HOT2b touch.js comment (hook fire).
+- **Hand:** C5b S1/S2 (taunt plate, meters); README fifth hook; seance rebuild; fps-landscape.mjs + HOT-PERF (60.1 FPS, no soft fix); LV1/bugs/claims docs.
+- **Tests:** npm test **986** green. Hook log **182**. SÉANCE **228/205**.
+- **owner lock tip (S1+S2):** a3128e3; shots shots-hud-c5b/. Merge held.
+- **Claims file:** build-review/WONT-TO-CAN-CLAIM.md (and team build-review copy).

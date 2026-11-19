@@ -1310,13 +1310,13 @@
     "spec": "14-phone-landscape",
     "id": 6,
     "title": "Measure mid-fight FPS on 844×390 @ DPR 3 class, write a note; soft fixes only if < 55 (R6)",
-    "done": false
+    "done": true
   },
   {
     "spec": "14-phone-landscape",
     "id": 7,
     "title": "Mark R1–R5 acceptance against `tests/engine/touch.test.js` and `tests/combat/landscapeHud.test.js`, and report the Fire right-inset open item to the owner (R1, R2, R3, R4, R5)",
-    "done": false
+    "done": true
   },
   {
     "spec": "haunted-spec",
