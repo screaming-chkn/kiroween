@@ -71,14 +71,15 @@ export function stepProjectile(proj, dt, arena) {
   const nx = proj.x + proj.vx * dt;
   const ny = proj.y + proj.vy * dt;
 
-  // Destroy when the centre leaves the arena rectangle (R1).
-  const dead =
+  // Destroy when the centre leaves the arena rectangle (R1) or hits Sever Wall.
+  // Tag deadReason so sfxEvents can play a metallic wall-hit (not a tank hit).
+  const outOfBounds =
     nx < 0 || nx > arena.width ||
-    ny < 0 || ny > arena.height ||
-    // Sever Wall (LV3+): shots stop on the wall, no bounce.
-    circleHitsWall(arena.wall, nx, ny, PROJECTILE_RADIUS);
-
-  return { ...proj, x: nx, y: ny, dead };
+    ny < 0 || ny > arena.height;
+  const hitSever = circleHitsWall(arena.wall, nx, ny, PROJECTILE_RADIUS);
+  if (hitSever) return { ...proj, x: nx, y: ny, dead: true, deadReason: 'wall' };
+  if (outOfBounds) return { ...proj, x: nx, y: ny, dead: true, deadReason: 'bounds' };
+  return { ...proj, x: nx, y: ny, dead: false, deadReason: undefined };
 }
 
 // ── hitTestCircle ─────────────────────────────────────────────────────────────

@@ -65,14 +65,14 @@ export const TANK_STYLE_DRAW = {
       barrelLen: 40, twin: false, base: 'treads', cutHull: 0.48, cutTurret: 0.22,
     },
   },
-  // Wheeled APC — boxy hull, flat cupola, sensor mast (C9: near-side tread + 3 wheels)
+  // Wheeled APC — longer-than-wide hull, flat cupola (C9b: rectangular + near-side tread)
   wheeled: {
     player: {
-      hull: { L: 38, W: 24, H: 12 }, turret: { L: 16, W: 14, H: 8 },
+      hull: { L: 50, W: 20, H: 11 }, turret: { L: 15, W: 13, H: 7 },
       barrelLen: 26, twin: false, base: 'wheels', cutHull: 0.08, cutTurret: 0.18,
     },
     enemy: {
-      hull: { L: 44, W: 30, H: 14 }, turret: { L: 20, W: 17, H: 9 },
+      hull: { L: 56, W: 24, H: 13 }, turret: { L: 18, W: 15, H: 8 },
       barrelLen: 30, twin: true, base: 'wheels', cutHull: 0.08, cutTurret: 0.18,
     },
   },

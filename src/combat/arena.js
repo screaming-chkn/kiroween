@@ -163,6 +163,7 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     ghostPerk: stats.enableGhostPerk ? createGhostPerk() : null,
     phase: 'playing',   // 'playing' | 'win' | 'lose'
     elapsedMs: 0,       // time survived so far (R8 end card)
+    wallHitsThisTick: 0, // C9b: projectile → Sever Wall / arena bound deaths
   };
 }
 
@@ -403,6 +404,12 @@ export function updateArena(state, actions, dt) {
     phase = 'lose';
   }
 
+  // C9b: count projectiles that died on Sever Wall or arena bounds this tick
+  // (not tank hits). Culled below; sfxEvents reads wallHitsThisTick.
+  const wallHitsThisTick = survivingProjectiles.filter(
+    p => p.dead && (p.deadReason === 'wall' || p.deadReason === 'bounds'),
+  ).length;
+
   return {
     arena,
     player:      playerAfterHits,
@@ -413,5 +420,6 @@ export function updateArena(state, actions, dt) {
     phase,
     // Accumulate survived time (R8). dt is seconds → convert to ms.
     elapsedMs:   elapsedNext,
+    wallHitsThisTick,
   };
 }

@@ -86,20 +86,18 @@ export function resolveWallMove(wall, from, to, r, opts = {}) {
   return { x: from.x, y: from.y, bumped: true };
 }
 
-/** How long the spawn "SEVER WALL" label stays up (ms). */
+/** How long the spawn label *would* stay up (ms). Kept for tests / callers; C9b draws no label. */
 export const SEVER_WALL_LABEL_MS = 3500;
 
 /**
- * Pure label for the Sever Wall spawn callout. Empty when there is no wall or
- * the fight has run past SEVER_WALL_LABEL_MS.
+ * Pure label for the Sever Wall spawn callout.
+ * C9b: always empty — wall geometry stays, name removed.
  * @param {number} elapsedMs
  * @param {object|null|undefined} wall
  * @returns {string}
  */
 export function severWallLabelText(elapsedMs, wall) {
-  if (!wall) return '';
-  const n = Number(elapsedMs);
-  if (!Number.isFinite(n) || n < 0 || n >= SEVER_WALL_LABEL_MS) return '';
-  return 'SEVER WALL';
+  void elapsedMs; void wall;
+  return '';
 }
 

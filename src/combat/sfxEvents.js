@@ -49,5 +49,9 @@ export function sfxEventsForTick(prev, next) {
   // Kill (win) or death (lose): one boom replaces the final hit sound.
   if (ended) out.push('explode');
 
+  // C9b: metallic wall clank when a shot dies on Sever Wall or arena bounds.
+  // One event per tick (throttle handles rapid repeats); never a tank-hit voice.
+  if ((next.wallHitsThisTick ?? 0) > 0) out.push('hitWall');
+
   return out;
 }

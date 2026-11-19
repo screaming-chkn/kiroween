@@ -88,10 +88,10 @@ test('bot head-on at the wall slides around instead of sticking', () => {
 });
 
 
-test('severWallLabelText only while wall present and elapsed < window', () => {
+test('severWallLabelText always empty (C9b: no name label; wall stays)', () => {
   const w = wallForLevel(3);
-  assert.equal(severWallLabelText(0, w), 'SEVER WALL');
-  assert.equal(severWallLabelText(SEVER_WALL_LABEL_MS - 1, w), 'SEVER WALL');
+  assert.equal(severWallLabelText(0, w), '');
+  assert.equal(severWallLabelText(SEVER_WALL_LABEL_MS - 1, w), '');
   assert.equal(severWallLabelText(SEVER_WALL_LABEL_MS, w), '');
   assert.equal(severWallLabelText(100, null), '');
   assert.equal(severWallLabelText(100, undefined), '');

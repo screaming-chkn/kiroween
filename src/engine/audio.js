@@ -108,6 +108,7 @@ export const SFX = Object.freeze({
   ENEMY_SHOT:  'enemyShot',
   HIT_ENEMY:   'hitEnemy',
   HIT_PLAYER:  'hitPlayer',
+  HIT_WALL:    'hitWall',
   DASH:        'dash',
   WINDUP:      'windup',
   EXPLODE:     'explode',
@@ -123,6 +124,7 @@ export const SFX_THROTTLE_MS = Object.freeze({
   enemyShot:  90,
   hitEnemy:   70,
   hitPlayer:  120,
+  hitWall:    80,
   dash:       150,
   windup:     300,
   explode:    600,
@@ -154,6 +156,7 @@ export const SFX_DURATION_S = Object.freeze({
   enemyShot:  0.16,
   hitEnemy:   0.09,
   hitPlayer:  0.20,
+  hitWall:    0.14,  // metallic clank/thud (C9b)
   dash:       0.21,
   windup:     0.43,
   explode:    2.05,  // single laugh + one echo (kill/KO, C8)
@@ -378,6 +381,14 @@ const RECIPES = {
       o.start(start);
       o.stop(start + syl + 0.03);
     }
+  },
+  // C9b: short metallic clank/thud — Sever Wall / arena-bound shot death.
+  // Bright bandpass spark + ringing triangle + light body thud; not hitEnemy
+  // (crunch tick), not hitPlayer (heavy low thud), not explode (laugh).
+  hitWall(t) {
+    noise(t, { type: 'bandpass', f0: 3400, f1: 1100, q: 5, peak: 0.24, attack: 0.001, decay: 0.055 });
+    tone(t, { type: 'triangle', f0: 1100, f1: 280, peak: 0.15, attack: 0.002, decay: 0.09, lp: 4500 });
+    tone(t, { type: 'sine', f0: 160, f1: 55, peak: 0.14, attack: 0.003, decay: 0.07 });
   },
   // Tiny CRT click for garage buttons.
   uiClick(t) {

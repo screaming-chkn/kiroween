@@ -175,7 +175,7 @@ export function drawWorld(ctx, state, gridAlpha = 0.12) {
 /**
  * Sever Wall (LV3+): void-filled slab with a double wireframe stroke, bone
  * outside and phosphor inside, so it reads on a phone. World space, opaque.
- * For the first SEVER_WALL_LABEL_MS of the fight, a centred "SEVER WALL"
+ * C9b: severWallLabelText is always empty (wall drawn; no name callout).
  * callout sits just above the slab (under the HUD / meters in screen space).
  */
 function drawSeverWall(ctx, wall, elapsedMs = 0) {

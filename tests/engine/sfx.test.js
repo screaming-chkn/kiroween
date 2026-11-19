@@ -153,5 +153,15 @@ test('kill emits explode instead of the final hitEnemy', () => {
   assert.ok(!ev.includes('hitEnemy'));
 });
 
+test('wallHitsThisTick emits hitWall (not hitEnemy/hitPlayer)', () => {
+  const s0 = base();
+  const s1 = { ...s0, wallHitsThisTick: 2 };
+  const ev = sfxEventsForTick(s0, s1);
+  assert.ok(ev.includes('hitWall'));
+  assert.ok(!ev.includes('hitEnemy'));
+  assert.ok(!ev.includes('hitPlayer'));
+  assert.ok(SFX.HIT_WALL === 'hitWall');
+});
+
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);
 if (failed > 0) process.exit(1);
