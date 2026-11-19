@@ -82,6 +82,7 @@ Human and agent edits went in separate commits. The Kiro IDE was not used. The f
 - `balance-on-combat-save.json` runs `node tests/combat/balance.test.js` when `src/combat/config.js` or `src/ui/hauntLevel.js` is saved.
 - `seance-on-spec-save.json` runs `npm run build:seance` when any spec `tasks.md` is saved.
 - `readme-check-on-save.json` runs `node scripts/check-readme.mjs` when `README.md`, `LICENSE` or a hook file is saved.
+- `landscape-hud-on-save.json` runs the touch, landscape HUD and touchLayout property tests when `src/engine/touch.js`, landscape HUD tests or `src/combat/screenHpMeters.js` is saved.
 
 Each hook command goes through `scripts/kiro-hook-run.mjs`, which logs every firing to `.kiro/hook-runs.log`. Our first ten headless runs used the CLI's default v2 engine, which does not load workspace hooks, so those commands were run by hand. With `kiro-cli chat --agent-engine v3 --trust-workspace` the hooks fire on Kiro's own file edits; the first logged firing is `seance-on-spec-save` rebuilding the séance after Kiro edited a spec `tasks.md`.
 
