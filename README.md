@@ -42,7 +42,7 @@ Then open http://localhost:8080.
 Other commands (plain Node, no framework):
 
 - `npm test` runs the engine, mech, combat and UI suites.
-- `npm run test:balance` runs the headless balance matrix and rewrites `tests/combat/BALANCE.md`.
+- `npm run test:balance` runs a quick headless balance matrix (48 per-LV seeds, about a minute) and writes the report to the OS temp dir. `npm run test:balance:full` runs the 200-seed matrix (about 7 minutes) and rewrites the committed `tests/combat/BALANCE.md`.
 - `npm run build:site` writes a static preview to `deploy/site/`. The preview is served with noindex.
 
 ## Costume Contest

@@ -11,14 +11,18 @@
  * and duel length, flags builds with win rate > 60%, and writes a markdown
  * report to BOTH:
  *
- *   • tests/combat/BALANCE.md            (in-repo, committed artifact)
+ *   • tests/combat/BALANCE.md            (in-repo, committed artifact) — only
+ *     on a full run (BALANCE_SEEDS=200, `npm run test:balance:full`, ~7 min).
+ *     Quick runs (default 48 per-LV seeds) write to the OS temp dir instead,
+ *     so they never overwrite the committed 200-seed report.
  *   • process.env.BALANCE_BOSS_PATH       (optional second copy for hand-off)
  *
  * Report only — it never retunes combat numbers.
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -59,7 +63,13 @@ const meta = {
 const report = buildReport(agg, meta);
 
 // ── Write to both targets ──────────────────────────────────────────────────────
-const repoPath = resolve(__dirname, 'BALANCE.md');
+// The committed report is the 200-seed run. Read the seed count here so a
+// quick run never overwrites it.
+const FULL_SEEDS = 200;
+const lvSeedCount = Math.max(1, Number(process.env.BALANCE_SEEDS) || 48);
+const repoPath = lvSeedCount === FULL_SEEDS
+  ? resolve(__dirname, 'BALANCE.md')
+  : join(tmpdir(), `haunt-hound-BALANCE.${lvSeedCount}-seeds.md`);
 const bossPath = process.env.BALANCE_BOSS_PATH || '';
 
 const targets = [repoPath, ...(bossPath ? [bossPath] : [])];
@@ -91,8 +101,8 @@ const policies = ['baseline', 'dashSpam', 'camp', 'reactive'];
 // Per-LV section uses its own seed list (not the ~200-fight list above).
 // Default 48 seeds (~1 min). Per-build deviation at 48 seeds is mostly
 // sampling noise (±7 pp per build), so the committed BALANCE.md comes from
-// BALANCE_SEEDS=200 npm run test:balance (~7 min).
-const lvSeedCount = Math.max(1, Number(process.env.BALANCE_SEEDS) || 48);
+// `npm run test:balance:full` (BALANCE_SEEDS=200, ~7 min). lvSeedCount is
+// read above, next to the output path.
 const lvSeeds = Array.from({ length: lvSeedCount }, (_, i) => 0x9e3779b9 + i * 2654435761);
 const levelMatrices = {};
 for (const pol of policies) {

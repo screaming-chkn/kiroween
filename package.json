@@ -11,6 +11,7 @@
     "test": "npm run test:engine && npm run test:mech && npm run test:combat && npm run test:ui",
     "test:ui": "node tests/ui/garage.test.js && node tests/ui/seance.test.js && node tests/ui/possession.test.js && node tests/ui/phoneCombatUi.test.js && node tests/ui/tankWire.test.js && node tests/ui/tankFx.test.js && node tests/ui/killMoment.test.js && node tests/ui/endCardView.test.js && node tests/ui/possessedTaunts.test.js && node tests/ui/hauntLevel.test.js",
     "test:balance": "node tests/combat/balance.mjs",
+    "test:balance:full": "BALANCE_SEEDS=200 node tests/combat/balance.mjs",
     "build:seance": "node scripts/build-seance-tasks.mjs",
     "build:site": "node scripts/build-site.mjs",
     "prebuild": "npm run build:seance",
