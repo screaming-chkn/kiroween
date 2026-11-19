@@ -1,6 +1,6 @@
 # Kiroween: Kiro usage log
 
-How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used per milestone. Kept honest for the Devpost write-up. The master copy lives on the team's build box; this repo-root copy is kept in sync. "build agent" below is the team's AI coding agent and a copywriter; edits by them are marked separately from Kiro's. The Kiro IDE was never used by the crew; every logged Kiro run is the headless kiro-cli.
+How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used per milestone. Kept honest for the Devpost write-up. The master copy lives on the team's build box; this repo-root copy is kept in sync. "Build agent" below is the team's AI coding agent; its edits, and copy from the team's copywriter, are marked separately from Kiro's. The Kiro IDE was never used by the crew; every logged Kiro run is the headless kiro-cli.
 
 ## M1: real SFX (2026-11-18, build agent) — PR #1, squash 369fdaf
 - Kiro used: **no**. Built and tested with box tools (node, git, gh, headless Chrome). No Kiro credits spent.
@@ -9,7 +9,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 
 ## M2: game feel, title, pause, settings (2026-11-18, build agent) — PR #2, squash ccf67d9
 - Kiro IDE used: **no**. No Kiro credits spent. Built with box tools (node, git, gh, headless Chrome).
-- .kiro specs: **added `.kiro/specs/10-polish/` (requirements.md, design.md, tasks.md) covering M1–M5.** These spec files were written by build agent outside the Kiro IDE (by hand, in the format of the existing specs 01–08). Kiro did not generate them. M1 and M2 tasks (1–13) are marked done; M3–M5 (14–18) are open.
+- .kiro specs: **added `.kiro/specs/10-polish/` (requirements.md, design.md, tasks.md) covering M1–M5.** These spec files were written by the build agent outside the Kiro IDE (by hand, in the format of the existing specs 01–08). Kiro did not generate them. M1 and M2 tasks (1–13) are marked done; M3–M5 (14–18) are open.
 - `public/seance-tasks.json` rebuilt with the repo's own `npm run build:seance` script, so the séance screen lists 10-polish (159 tasks, 131 done).
 - Steering and hooks: not changed. `.kiro/hooks/test-on-save.json` was not run, because work happened outside the IDE; `npm test` was run by hand instead.
 - `.kiro/` stays committed (it is not in .gitignore).
@@ -201,7 +201,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
   - My fix (separate commit): dropped the unused `STAT_MAX`.
 - **Run 18 (18:38–18:39 PT), PR #18, win-review #10:** the built site adds `<link rel="modulepreload">` for all 45 modules reachable from `src/main.js` (`moduleGraph`, `addModulePreloads`, tests, task 42). The repo's own `index.html` is unchanged.
   - Hooks fired: `seance-on-spec-save` ×1, `test-on-save` ×2 (green). `scripts/` edits match no hook.
-- **Not Kiro:** the public-repo scrub (PR #13) and the LV1 balance tune (PR #17: pressure 0.8 → 0.6, LV1 median 56.0 → 42.3 s, LV2–LV5 unchanged) were done by build agent.
+- **Not Kiro:** the public-repo scrub (PR #13) and the LV1 balance tune (PR #17: pressure 0.8 → 0.6, LV1 median 56.0 → 42.3 s, LV2–LV5 unchanged) were done by the build agent.
 - **Hook output and the agent:** as in M6, Kiro said it could not see hook output or run shell commands. I ran `npm test` after every run.
 - **Credits (`/usage`):** Pro 248.59 → 249.99 (run 15) → 253.94 (run 16b, including the aborted run 16) → 255.26 (run 17) → 256.17 (run 18). **7.58 for M7.** About 621 left of 877; resets 2026-12-01. No credits bought, no plan or settings change, no new login, no IDE.
 - **Proof** (build box, not in the repo): `deploy/kiro-proof/run15-*`, `run16-aborted-*`, `run16b-*`, `run17-*`, `run18-*` (screen recording, scrubbed transcript, prompt).
