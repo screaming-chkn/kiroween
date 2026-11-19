@@ -1,7 +1,7 @@
 /**
  * tests/combat/leadAim.test.js
  *
- * Expect-style unit tests for the feel (11/5) enemy lead-aim pass, updated for
+ * Expect-style unit tests for the feel-pass (11/5) enemy lead-aim pass, updated for
  * the POINT-lock bug fix:
  *
  *   1) leadAimPoint(ex,ey,px,py,pvx,pvy,speed,leadFrac) returns a world {x,y}

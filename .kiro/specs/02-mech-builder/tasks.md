@@ -29,5 +29,5 @@
 
 - [x] 17. Light render-only tank FX: 1.3× draw scale + phosphor edge glow (additive wide then crisp 1px, brighter front edges), muzzle flash + ~4px/120ms barrel recoil from projectile ids, hover shadow + 1–2px deterministic sine bob (player/enemy out of phase); no src/combat edits, hitboxes unchanged
 
-## owner curiosity 11/12 — techy edge styles
+## owner idea 11/12 — techy edge styles
 - [x] 18. Optional tank edge styles behind EDGE_STYLE (dashed-tech default; solid, dashed, tech corner-brackets also available) and two one-colour TANK_PALETTE sets: slightly neon mono-green (default; player #47FF9A, enemy #FF3B5C) and mono-blue (alternate; player #3EF6FF with deeper blue glow, same #FF3B5C red enemy); mid-halo alpha 0.38 (8px under-halo 0.12 and barrel halo 0.18 unchanged); no gold/orange; render only, dash/brackets scaled to hull with a minimum dash length, glow and ticks stay solid

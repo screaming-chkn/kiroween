@@ -85,7 +85,7 @@ User story: As a player, I want a clear end card so I know how the round went an
 ### R12 Stutter visible in arena (SHOULD)
 - WHEN the build is overdrawn THEN the HUD POWER tag SHALL pulse ember at ≤ 2 Hz and the cooldown ring SHALL visibly skip on stuttered shots.
 
-## MVP scope lock (11/5 — design pass)
+## MVP scope lock (11/5 — team)
 
 **KEEP for show-owner / 11/6 slice:** one arena, one enemy bot, Garage (6 slots), hit flash + floating numbers, blood-red enemy shots with windup, Shift dash, overdraw that slows fire, fixed HUD, end card (RETRY / GARAGE). Target duel length **60–120 s**.
 
@@ -99,4 +99,4 @@ User story: As a player, I want a clear end card so I know how the round went an
 - Multi-enemy squads, kill-cam, full accel/weight curve beyond current numbers
 - Phone / touch controls
 
-**Feel targets (feel 11/5):** enemy ~400 HP; enemy shot windup ~0.45 s; dash 0.18 s at 3× with CD 2.5/3.5/4.5 s by weight; overdraw multiplies fire cooldown.
+**Feel targets (Feel pass 11/5):** enemy ~400 HP; enemy shot windup ~0.45 s; dash 0.18 s at 3× with CD 2.5/3.5/4.5 s by weight; overdraw multiplies fire cooldown.

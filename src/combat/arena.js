@@ -98,7 +98,7 @@ export function createArena(loadoutTotals = {}, stats = {}) {
   player.energy       = stats.playerEnergy ?? player.maxEnergy;
   player.powerBalance = loadoutTotals.balance ?? 0;
 
-  // ── Dash state (feel 11/5 feel pass, R2) ──────────────────────────────────
+  // ── Dash state (Feel pass 11/5 feel pass, R2) ──────────────────────────────────
   // dashRemainingMs > 0 → mid-burst (3× speed). dashCooldownMs > 0 → on
   // cooldown. dashBufferMs holds a recent DASH press so a slightly-early tap
   // still fires the instant the cooldown clears. dashCooldownBaseMs is the
@@ -108,7 +108,7 @@ export function createArena(loadoutTotals = {}, stats = {}) {
   player.dashBufferMs      = 0;
   player.dashCooldownBaseMs = dashCooldownForLoad(loadoutTotals.loadPct ?? 0);
 
-  // ── Overdraw fire-rate penalty (feel 11/5 feel pass, R4) ──────────────────
+  // ── Overdraw fire-rate penalty (Feel pass 11/5 feel pass, R4) ──────────────────
   // When the build is overdrawn (powerDraw > powerOut) weapons stutter: the
   // player fire cooldown is multiplied by (1 + penalty) where penalty matches
   // the garage readout overdrawPenaltyPct / 100. Stored once at match start.
@@ -178,7 +178,7 @@ export function updateArena(state, actions, dt) {
   const { arena } = state;
   const act = actions ?? {};
 
-  // ── 0. Dash timers (feel 11/5 feel pass, R2) ─────────────────────────────
+  // ── 0. Dash timers (Feel pass 11/5 feel pass, R2) ─────────────────────────────
   // Tick dash burst + cooldown, maintain the input buffer, and start a dash
   // the instant a buffered DASH press meets a ready cooldown. The burst then
   // multiplies move speed by DASH_SPEED_MULT for its duration.
@@ -233,7 +233,7 @@ export function updateArena(state, actions, dt) {
   };
 
   // ── 4. Player fire (R3): LMB + cooldown elapsed ───────────────────────────
-  // feel 11/5: an overdrawn build stutters — the fire cooldown is scaled by
+  // Feel pass 11/5: an overdrawn build stutters — the fire cooldown is scaled by
   // player.fireCooldownMult (1 + overdrawPenaltyPct/100), so overdraw fires
   // strictly slower than a balanced build. Defaults to 1 when not overdrawn.
   let newProjectiles = [];
@@ -256,7 +256,7 @@ export function updateArena(state, actions, dt) {
   }
 
   // ── 5. Enemy AI tick (R4) ────────────────────────────────────────────────
-  // feel GO (11/5): track the player's velocity by finite difference from
+  // Feel-pass GO (11/5): track the player's velocity by finite difference from
   // last tick's position (post-move this tick vs the previous state). The
   // enemy's windup locks a lead-aim angle from this velocity, so a steady
   // strafe gets clipped but dashing / breaking velocity during the windup

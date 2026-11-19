@@ -27,7 +27,7 @@
  *   Power draw                 6  (spotter 2 + hatchet 1 + smoke 1 + optics 2)
  *   Balance                   +4  (no Overdraw)
  *
- * feel-pass (11/5, owner GO): legs-runner capacity raised 80 → 90 so the
+ * Feel pass (11/5, lead GO): legs-runner capacity raised 80 → 90 so the
  * default Scout sits at ≈76.7% load — inside the penalty-free band (≤ 80%) — and
  * so earns the light 2.5 s dash cooldown (dashCooldownForLoad(76.67) === 2500)
  * for a snappy Scout feel. The dash table itself is untouched.

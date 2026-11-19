@@ -87,10 +87,10 @@ touched.
   shake decay + caps + reduced motion; impact points; spark pool; dash tap;
   settings persistence (memory storage, corrupt / blocked storage).
 - Headless Chrome (desktop + phone + reduced motion): title → garage → DEPLOY
-  → combat → pause, 0 console errors, screenshots in the crew deploy folder.
+  → combat → pause, 0 console errors, screenshots in the team deploy folder.
 
 ## Open questions
-- Font licence and hosting (M3); preview access via the access lead (M5).
+- Font licence and hosting (M3); preview access via the team (M5).
 
 ## M4.5 loadout effects
 

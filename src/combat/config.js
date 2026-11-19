@@ -53,7 +53,7 @@ export const PLAYER_PROJECTILE_RADIUS = 5;
  * SHALL be larger than the player's so incoming fire reads as a heavier,
  * blood-red threat without relying on colour alone (accessibility rule 6).
  *
- * feel Tweak GO (11/5): 9 → 8 (~11% trim). Shrinking the enemy shot's hit
+ * Feel tweak GO (11/5): 9 → 8 (~11% trim). Shrinking the enemy shot's hit
  * radius makes a windup dash clear the incoming shot more reliably — a smaller
  * projectile is easier to slip past off the telegraph. Still strictly greater
  * than PLAYER_PROJECTILE_RADIUS (5), so incoming fire still reads as the
@@ -64,7 +64,7 @@ export const ENEMY_PROJECTILE_RADIUS = 8;
 /**
  * Damage dealt by a single player projectile.
  *
- * owner GO LEVER 2 (11/5 continue): 17 → 14. At 17 dmg with ENEMY_MAX_HP
+ * lead GO LEVER 2 (11/5 continue): 17 → 14. At 17 dmg with ENEMY_MAX_HP
  * 3600, sim2 showed BOTH M2 strafe-no-dash AND M3 strafe+dash LOSE ~68–70 s in
  * with <100 enemy HP left — dash never tipped a win because the fight ended a
  * few shots short of the kill. Cutting per-shot damage ~18% stretches the
@@ -72,7 +72,7 @@ export const ENEMY_PROJECTILE_RADIUS = 8;
  * line-of-sight off the telegraph) long enough to land those last shots, while
  * a passive strafe-no-dash player's extra misses still let the enemy's kill
  * clock win. Paired with the ENEMY_MAX_HP 3600 → 3400 trim below so a dashing
- * player can still finish inside ~60–100 s. feel windup (450 ms), fire CD
+ * player can still finish inside ~60–100 s. feel-pass windup (450 ms), fire CD
  * (1500 enemy / 300 player), the dash table, and ENEMY_PROJECTILE_DAMAGE (20)
  * are all untouched.
  */
@@ -81,7 +81,7 @@ export const PLAYER_PROJECTILE_DAMAGE = 14;
 /**
  * Damage dealt by a single enemy projectile.
  *
- * feel-pass (11/5, owner GO): lowered 35 → 20. At 35 the enemy's shots
+ * Feel pass (11/5, lead GO): lowered 35 → 20. At 35 the enemy's shots
  * hit hard enough that a few landed rounds inside the harness freeze windows
  * could delete the player's 300 HP faster than the duel felt fair — incoming
  * fire read as a one-sided punish rather than a readable threat. Dropping
@@ -90,7 +90,7 @@ export const PLAYER_PROJECTILE_DAMAGE = 14;
  * dash/break line-of-sight off the windup telegraph. Paired with the
  * ENEMY_MAX_HP 2900 → 1400 cut below so duels stay a tight, winnable feel.
  * Windup (450 ms), ENEMY_FIRE_COOLDOWN_MS (1500), and the dash table are all
- * untouched (feel feel preserved).
+ * untouched (feel pass preserved).
  */
 export const ENEMY_PROJECTILE_DAMAGE  = 20;
 
@@ -129,7 +129,7 @@ export const PLAYER_MAX_HP = 140;
  * fight, so an equal ×0.53 cut made strafe-without-dash win 80%. 140 = 7 enemy
  * hits. Damage per hit (14 / 20), dash, windup, lead-aim, speeds and shot
  * radius unchanged.
- * History: feel Tweak GO (11/5) 2920 → 2800.
+ * History: Feel tweak GO (11/5) 2920 → 2800.
  */
 export const ENEMY_MAX_HP  = 1500;
 
@@ -159,7 +159,7 @@ export const ENEMY_BASE_SPEED = 160;
 export const ENEMY_STRAFE_SPEED = 90;
 
 /**
- * Enemy shot windup in milliseconds (feel 11/5 feel pass, R4).
+ * Enemy shot windup in milliseconds (Feel pass 11/5 feel pass, R4).
  *
  * When the enemy is in SHOOT state and its fire cooldown is ready it first
  * enters a ~0.45 s WINDUP: `enemy.windupRemainingMs` counts down and the
@@ -169,13 +169,13 @@ export const ENEMY_STRAFE_SPEED = 90;
  */
 export const ENEMY_SHOT_WINDUP_MS = 450;
 
-// ── Dash (feel 11/5 feel pass, R2) ───────────────────────────────────────────
+// ── Dash (Feel pass 11/5 feel pass, R2) ───────────────────────────────────────────
 
 /**
  * Dash burst duration in milliseconds. While `player.dashRemainingMs > 0` the
  * player moves at DASH_SPEED_MULT × their normal (penalty-adjusted) speed.
  *
- * feel Tweak GO (11/5): 180 → 220. A full-speed burst now travels
+ * Feel tweak GO (11/5): 180 → 220. A full-speed burst now travels
  * ≈ 240 wu/s × 3 × 0.22 s ≈ 158 wu — comfortably past the ~100 wu (≈2.5 mech
  * lengths) enemy shot hit radius, so a windup dash clearly clears the shot even
  * with imperfect timing. The old 180 ms burst (~130 wu) was marginal for a

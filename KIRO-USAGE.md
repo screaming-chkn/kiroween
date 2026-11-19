@@ -1,6 +1,6 @@
 # Kiroween: Kiro usage log
 
-How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used per milestone. Kept honest for the Devpost write-up. The master copy is the team's working copy on the crew box; the repo-root KIRO-USAGE.md is a synced copy. The Kiro IDE was never used by the crew; every logged Kiro run is the headless kiro-cli.
+How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used per milestone. Kept honest for the Devpost write-up. The master copy lives on the team's build box; this repo-root copy is kept in sync. "build agent" below is the team's AI coding agent and a copywriter; edits by them are marked separately from Kiro's. The Kiro IDE was never used by the crew; every logged Kiro run is the headless kiro-cli.
 
 ## M1: real SFX (2026-11-18, build agent) — PR #1, squash 369fdaf
 - Kiro used: **no**. Built and tested with box tools (node, git, gh, headless Chrome). No Kiro credits spent.
@@ -24,8 +24,8 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 ## M4: balance (2026-11-18, build agent): PR #4, squash ca6fec8
 - **Kiro used: yes**, through `kiro-cli` 3.4.0 in headless chat mode and not in the IDE. Every run used model **Auto** (never Sonnet), `--no-interactive`, and `--trust-tools=fs_read,fs_write`, so Kiro could not run shell commands. Each run had one focused prompt and no long agent loop.
 - **Accounts per step:**
-  - Runs 1–2 were on the owner's Mac mini in `~/Projects/kiroween-push`, synced to origin/main 26a0677. Nothing was pushed from the mini. The account was the **Google login**, KIRO FREE, a second Kiro account alongside the original.
-  - Runs 3–4 were on the box in a local clone. The account was the **GitHub login**, **Kiro Pro**, which is the original account.
+  - Runs 1–2 were on the owner's Mac mini in `a local clone`, synced to origin/main 26a0677. Nothing was pushed from the mini. The account was the **Google login**, KIRO FREE, a second Kiro account alongside the original.
+  - Runs 3–4 were on the box in the build box's repo clone. The account was the **GitHub login**, **Kiro Pro**, which is the original account.
 - **Commands** (run from the repo root):
   - Run 1, mini: `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat prompt1.txt)"`. The prompt asked for the R6 balance spec in `.kiro/specs/10-polish` (requirements, design, tasks), the steering file `.kiro/steering/balance.md`, and two hooks.
   - Run 2, mini: same command with `prompt2.txt`. The prompt asked to implement tasks 16 and 23: `runFight` opts `hauntLv`/`policy`, `dashSpam`/`camp` probes, `runLevelMatrix`, and per-LV and probe tables in `balance.mjs`.
@@ -51,7 +51,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Hooks:** the new hooks were not exercised by an IDE, because the work was headless. I ran `npm test` (802 passed) and `npm run build:seance` by hand. `.kiro/` stays committed.
 
 ## M5: ship prep (2026-11-18, build agent): PR #5, squash afbd763
-- **Kiro used: yes.** Every M5 run was on the box (`kiro-cli` 3.4.0 in a local clone) with the **GitHub login**, **Kiro Pro**. The mini's Google login was not used and is left alone as a backup.
+- **Kiro used: yes.** Every M5 run was on the box (`kiro-cli` 3.4.0 in the build box's repo clone) with the **GitHub login**, **Kiro Pro**. The mini's Google login was not used and is left alone as a backup.
 - **Command for each run:** `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write "$(cat promptN.txt)"`, run from the repo root. Model was Auto every time (never Sonnet), and Kiro could not run shell commands. `/usage` was checked before and after each run.
 - **Runs:**
   - **Run 5** (226.41 → 228.98, **2.57 credits**). Prompt: rewrite steering product/tech/structure for the shipped 1v1 duel; fix accessibility/ui-style lines that cite cut features; reconcile stale spec tasks (CUT (1v1 pivot), or shipped); add 10-polish tasks 27–31 plus R7 EARS bullets and a design "M5 ship" section.
@@ -159,7 +159,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
 - **Hook fired:** `seance-on-spec-save` (PostFileSave, matcher `.kiro/specs/*/tasks.md`). Log line: `2026-11-19T01:44:53.504Z seance-on-spec-save event=PostFileSave file=.kiro/specs/10-polish/tasks.md exit=0 ms=213` (17:44:53 PT). It rebuilt `public/seance-tasks.json` at 17:44:53 PT (161/179 done). No other hook matched the edit, so none fired.
 - **Commits:** ed4b814 "Kiro-authored" (the tasks.md line), 8c74def (hook output: seance-tasks.json and the first hook-runs.log line, produced by the hook rather than by hand).
 - **Credits (`/usage`):** Pro 241.47 → 241.60 of 877. **0.13 used** (metering can lag; recheck at the next run). About 635 left; resets 2026-12-01. No credits bought, no plan or settings change, no new login, no IDE.
-- **Proof** (crew box, not in the repo): `kiro-proof/ (team archive)` holds `probe-recording.mp4` (screen recording of the box desktop, 75 s, the run in a visible terminal), `probe-transcript.txt` (`script` capture), `probe-prompt.txt`, `run-probe.sh` and `frame-16s.png`.
+- **Proof** (build box, not in the repo): `deploy/kiro-proof/` holds `probe-recording.mp4` (screen recording of the box desktop, 75 s, the run in a visible terminal), `probe-transcript.txt` (`script` capture), `probe-prompt.txt`, `run-probe.sh` and `frame-16s.png`.
 - **Tests:** `npm test` 877 passed, 0 failed (873 + 4 new).
 - **Account totals:** 21.82 + 0.13 = **21.95 credits metered** (Google 4.81, Pro 17.14).
 
@@ -181,7 +181,7 @@ How Kiro (its .kiro specs, steering and hooks, and the kiro-cli runs) was used p
   - `specTauntLine` now drops a spec number's leading zero (`3.5`, not `03.5`).
   - Task 11 (text-fit check) was ticked by hand and the séance rebuilt with `npm run build:seance` by hand. No hook fired for that edit.
   - README spooky-elements and Kiro sections were updated.
-- **Text fit:** screenshots at 1280×800, 1024×640 and 390×844 DPR 2 (phone portrait) are in `build-review/ (team archive)shots-m6/`. They cover the spawn taunt, the low-HP taunt, and the end cards for an LV 2 win, an LV 5 win and an LV 1 loss. Every string fits and there were 0 console errors. On the phone, LAID TO REST fills the card width but is not clipped.
-- **Proof** (crew box): `kiro-proof/ (team archive)run12-*`, `run13-*`, `run14-*` (screen recording, scrubbed transcript, prompt).
+- **Text fit:** screenshots at 1280×800, 1024×640 and 390×844 DPR 2 (phone portrait) are in `build-review/shots-m6/` on the build box. They cover the spawn taunt, the low-HP taunt, and the end cards for an LV 2 win, an LV 5 win and an LV 1 loss. Every string fits and there were 0 console errors. On the phone, LAID TO REST fills the card width but is not clipped.
+- **Proof** (build box, not in the repo): `deploy/kiro-proof/run12-*`, `run13-*`, `run14-*` (screen recording, scrubbed transcript, prompt).
 - **Tests:** `npm test` 900 passed, 0 failed.
 - **Account totals:** 21.95 + 6.99 = **28.94 credits metered** (Google 4.81, Pro 24.13).

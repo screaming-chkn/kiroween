@@ -37,7 +37,7 @@ export const STATE_SHOOT = 'SHOOT';
 // ── leadAimAngle ───────────────────────────────────────────────────────────────
 
 /**
- * Compute the fire angle that LEADS a moving target (feel GO, 11/5).
+ * Compute the fire angle that LEADS a moving target (Feel-pass GO, 11/5).
  *
  * A projectile fired now travels for roughly `flightTime = dist / speed` before
  * reaching the target's current position. If the target is moving, aiming at
@@ -71,7 +71,7 @@ export function leadAimAngle(ex, ey, px, py, pvx, pvy, speed, leadFrac = 0.8) {
 
 /**
  * Compute the predicted AIM POINT (world x/y) that LEADS a moving target
- * (feel 11/5 bug fix).
+ * (Feel pass 11/5 bug fix).
  *
  * This is the point-valued twin of {@link leadAimAngle}. We LOCK a world
  * point — not an angle — at windup start, so the fire angle can be recomputed
@@ -231,14 +231,14 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
     }
   }
 
-  // ── SHOOT: windup → fire on cooldown (feel 11/5 feel pass) ──────────────
+  // ── SHOOT: windup → fire on cooldown (Feel pass 11/5 feel pass) ──────────────
   // When in SHOOT with the fire cooldown ready, the enemy first spends
   // ENEMY_SHOT_WINDUP_MS "winding up": windupRemainingMs counts down and the
   // renderer reads it as a red telegraph glow. The projectile only spawns the
   // tick the windup completes, giving the player a readable tell. Leaving
   // SHOOT (or not yet ready) cancels any windup.
   //
-  // feel GO (11/5): when the windup STARTS we LOCK a lead-aim POINT (world
+  // Feel-pass GO (11/5): when the windup STARTS we LOCK a lead-aim POINT (world
   // x/y) that leads the player ~80% of the way to their projected position
   // (leadAimPoint). On fire we recompute the angle from the enemy's CURRENT
   // position toward that locked point — the enemy keeps strafing during the

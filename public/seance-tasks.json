@@ -349,7 +349,7 @@
   {
     "spec": "03-arena-combat",
     "id": 32,
-    "title": "LEVER 1b retune: `ENEMY_MAX_HP` 2800 → 4200. At 2800 the harness's perfect-lead player landed essentially every shot, giving ~46 s medians at a still-100% win rate — perfect lead was god-mode, so the duel failed the \"not all 100% wins\" stop criterion. Raising HP to 4200 pushes base perfect-lead TTK to ~63 s (4200/20dmg/0.3s) before misses/travel. Windup, dash, and overdraw fire-rate untouched (feel feel pass preserved). `feelPass.test.js` HP assertion updated to 4200; arena/integration read `ENEMY_MAX_HP` symbolically (R5).",
+    "title": "LEVER 1b retune: `ENEMY_MAX_HP` 2800 → 4200. At 2800 the harness's perfect-lead player landed essentially every shot, giving ~46 s medians at a still-100% win rate — perfect lead was god-mode, so the duel failed the \"not all 100% wins\" stop criterion. Raising HP to 4200 pushes base perfect-lead TTK to ~63 s (4200/20dmg/0.3s) before misses/travel. Windup, dash, and overdraw fire-rate untouched (feel pass preserved). `feelPass.test.js` HP assertion updated to 4200; arena/integration read `ENEMY_MAX_HP` symbolically (R5).",
     "done": true
   },
   {
@@ -379,7 +379,7 @@
   {
     "spec": "03-arena-combat",
     "id": 37,
-    "title": "LEVER mix retune to satisfy BOTH stop criteria at once (none of sigma 32/42/60 alone did: 32/42 → in-window medians but 100% wins; 60 → 0–6% wins but near-all 180 s timeouts). Three coordinated moves, feel windup/dash/overdraw untouched:",
+    "title": "LEVER mix retune to satisfy BOTH stop criteria at once (none of sigma 32/42/60 alone did: 32/42 → in-window medians but 100% wins; 60 → 0–6% wins but near-all 180 s timeouts). Three coordinated moves, feel-pass windup/dash/overdraw untouched:",
     "done": true
   },
   {
@@ -391,19 +391,19 @@
   {
     "spec": "03-arena-combat",
     "id": 39,
-    "title": "Final levers toward BOTH stop criteria. Fact driving the fix: sticky lapses alone still yielded 100% wins because the player kept **strafing** during the no-fire/bad-aim window and dodged the enemy's shots, so the enemy rarely landed finishers and the player ended ~180–300 HP. feel windup/dash/overdraw UNTOUCHED. Four coordinated moves:",
+    "title": "Final levers toward BOTH stop criteria. Fact driving the fix: sticky lapses alone still yielded 100% wins because the player kept **strafing** during the no-fire/bad-aim window and dodged the enemy's shots, so the enemy rarely landed finishers and the player ended ~180–300 HP. feel-pass windup/dash/overdraw UNTOUCHED. Four coordinated moves:",
     "done": true
   },
   {
     "spec": "03-arena-combat",
     "id": 40,
-    "title": "LAST balance pass within the remaining credit budget. Fact driving the fix: after 11/5c the player still took only ~77 dmg/fight on average (needs 300 to lose) and win rates pinned at 100% — the enemy simply could not deal enough damage inside the (too-short) freeze windows to finish the player. feel windup/dash/overdraw UNTOUCHED. Three coordinated levers plus test upkeep:",
+    "title": "LAST balance pass within the remaining credit budget. Fact driving the fix: after 11/5c the player still took only ~77 dmg/fight on average (needs 300 to lose) and win rates pinned at 100% — the enemy simply could not deal enough damage inside the (too-short) freeze windows to finish the player. feel-pass windup/dash/overdraw UNTOUCHED. Three coordinated levers plus test upkeep:",
     "done": true
   },
   {
     "spec": "03-arena-combat",
     "id": 41,
-    "title": "Feel-pass balance package. Scope limited to numbers + possession clarity; windup (450 ms), `ENEMY_FIRE_COOLDOWN_MS` (1500), and the whole dash duration/mult/buffer/cooldown table are UNTOUCHED (feel feel preserved).",
+    "title": "Feel-pass balance package. Scope limited to numbers + possession clarity; windup (450 ms), `ENEMY_FIRE_COOLDOWN_MS` (1500), and the whole dash duration/mult/buffer/cooldown table are UNTOUCHED (feel pass preserved).",
     "done": true
   },
   {
@@ -445,7 +445,7 @@
   {
     "spec": "03-arena-combat",
     "id": 48,
-    "title": "feel Tweak GO (numbers only): tightened dodge skill then HP in `src/combat/config.js` (R2/R5). Lead-aim POINT lock KEPT, NO i-frames, `ENEMY_SHOT_WINDUP_MS` 450, `PLAYER_PROJECTILE_DAMAGE` 14, `ENEMY_PROJECTILE_DAMAGE` 20 all untouched.",
+    "title": "Feel tweak GO (numbers only): tightened dodge skill then HP in `src/combat/config.js` (R2/R5). Lead-aim POINT lock KEPT, NO i-frames, `ENEMY_SHOT_WINDUP_MS` 450, `PLAYER_PROJECTILE_DAMAGE` 14, `ENEMY_PROJECTILE_DAMAGE` 20 all untouched.",
     "done": true
   },
   {
@@ -1141,7 +1141,7 @@
   {
     "spec": "haunted-spec",
     "id": 9,
-    "title": "Possessed CRT taunts on spawn / windup / death from .kiro/steering/possessed-taunts.md (Hook 12 PG-13 lines); typewriter overlay; demo flag forces the spawn and death lines; windup cooldown 8s",
+    "title": "Possessed CRT taunts on spawn / windup / death from .kiro/steering/possessed-taunts.md (12 PG-13 lines); typewriter overlay; demo flag forces the spawn and death lines; windup cooldown 8s",
     "done": true
   }
 ]

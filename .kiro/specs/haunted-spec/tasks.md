@@ -28,4 +28,4 @@ list + cursor):
 
 Phase-2 extensions (static-burst/wipe animation, title/settings/pause shell,
 wingmen, pings, Surge, hexes) live in specs 05–07 as open planning placeholders.
-- [x] 9. Possessed CRT taunts on spawn / windup / death from .kiro/steering/possessed-taunts.md (Hook 12 PG-13 lines); typewriter overlay; demo flag forces the spawn and death lines; windup cooldown 8s
+- [x] 9. Possessed CRT taunts on spawn / windup / death from .kiro/steering/possessed-taunts.md (12 PG-13 lines); typewriter overlay; demo flag forces the spawn and death lines; windup cooldown 8s

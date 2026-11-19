@@ -139,13 +139,13 @@ function drawPlayerMech(ctx, mech) {
  * @param {{ x: number, y: number, angle: number, hp: number, maxHp: number }} mech
  */
 function drawEnemyMech(ctx, mech) {
-  // feel 11/5: red shot telegraph (windup halo) drawn first.
+  // Feel pass 11/5: red shot telegraph (windup halo) drawn first.
   drawWindupTelegraph(ctx, mech.x, mech.y, mech.windupRemainingMs);
   drawWireTank(ctx, 'enemy', mech, Math.PI);
 }
 
 /**
- * Draw the enemy shot telegraph (feel 11/5 feel pass).
+ * Draw the enemy shot telegraph (Feel pass 11/5 feel pass).
  *
  * While the enemy winds up a shot, `windupRemainingMs` counts down from
  * ENEMY_SHOT_WINDUP_MS to 0. We draw a soft blood-red ring whose radius and

@@ -431,7 +431,7 @@ test('R6: median duel length is 45–120 s at each tested LV', () => {
   }
 });
 
-// No dashSpam-vs-baseline cap here (M4, build agent edit): the baseline is
+// No dashSpam-vs-baseline cap here (M4, team edit): the baseline is
 // tell-blind, so spamming dash (more movement) beats it by +5..+37 pp in the
 // 3,200-fight-per-LV deep run — the intended counterplay, not dominance.
 // Dominance is checked against the tell-reading policy below; the edge over

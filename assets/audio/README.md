@@ -1,7 +1,7 @@
 # Music + stings
 
 Original music for HAUNT//HOUND, composed and synthesized from scratch by
-the team's music tooling, in Python with numpy/scipy (oscillators, filters,
+The team's music bot, in Python with numpy/scipy (oscillators, filters,
 noise). No samples, soundfonts or AI music services were used. Free to use in
 the game, its Devpost entry and its trailer.
 

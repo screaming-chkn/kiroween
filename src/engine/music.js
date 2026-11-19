@@ -1,7 +1,7 @@
 /**
  * src/engine/music.js — music loops + stings on the music bus (M3).
  *
- * Original tracks by the crew's music bot (see assets/audio/README.md).
+ * Original tracks by the team's music bot (see assets/audio/README.md).
  *   - Loops play from an AudioBufferSourceNode with loop = true (sample-exact).
  *     OGG loops the whole buffer; the MP3 fallback (older iOS Safari, no
  *     Vorbis) sets loopStart/loopEnd to the musical length, skipping the

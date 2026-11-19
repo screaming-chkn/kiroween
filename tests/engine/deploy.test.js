@@ -181,9 +181,9 @@ test('each deploy tick is cheap (no per-tick stall on the critical path)', () =>
   console.log(`    per-tick cost: ${perTickMs.toFixed(4)}ms over ${TICKS} ticks`);
 });
 
-// ── feel-pass — default Scout is light (≤ 80% load → 2.5 s dash CD) ──────
+// ── Feel pass — default Scout is light (≤ 80% load → 2.5 s dash CD) ──────
 
-console.log('\nfeel-pass — default Scout sits in the light dash band\n');
+console.log('\nFeel pass — default Scout sits in the light dash band\n');
 
 test('default Drifter preset loads under 80% (penalty-free light band)', () => {
   const t = totals(defaultLoadout(), PARTS_BY_ID);

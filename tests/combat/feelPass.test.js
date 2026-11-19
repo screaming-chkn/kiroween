@@ -1,10 +1,10 @@
 /**
  * tests/combat/feelPass.test.js
  *
- * Expect-style unit tests for the feel 11/5 combat feel pass:
+ * Expect-style unit tests for the Feel pass 11/5 combat feel pass:
  *
  *   1) Enemy HP: owner GO (11/12) cut ENEMY_MAX_HP 2800 → 1500 (and PLAYER_MAX_HP
- *      300 → 140) for 30–45 s fights. Earlier: feel Tweak GO (11/5) 2920 → 2800 on top
+ *      300 → 140) for 30–45 s fights. Earlier: Feel tweak GO (11/5) 2920 → 2800 on top
  *      of the LEVER 2 PLAYER_PROJECTILE_DAMAGE 17 → 14 cut. With the widened
  *      dash (DASH_DURATION_MS 180 → 220, burst ≈ 158 wu clearing the ~100 wu
  *      shot hit radius) and the slimmer enemy projectile (radius 9 → 8), a
@@ -68,9 +68,9 @@ const DT_MS = DT * 1000;  // ≈ 16.667 ms
 
 // ── 1. Enemy HP ──────────────────────────────────────────────────────────────
 
-console.log('\n── 1. Enemy HP & player damage (owner GO LEVER 2) ──\n');
+console.log('\n── 1. Enemy HP & player damage (lead GO LEVER 2) ──\n');
 
-test('PLAYER_PROJECTILE_DAMAGE is 14 (owner GO LEVER 2, was 17)', () => {
+test('PLAYER_PROJECTILE_DAMAGE is 14 (lead GO LEVER 2, was 17)', () => {
   assert.equal(PLAYER_PROJECTILE_DAMAGE, 14);
 });
 

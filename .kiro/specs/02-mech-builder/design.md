@@ -24,4 +24,4 @@ Piecewise linear: (0,0) → (80,0) → (100,0.15) → (115,0.45); >115 blocked.
 - PBT (small seeded generator, no deps; fast-check optional): random legal loadouts deploy; penalty monotonic and bounded; balance identity.
 
 ## Open questions
-- Exact leg capacities and part numbers (feel feel pass 11/5).
+- Exact leg capacities and part numbers (feel pass 11/5).

@@ -31,7 +31,7 @@ import { enumerateLoadouts, runFight } from './balanceCore.mjs';
 import { readFileSync } from 'node:fs';
 
 // Expected numbers come from the table itself, so retuning keeps these tests
-// meaningful (build agent edit after the M4.5 balance pass).
+// meaningful (team edit after the M4.5 balance pass).
 const E = (id) => LOADOUT_EFFECTS[id].mods;
 
 // ── Minimal test harness ─────────────────────────────────────────────────────

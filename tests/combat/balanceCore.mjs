@@ -48,7 +48,7 @@ export const FIXED_DT = 1 / 60;
 /** Builds with win rate above this are flagged as potential outliers. */
 export const WIN_RATE_FLAG = 0.60;
 
-/** Duel-length design target (seconds) from the feel 11/5 feel pass. */
+/** Duel-length design target (seconds) from the Feel pass 11/5 feel pass. */
 export const DUEL_TARGET_LOW = 60;
 export const DUEL_TARGET_HIGH = 120;
 

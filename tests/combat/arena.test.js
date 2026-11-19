@@ -184,7 +184,7 @@ test('stepEnemy SHOOT→CHASE when player exceeds range + hysteresis', () => {
 });
 
 test('stepEnemy fires projectile when in SHOOT state with cooldown 0', () => {
-  // feel 11/5: firing now runs through a ~450 ms windup telegraph. The first
+  // Feel pass 11/5: firing now runs through a ~450 ms windup telegraph. The first
   // SHOOT tick with cooldown 0 only STARTS the windup (no projectile yet); the
   // shot spawns the tick the windup completes.
   const e = { ...createEnemy({ x: 500, y: 450 }), aiState: STATE_SHOOT, fireCooldown: 0 };
@@ -371,7 +371,7 @@ test('scripted sim: sustained fire → enemy dead → win', () => {
     },
   };
 
-  // feel Tweak GO (11/5): ENEMY_MAX_HP is 2800 and player damage
+  // Feel tweak GO (11/5): ENEMY_MAX_HP is 2800 and player damage
   // is 14. At point-blank the player out-damages the enemy, but its DPS
   // (14 / 0.3 s ≈ 47/s → ~59 s to grind 2800) trails the enemy draining the
   // player's 300 HP, so the raw sustained-fire duel would LOSE. To keep this a
