@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<title>C9c tank rotations</title>
+<style>
+  html,body{margin:0;background:#000;color:#47FF9A;font:14px/1.3 ui-monospace,monospace}
+  #wrap{display:flex;gap:12px;padding:16px;align-items:flex-start}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:6px}
+  canvas{background:#050505;border:1px solid #1a3a28;image-rendering:pixelated}
+  .lab{opacity:.8}
+</style>
+</head><body>
+<div id="wrap"></div>
+<script type="module">
+import { drawTank, setTankStyle, setTankPalette, setEdgeStyle } from '../src/ui/tankWire.js';
+setTankStyle('wheeled');
+setTankPalette('mono-green');
+setEdgeStyle('dashed-tech');
+const angles = [
+  { name: 'rot0', deg: 0 },
+  { name: 'rot45', deg: 45 },
+  { name: 'rot90', deg: 90 },
+];
+const wrap = document.getElementById('wrap');
+for (const a of angles) {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  const c = document.createElement('canvas');
+  c.width = 320; c.height = 320;
+  c.dataset.name = a.name;
+  const lab = document.createElement('div');
+  lab.className = 'lab';
+  lab.textContent = a.name + ' (' + a.deg + '°)';
+  cell.appendChild(c); cell.appendChild(lab); wrap.appendChild(cell);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#050505';
+  ctx.fillRect(0, 0, 320, 320);
+  const ang = a.deg * Math.PI / 180;
+  // player green
+  drawTank(ctx, 'player', 110, 170, ang, ang, 0);
+  // enemy red offset
+  drawTank(ctx, 'enemy', 220, 150, ang + 0.35, ang + 0.55, 0);
+}
+document.title = 'C9c tank rotations ready';
+</script>
+</body></html>
