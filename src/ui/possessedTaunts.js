@@ -245,7 +245,8 @@ export function tauntAboveLineY({ lineTop, scale = 1, gap = TAUNT_ABOVE_GAP }) {
 export function drawPossessedTaunt(ctx, line, pos) {
   if (!line || !line.typed) return;
   const scale = pos.scale > 0 ? pos.scale : 1;
-  const px = Math.max(14, Math.round(14 * scale));
+  // C9: slightly smaller so long lines + plate clear the top neon with HUD_SPACE gap.
+  const px = Math.max(12, Math.round(12 * scale));
   ctx.save();
   ctx.font = `${px}px ${TAUNT_FONT}`;
   ctx.textAlign = 'left';
@@ -260,30 +261,37 @@ export function drawPossessedTaunt(ctx, line, pos) {
   const side = Number.isFinite(pos.sidePad) ? pos.sidePad : 56 * scale;
   const margin = Math.max(8 * scale, side);
   const usable = Number.isFinite(viewW) ? viewW - 2 * margin : Infinity;
-  // Too wide: shrink once (floor = 14 CSS px), then wrap if it still will not fit.
+  // Too wide: shrink once (floor = 12 CSS px), then wrap if it still will not fit.
   if (fullW > usable && usable > 0) {
-    drawPx = Math.max(px, Math.floor(px * usable / fullW));
+    drawPx = Math.max(12 * scale, Math.floor(px * usable / fullW));
     ctx.font = `${drawPx}px ${TAUNT_FONT}`;
   }
   const lines = (usable > 0 && hasMeasure && measure(line.text) > usable)
     ? wrapLines(line.text, usable, measure, 3)
     : [{ start: 0, text: line.text }];
   const lineH = Math.round(drawPx * 1.25);
-  const y0 = Math.max(drawPx + 8 * scale, pos.y);
+  // pos.y = BOTTOM baseline of the taunt block (gap above field). Multi-line grows UP.
+  const yLast = Math.max(drawPx + 8 * scale, pos.y);
   const fill = line.color || tauntColor(line.speaker);
   const alpha = Math.max(0, Math.min(1, line.alpha));
   // Measure typed block for a dark plate so the line clears the field border/timer.
   let blockLeft = Infinity;
   let blockRight = -Infinity;
   const shownLines = [];
-  lines.forEach((ln, i) => {
+  let drawn = 0;
+  const totalShown = lines.reduce((acc, ln) => {
+    const shown = line.typed.slice(ln.start, ln.start + ln.text.length);
+    return acc + (shown ? 1 : 0);
+  }, 0);
+  lines.forEach((ln) => {
     const shown = line.typed.slice(ln.start, ln.start + ln.text.length);
     if (!shown) return;
     const w = lines.length === 1 ? fullW : measure(ln.text);
     let x = pos.x - w / 2;
     if (Number.isFinite(viewW)) x = Math.min(x, viewW - margin - w);
     x = Math.max(margin, x);
-    const y = y0 + i * lineH;
+    const y = yLast - (totalShown - 1 - drawn) * lineH;
+    drawn += 1;
     shownLines.push({ shown, x, y, w });
     blockLeft = Math.min(blockLeft, x);
     blockRight = Math.max(blockRight, x + w);
@@ -291,8 +299,11 @@ export function drawPossessedTaunt(ctx, line, pos) {
   if (shownLines.length) {
     const padX = 8 * scale;
     const padY = 4 * scale;
-    const plateTop = y0 - drawPx - padY;
-    const plateH = shownLines.length * lineH + padY * 2 - (lineH - drawPx);
+    const firstY = shownLines[0].y;
+    const lastY = shownLines[shownLines.length - 1].y;
+    // C9: plate ends at last baseline (no pad below) so it never covers the neon.
+    const plateTop = firstY - drawPx - padY;
+    const plateH = Math.max(0, lastY - plateTop);
     ctx.globalAlpha = alpha * 0.82;
     ctx.fillStyle = '#0A0D0B';
     ctx.fillRect(blockLeft - padX, plateTop, (blockRight - blockLeft) + padX * 2, plateH);

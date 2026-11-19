@@ -65,8 +65,7 @@ export const TANK_STYLE_DRAW = {
       barrelLen: 40, twin: false, base: 'treads', cutHull: 0.48, cutTurret: 0.22,
     },
   },
-  // Wheeled 8x8 — boxier hull, wheels as side ellipses, mid turret
-  // Wheeled 8x8 APC — boxy hull, flat cupola, sensor mast (C8: thin/dashed, less bloom)
+  // Wheeled APC — boxy hull, flat cupola, sensor mast (C9: near-side tread + 3 wheels)
   wheeled: {
     player: {
       hull: { L: 38, W: 24, H: 12 }, turret: { L: 16, W: 14, H: 8 },
@@ -397,40 +396,78 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
     }
     ctx.stroke();
   } else if (s.base === 'wheels') {
-    // C8: crisp 8x8 wheels — thin tire + dashed hub detail, light shadow, no bloom
+    // C9: near-side tank tread (flat oval track + 3 road wheels); far side faint dashed.
+    // Hitbox/scale unchanged — draw-only. Thin crisp strokes, no bloom.
     const fx = Math.cos(hullHeading), fy = Math.sin(hullHeading);
     const lx = Math.sin(hullHeading), ly = -Math.cos(hullHeading);
     const hl = s.hull.L / 2, off = s.hull.W / 2 + 3.5;
-    const wr = Math.max(3.0, s.hull.H * 0.4);
+    const wr = Math.max(2.6, s.hull.H * 0.34);
+    // Near = side that sits lower on screen (toward viewer).
+    const nearSide = ly >= 0 ? 1 : -1;
+    const farSide = -nearSide;
+
     ctx.globalAlpha = 0.12;
     ctx.fillStyle = '#000';
     ctx.beginPath();
     ctx.ellipse(x, y + 6, s.hull.L * 0.66, s.hull.W * 0.5, hullHeading, 0, Math.PI * 2);
     ctx.fill();
-    for (const side of [-1, 1]) {
-      for (let i = 0; i < 4; i++) {
-        const tt = -hl + (hl * 2) * ((i + 0.5) / 4);
+
+    // Far side: super-thin faint dashed hints (barely noticeable)
+    {
+      const side = farSide;
+      ctx.globalAlpha = 0.2;
+      ctx.strokeStyle = s.turretStroke;
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([1.0, 2.6]);
+      for (let i = 0; i < 3; i++) {
+        const tt = -hl * 0.72 + (hl * 1.44) * ((i + 0.5) / 3);
         const cx = x + fx * tt + lx * off * side;
-        const cy = y + fy * tt + ly * off * side + 1.6;
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = s.turretStroke;
-        ctx.lineWidth = 1.05;
+        const cy = y + fy * tt + ly * off * side + 1.2;
         ctx.beginPath();
-        ctx.ellipse(cx, cy, wr * 1.02, wr * 0.68, hullHeading, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, wr * 0.8, wr * 0.5, hullHeading, 0, Math.PI * 2);
         ctx.stroke();
-        // Dotted hub ring
-        ctx.lineWidth = 0.85;
-        ctx.setLineDash([1.2, 1.6]);
+      }
+      ctx.setLineDash([]);
+    }
+
+    // Near side: flat oval tread outline + 3 road wheels inside
+    {
+      const side = nearSide;
+      const ox = lx * off * side, oy = ly * off * side;
+      const tcx = x + ox, tcy = y + oy + 1.6;
+      const trackLen = hl * 0.92;
+      const trackH = wr * 1.2;
+
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = s.turretStroke;
+      ctx.lineWidth = 1.05;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.ellipse(tcx, tcy, trackLen + wr * 0.2, trackH, hullHeading, 0, Math.PI * 2);
+      ctx.stroke();
+      // Inner rail
+      ctx.lineWidth = 0.7;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.ellipse(tcx, tcy, Math.max(2, trackLen - wr * 0.25), trackH * 0.5, hullHeading, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.globalAlpha = 1;
+      for (let i = 0; i < 3; i++) {
+        const tt = -hl * 0.72 + (hl * 1.44) * ((i + 0.5) / 3);
+        const cx = x + fx * tt + ox;
+        const cy = y + fy * tt + oy + 1.6;
+        ctx.lineWidth = 1.0;
+        ctx.strokeStyle = s.turretStroke;
         ctx.beginPath();
-        ctx.ellipse(cx, cy, wr * 0.42, wr * 0.28, hullHeading, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, wr * 0.95, wr * 0.62, hullHeading, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.lineWidth = 0.7;
+        ctx.setLineDash([1.0, 1.5]);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, wr * 0.34, wr * 0.22, hullHeading, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
-        // Thin hub cross
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(cx - lx * wr * 0.32 * side, cy - ly * wr * 0.32 * side);
-        ctx.lineTo(cx + lx * wr * 0.32 * side, cy + ly * wr * 0.32 * side);
-        ctx.stroke();
       }
     }
   }

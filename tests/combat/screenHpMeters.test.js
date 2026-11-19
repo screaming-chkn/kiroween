@@ -110,7 +110,7 @@ test('sideOutGeometry: groups stay outside arena edges by ≥8 CSS px', () => {
       `player ${g.player.x + g.player.w} vs ${left}`);
     assert.ok(g.enemy.x >= right + METER_FIELD_GAP * scale - 1e-6,
       `enemy ${g.enemy.x} vs ${right}`);
-    assert.ok(g.fontPx / scale >= 14);
+    assert.ok(g.fontPx / scale >= 12);
   }
 });
 

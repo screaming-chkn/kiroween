@@ -152,11 +152,12 @@ export function sideOutGeometry(vpW, vpH, opts = {}) {
     ? Math.max(14, Math.min(18, Math.round((vpW / s) * 0.016)))
     : Math.max(10, Math.min(14, Math.round((vpW / s) * 0.012)))) * s;
   const h = (opts.compact ? 56 : Math.max(72, Math.min(130, Math.round((vpH / s) * 0.15)))) * s;
-  const fontPx = (opts.compact ? 14 : 14) * s;       // mech name
-  const hpFontPx = (opts.compact ? 18 : 14) * s;     // cur/max — larger on landscape
-  const gapX = 8 * s; // C8 HUD_SPACE
+  // C9: slightly smaller type; reserve full "P1 · RUSTBIT" width so labels stay far L/R.
+  const fontPx = (opts.compact ? 12 : 12) * s;       // mech name
+  const hpFontPx = (opts.compact ? 14 : 12) * s;     // cur/max
+  const gapX = 8 * s; // HUD_SPACE
   // Labels sit BESIDE the bar (outward), so group height ≈ bar height.
-  const labelW = Math.max(4 * fontPx, 7.2 * fontPx, 4.2 * hpFontPx); // name or HP
+  const labelW = Math.max(12 * fontPx, 5.5 * hpFontPx); // "P1 · RUSTBIT" / "140/140"
   const groupW = thick + gapX + labelW;
   const gh = h;
   const arenaLeft = Number.isFinite(opts.arenaLeft) ? opts.arenaLeft : vpW * 0.2;
@@ -213,18 +214,31 @@ function drawSideOut(ctx, state, vpW, vpH, opts) {
   const g = sideOutGeometry(vpW, vpH, opts);
   const pHp = formatHudStat(Math.ceil(state.player?.hp ?? 0), state.player?.maxHp ?? 0);
   const eHp = formatHudStat(Math.ceil(state.enemy?.hp ?? 0), state.enemy?.maxHp ?? 0);
-  drawSideOutGroup(ctx, g, g.player, pctOf(state.player), playerHudLabel(), pHp, C.player);
-  drawSideOutGroup(ctx, g, g.enemy, pctOf(state.enemy), enemyHudLabel(), eHp, C.enemy);
+  const barMinY = Number.isFinite(opts.barMinY) ? opts.barMinY : null;
+  drawSideOutGroup(ctx, g, g.player, pctOf(state.player), playerHudLabel(), pHp, C.player, barMinY);
+  drawSideOutGroup(ctx, g, g.enemy, pctOf(state.enemy), enemyHudLabel(), eHp, C.enemy, barMinY);
 }
 
-/** Name + HP beside the bar (outward), bar hugs the field edge. */
-function drawSideOutGroup(ctx, g, box, pct, name, hpText, nameColor) {
-  fillBar(ctx, box.barX, box.y, g.thick, g.h, pct);
+/** Name + HP beside the bar (outward), bar hugs the field edge.
+ *  C9: if barMinY is set, the filled bar starts there so it never covers the top neon. */
+function drawSideOutGroup(ctx, g, box, pct, name, hpText, nameColor, barMinY = null) {
+  let barY = box.y;
+  let barH = g.h;
+  if (Number.isFinite(barMinY) && barMinY > box.y) {
+    barY = barMinY;
+    barH = Math.max(8, box.y + g.h - barMinY);
+  }
+  fillBar(ctx, box.barX, barY, g.thick, barH, pct);
   const lx = box.labelX;
   const align = box.labelAlign || 'left';
   const hpPx = g.hpFontPx || g.fontPx;
-  drawColoredLabel(ctx, name, lx, box.y, align, g.fontPx, nameColor);
-  drawColoredLabel(ctx, hpText, lx, box.y + g.fontPx * 1.25, align, hpPx, C.bone);
+  // Keep name+HP above the neon when possible (letterbox).
+  let labelY = box.y;
+  if (Number.isFinite(barMinY) && box.y + g.fontPx * 2.4 > barMinY) {
+    labelY = Math.max(2, barMinY - g.fontPx * 2.5);
+  }
+  drawColoredLabel(ctx, name, lx, labelY, align, g.fontPx, nameColor);
+  drawColoredLabel(ctx, hpText, lx, labelY + g.fontPx * 1.25, align, hpPx, C.bone);
 }
 
 function drawCornerV(ctx, state, vpW, vpH, opts) {

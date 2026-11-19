@@ -250,7 +250,7 @@ test('reset clears line and windup cooldown', () => {
   assert.ok(m.current());
 });
 
-test('drawPossessedTaunt: balanced, >=14px font, clamps on 390 wide', () => {
+test('drawPossessedTaunt: balanced, >=12px font, clamps on 390 wide', () => {
   const log = { saves: 0, restores: 0, x: [], font: '' };
   const target = {
     canvas: { width: 390 },
@@ -262,7 +262,7 @@ test('drawPossessedTaunt: balanced, >=14px font, clamps on 390 wide', () => {
   const text = PLAYER_DEATH[0];
   drawPossessedTaunt(ctx, { text, typed: text, alpha: 1 }, { x: 380, y: 100, sidePad: 8 });
   assert.equal(log.saves, log.restores);
-  assert.ok(parseInt(log.font, 10) >= 14);
+  assert.ok(parseInt(log.font, 10) >= 12);
   assert.ok(log.x[0] >= 0 && log.x[0] + text.length * 9 <= 390, `x ${log.x[0]}`);
   drawPossessedTaunt(ctx, null, { x: 0, y: 0 });
   assert.equal(log.saves, 1);

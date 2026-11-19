@@ -460,7 +460,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const vpH = renderer.canvas.height;
     const edges = arenaSideEdges(camera, vpW, vpH, aw,
       { shakeX: shakeX + kickX, shakeY: shakeY + kickY });
-    // Place meter tops just under the slim strip so labels clear the above-field taunt.
+    // Labels sit in the letterbox under the slim strip (clear of stick).
+    // Bars themselves start at barMinY = top neon bottom so they never cover it.
     const topInset = stripBottomPx(vpW) + 4 * hudScale;
     return {
       layout: SCREEN_HP_LAYOUT,
@@ -469,6 +470,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       arenaLeft: edges.left,
       arenaRight: edges.right,
       topInset,
+      barMinY: lineBottomPx(vpW, vpH),
       gapCss: METER_FIELD_GAP,
     };
   };
@@ -494,7 +496,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (st.phase === 'playing') {
       const g = sideOutGeometry(vpW, vpH, meterOpts);
       const tauntBaseline = tauntAboveLineY({ lineTop, scale: hudScale, gap: TAUNT_ABOVE_GAP });
-      const fontPx = Math.max(14, Math.round(14 * hudScale));
+      const fontPx = Math.max(12, Math.round(12 * hudScale));
       const tauntTop = Math.max(stripBottomPx(vpW) + 2 * hudScale, tauntBaseline - fontPx);
       const tauntBottom = tauntBaseline; // alphabetic ≈ glyph bottom
       const fieldBottom = arenaBottomLineSy(
@@ -521,6 +523,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         lineTop,
         lineBottom,
         fieldBottom,
+        meterTop: g.top,
         playerMeterRight: g.player.x + g.player.w,
         enemyMeterLeft: g.enemy.x,
         arenaLeft: g.arenaLeft ?? meterOpts.arenaLeft,
@@ -616,9 +619,19 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       drawTellCaption(ctx, tellCaption.current(nowMs), { x: vpW / 2, y: capTop * hudScale, scale: hudScale });
     }
 
-    // Possessed taunt. C4 in-fight: centred just ABOVE the green field top,
-    // clear of side meters, coloured to the speaker. End card: near the top.
-    const taunt = tauntMachine.current();
+    // Possessed taunt. C9 in-fight: centred ABOVE the neon field top (HUD_SPACE
+    // gap); plate/multi-line grow upward. End card: near the top.
+    // Shot/debug: __HH_FORCE_TAUNT__ = full string to show (typed instantly).
+    const forcedTaunt = typeof globalThis.__HH_FORCE_TAUNT__ === 'string' && globalThis.__HH_FORCE_TAUNT__
+      ? {
+          text: globalThis.__HH_FORCE_TAUNT__,
+          typed: globalThis.__HH_FORCE_TAUNT__,
+          alpha: 1,
+          speaker: 'hound',
+          color: '#FF4D5E',
+        }
+      : null;
+    const taunt = forcedTaunt || tauntMachine.current();
     let afterCard = null;
     if (taunt) {
       let tx = vpW / 2;
