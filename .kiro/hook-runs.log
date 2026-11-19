@@ -180,3 +180,6 @@
 2026-11-19T21:59:57.369Z landscape-hud-on-save event=PostFileSave file=src/engine/touch.js exit=0 ms=114
 2026-11-19T22:00:14.050Z landscape-hud-on-save event=PostFileSave file=src/engine/touch.js exit=0 ms=44
 2026-11-19T22:00:16.130Z test-on-save event=PostFileSave file=src/engine/touch.js exit=1 ms=1936
+2026-11-19T23:51:45.884Z close-loop-probe-save event=PostFileSave file=deploy/kiro-proof/close-loop-guard/PROBE.md exit=0 ms=5
+2026-11-19T23:51:47.659Z close-loop-stop-log event=Stop file=- exit=1 ms=8
+2026-11-19T23:52:29.372Z close-loop-on-stop event=Stop file=- exit=0 ms=34

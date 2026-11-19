@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Close-the-Loop Guard (Stop agent inject)",
+      "description": "On Stop, inject last hook-runs.log failures into the same CLI turn. Trigger name is Stop (docs PascalCase for Agent Stop; not AgentStop).",
+      "trigger": "Stop",
+      "enabled": true,
+      "action": {
+        "type": "agent",
+        "prompt": "Close-the-Loop Guard (same-turn): read the last 8 lines of `.kiro/hook-runs.log`. Prefer fixing exit!=0 lines whose file you edited this turn, using fs_read/fs_write only. Ignore close-loop-on-stop / close-loop-stop-log self-lines. If nothing actionable remains (or failures need shell you do not have), write one short note to `deploy/kiro-proof/close-loop-guard/CLOSE_LOOP_NOTE.txt` and end your reply with exactly: CLOSE_LOOP_OK. Do not edit unrelated game/HUD/combat files."
+      }
+    },
+    {
+      "name": "Close-the-Loop Guard (Stop command companion)",
+      "description": "On Stop, mark STOP-FIRED.txt and write .kiro/NEXT-PROMPT.md for the next CLI run (durable fallback; does not claim same-turn LLM steering by itself).",
+      "trigger": "Stop",
+      "enabled": true,
+      "action": {
+        "type": "command",
+        "command": "node scripts/kiro-hook-run.mjs close-loop-on-stop -- node scripts/kiro-close-loop-on-stop.mjs"
+      },
+      "timeout": 30
+    }
+  ]
+}

@@ -76,15 +76,17 @@ Human and agent edits went in separate commits. The Kiro IDE was not used. The f
 
 **Property-based tests.** `tests/combat/loadoutEffects.pbt.test.js` was written by Kiro. It uses a hand-rolled seeded generator with no dependencies, and checks loadout folding laws, bounds over every possible loadout, arena HP and dash invariants, damage never healing, shot damage and speed, and flag-off equivalence. It found no bugs when it was added. `tests/mech/pbt.test.js` comes from the first phase.
 
-**Hooks** (`.kiro/hooks/`, all PostFileSave):
+**Hooks** (`.kiro/hooks/`):
 
-- `test-on-save.json` runs `npm test` when a JS file under `src/` or `tests/` is saved.
-- `balance-on-combat-save.json` runs `node tests/combat/balance.test.js` when `src/combat/config.js` or `src/ui/hauntLevel.js` is saved.
-- `seance-on-spec-save.json` runs `npm run build:seance` when any spec `tasks.md` is saved.
-- `readme-check-on-save.json` runs `node scripts/check-readme.mjs` when `README.md`, `LICENSE` or a hook file is saved.
-- `landscape-hud-on-save.json` runs the touch, landscape HUD and touchLayout property tests when `src/engine/touch.js`, landscape HUD tests or `src/combat/screenHpMeters.js` is saved.
+- `test-on-save.json` (PostFileSave) runs `npm test` when a JS file under `src/` or `tests/` is saved.
+- `balance-on-combat-save.json` (PostFileSave) runs `node tests/combat/balance.test.js` when `src/combat/config.js` or `src/ui/hauntLevel.js` is saved.
+- `seance-on-spec-save.json` (PostFileSave) runs `npm run build:seance` when any spec `tasks.md` is saved.
+- `readme-check-on-save.json` (PostFileSave) runs `node scripts/check-readme.mjs` when `README.md`, `LICENSE` or a hook file is saved.
+- `landscape-hud-on-save.json` (PostFileSave) runs the touch, landscape HUD and touchLayout property tests when `src/engine/touch.js`, landscape HUD tests or `src/combat/screenHpMeters.js` is saved.
+- `close-loop-probe-save.json` (PostFileSave) cheaply logs when the Close-the-Loop Guard probe marker is saved.
+- `close-loop-on-stop.json` (Stop / Agent Stop) injects recent `.kiro/hook-runs.log` failures back into the same CLI turn (agent action) and writes `.kiro/NEXT-PROMPT.md` plus a Stop-fired marker (command companion) for the next run.
 
-Each hook command goes through `scripts/kiro-hook-run.mjs`, which logs every firing to `.kiro/hook-runs.log`. Our first ten headless runs used the CLI's default v2 engine, which does not load workspace hooks, so those commands were run by hand. With `kiro-cli chat --agent-engine v3 --trust-workspace` the hooks fire on Kiro's own file edits; the first logged firing is `seance-on-spec-save` rebuilding the séance after Kiro edited a spec `tasks.md`.
+Command hooks go through `scripts/kiro-hook-run.mjs`, which logs every firing to `.kiro/hook-runs.log`. Our first ten headless runs used the CLI's default v2 engine, which does not load workspace hooks, so those commands were run by hand. With `kiro-cli chat --agent-engine v3 --trust-workspace` the hooks fire on Kiro's own file edits; the first logged firing is `seance-on-spec-save` rebuilding the séance after Kiro edited a spec `tasks.md`. A later headless Auto probe proved the Stop agent action can steer the same session after a PostFileSave hook line lands.
 
 **Steering** (`.kiro/steering/`):
 
