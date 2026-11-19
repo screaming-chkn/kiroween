@@ -1304,7 +1304,7 @@
     "spec": "14-phone-landscape",
     "id": 5,
     "title": "Exercise the hook by saving a matched file, and log each firing and result (R8)",
-    "done": false
+    "done": true
   },
   {
     "spec": "14-phone-landscape",
