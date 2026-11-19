@@ -10,7 +10,7 @@
  */
 import { formatHudStat } from './hud.js';
 
-export const SCREEN_HP_LAYOUT = 'vertical'; // branch A; branch B sets 'top'
+export const SCREEN_HP_LAYOUT = 'top'; // branch B; branch A uses 'vertical'
 
 const C = {
   void: '#0A0D0B',
