@@ -171,6 +171,7 @@ function expectedFold(loadout) {
   const e = {
     shotDamage: PLAYER_PROJECTILE_DAMAGE, projectileSpeedMult: 1, maxHpBonus: 0,
     dashCooldownMult: 1, fireCooldownMult: 1, incomingDamageMult: 1,
+    moveSpeedMult: 1, dashDurationMult: 1,
   };
   for (const id of Object.values(loadout)) {
     const m = LOADOUT_EFFECTS[id]?.mods;

@@ -143,6 +143,9 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     player.shotDamage          = mods.shotDamage;
     player.projectileSpeedMult = mods.projectileSpeedMult;
     player.incomingDamageMult  = mods.incomingDamageMult;
+    // Tank upgrades (feat/tank-upgrades): optional speed / dash-length levers.
+    if (mods.moveSpeedMult != null) player.moveSpeedMult = mods.moveSpeedMult;
+    if (mods.dashDurationMult != null) player.dashDurationMult = mods.dashDurationMult;
   }
 
   const enemy = createEnemy({
@@ -212,13 +215,15 @@ export function updateArena(state, actions, dt) {
 
   // Start a dash when buffered + off cooldown + not already mid-burst.
   if (dashBufferMs > 0 && dashCooldownMs === 0 && dashRemainingMs === 0) {
-    dashRemainingMs = DASH_DURATION_MS;
+    const durMult = state.player.dashDurationMult ?? 1;
+    dashRemainingMs = Math.round(DASH_DURATION_MS * durMult);
     dashCooldownMs  = dashBaseMs;
     dashBufferMs    = 0;
   }
 
   const dashing   = dashRemainingMs > 0;
-  const speedMult = dashing ? DASH_SPEED_MULT : 1;
+  const moveBase  = state.player.moveSpeedMult ?? 1;
+  const speedMult = (dashing ? DASH_SPEED_MULT : 1) * moveBase;
 
   // ── 1. Move player (R2) ───────────────────────────────────────────────────
   let player = act.move

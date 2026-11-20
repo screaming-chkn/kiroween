@@ -45,6 +45,10 @@ import {
 import { sfxEventsForTick }    from './combat/sfxEvents.js';
 import { createArena, updateArena } from './combat/arena.js';
 import { combatModsFor }       from './combat/loadoutEffects.js';
+import {
+  awardWin, loadUpgradeState, saveUpgradeState, paletteForTier,
+} from './mech/tankUpgrades.js';
+import { setTankPalette } from './ui/tankWire.js';
 import { buildPlayerActions }  from './combat/actions.js';
 import { drawWorld,
   drawEntities,
@@ -294,9 +298,16 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     ...loadoutTotals,
     speedPenalty: speedPenalty(loadoutTotals.loadPct ?? 0),
   };
-  // M4.5 loadout effects: set only when the flag is on.
-  const combatMods = combatModsFor(loadout);
-  if (combatMods) arenaStats.combatMods = combatMods;
+  // Tank upgrades supply combatMods on totals; fall back to part effects.
+  if (loadoutTotals.combatMods) {
+    arenaStats.combatMods = loadoutTotals.combatMods;
+  } else {
+    const combatMods = combatModsFor(loadout);
+    if (combatMods) arenaStats.combatMods = combatMods;
+  }
+  // Tier recolor only (C9e silhouette unchanged).
+  const ug = loadoutTotals.tankUpgrades || loadUpgradeState();
+  setTankPalette(paletteForTier(ug.tier));
 
   // Difficulty ramp (HAUNT LV): applied at spawn, outside createArena math.
   // Read the level first: the Sever Wall (LV3+) is part of the arena itself.
@@ -948,6 +959,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       if (arenaState.phase === 'win') {
         advanceHaunt = true;
         tauntMachine.onDeath(killNow);
+        // Win N pays N credits (losses pay 0).
+        const next = awardWin(loadUpgradeState());
+        saveUpgradeState(next);
       } else if (arenaState.phase === 'lose') {
         tauntMachine.onPlayerDeath(killNow, specTauntLine(seanceTasks));
       }

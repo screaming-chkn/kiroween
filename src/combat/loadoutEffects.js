@@ -61,6 +61,8 @@ export const IDENTITY_MODS = Object.freeze({
   dashCooldownMult:    1,
   fireCooldownMult:    1,
   incomingDamageMult:  1,
+  moveSpeedMult:       1,
+  dashDurationMult:    1,
 });
 
 /**
