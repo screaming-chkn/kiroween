@@ -5,7 +5,7 @@
  * Pure model (no DOM). Persist via localStorage key hh_tank_upgrades_v1.
  *
  * Bars: tracks | turret | loader | armor | dash  (0..MAX_NOTCH each)
- * Credits: win N pays N; losses pay 0.
+ * Credits: win N pays N; losses pay 1 consolation credit (E6).
  * When every bar is full → unlock next tier, reset bars, keep leftover credits.
  */
 
@@ -114,9 +114,18 @@ export function awardWin(state) {
   return { ...s, wins: s.wins + 1, credits: s.credits + payout };
 }
 
-/** Losses pay 0 (documented choice). */
+/** Consolation credits paid on any loss (does not bump wins). */
+export const LOSS_CREDIT = 1;
+
+/**
+ * Apply a loss: add LOSS_CREDIT consolation. Wins unchanged.
+ * First round still starts at 0 credits (default state).
+ * @param {TankUpgradeState} state
+ * @returns {TankUpgradeState}
+ */
 export function awardLoss(state) {
-  return normalizeUpgradeState(state);
+  const s = normalizeUpgradeState(state);
+  return { ...s, credits: s.credits + LOSS_CREDIT };
 }
 
 /**

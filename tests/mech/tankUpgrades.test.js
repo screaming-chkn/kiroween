@@ -3,7 +3,7 @@
  */
 import assert from 'node:assert/strict';
 import {
-  defaultUpgradeState, normalizeUpgradeState, spendNotch, awardWin,
+  defaultUpgradeState, normalizeUpgradeState, spendNotch, awardWin, awardLoss, LOSS_CREDIT,
   creditsForNextWin, awardCredits, barsFull, notchLabel, combatModsFromUpgrades,
   enemyScaleFromUpgrades, hitsToKill, MAX_NOTCH, SLOT_ORDER, paletteForTier,
 } from '../../src/mech/tankUpgrades.js';
@@ -31,6 +31,21 @@ test('win N pays N credits', () => {
   s = awardWin(s); assert.equal(s.wins, 1); assert.equal(s.credits, 1);
   s = awardWin(s); assert.equal(s.wins, 2); assert.equal(s.credits, 1 + 2);
   s = awardWin(s); assert.equal(s.credits, 1 + 2 + 3);
+});
+
+test('loss pays 1 consolation without bumping wins', () => {
+  assert.equal(LOSS_CREDIT, 1);
+  let s = defaultUpgradeState();
+  assert.equal(s.credits, 0);
+  s = awardLoss(s);
+  assert.equal(s.wins, 0);
+  assert.equal(s.credits, 1);
+  s = awardLoss(s);
+  assert.equal(s.wins, 0);
+  assert.equal(s.credits, 2);
+  s = awardWin(s);
+  assert.equal(s.wins, 1);
+  assert.equal(s.credits, 2 + 1);
 });
 
 test('spend notch costs 1 and fills bar', () => {

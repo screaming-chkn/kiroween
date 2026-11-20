@@ -113,21 +113,24 @@ Command hooks go through `scripts/kiro-hook-run.mjs`, which logs every firing to
 
 **The séance view.** `npm run build:seance` builds `public/seance-tasks.json` from every `tasks.md`. The game shows it from the garage SÉANCE button, so it literally shows its own Kiro task list.
 
-**Accounts and credits (frozen at pin tip `2a2d5e9`).** Two Kiro accounts were used; every run is logged in `KIRO-USAGE.md`. A clean all-time metered sum across every later HUD/walls/Séance/Guard/Factory run is ambiguous in the log (meter lag + parallel branches), so we publish only verified figures — never invented totals:
+**Accounts and credits (frozen at pin tip `2a2d5e9`).** Tip-true paste line (do not invent; do not paste stale 22 / 41.72 totals):
 
-| Item | Runs / notes | Credits | Stop-hook | Pin tip |
-|---|---|---:|---|---|
-| Google (free, M4 runs 1–2) | Mac mini Google login | 4.81 | — | 2a2d5e9 |
-| Pro through M8 (logged total) | M4–M8 + 0.62 untied | 36.91 (Google+Pro then **41.72**) | — | 2a2d5e9 |
-| Walls GO (WALLS+RETRO+VERIFY2) | Spec/verify after first walls pass | **10.21** | — | 2a2d5e9 |
-| Pro meter after walls VERIFY2 | Last clean Pro readout in KIRO-USAGE | **307.41 / 877** (~569.59 left) | — | 2a2d5e9 |
-| Soften all-max LV3 | Hand-finished build-agent (65f1726); no Kiro run | **0** new | — | 2a2d5e9 |
-| Hooks on tip | 9 JSON hooks in `.kiro/hooks/` | — | **`close-loop-on-stop` present** | 2a2d5e9 |
-| Later Séance / Guard / Factory | Short Auto probes; see KIRO-USAGE | see KIRO-USAGE.md | Stop fired on Guard probe | 2a2d5e9 |
+`36 logged kiro-cli runs · 312.22 credits metered (Google 4.81 + Pro 307.41) · SÉANCE 241/276 · 199 hook firings · Stop hook on tip · npm test green · tip 2a2d5e9`
 
-Full per-run detail: [KIRO-USAGE.md](KIRO-USAGE.md). No credits were bought.
+| Field | Value |
+|---|---|
+| Tip | `2a2d5e9` (tag `submit-lock`) |
+| Logged CLI runs | **36** (Run 1–22 M4–M8 + 14 later tip-lineage sessions) |
+| Credits metered | **312.22** (Google **4.81** + Pro **307.41**; none bought) |
+| Walls/coins GO slice | **10.21** (WALLS + RETRO + VERIFY2) |
+| SÉANCE DONE / TOTAL | **241 / 276** |
+| Hook firings logged | **199** |
+| Stop hook on tip | **YES** — `.kiro/hooks/close-loop-on-stop.json` |
+| npm test | green |
 
-The first runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write` with one focused prompt each; from the probe on, the same command adds `--agent-engine v3 --trust-workspace`. No credits were bought.
+Two Kiro accounts were used; every run is logged in [KIRO-USAGE.md](KIRO-USAGE.md). An early M8-era Google+Pro subtotal of **41.72** still appears in that log as a historical slice — it is **not** the tip-wide total; use **312.22** above.
+
+The first runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write` with one focused prompt each; from the probe on, the same command adds `--agent-engine v3 --trust-workspace`.
 
 ## Balance
 

@@ -46,7 +46,7 @@ const EXTRA_CSS = `
 }
 .hh-ug-row__label {
   font-family: 'Share Tech Mono', 'IBM Plex Mono', monospace;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.06em;
   color: var(--color-phosphor, #39FF88);
 }
@@ -87,7 +87,8 @@ const EXTRA_CSS = `
 .hh-ug-flavor {
   margin: 0 0 12px;
   color: var(--color-ash, #8A8F85);
-  font-size: 13px;
+  font-size: 15px;
+  line-height: 1.4;
   font-style: italic;
 }
 .hh-ug-spend {
@@ -115,7 +116,8 @@ const EXTRA_CSS = `
   border: 1px solid var(--color-phosphor-dim, #1F3D2A);
   border-radius: 4px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.4;
 }
 .hh-ug-meta strong { color: var(--color-phosphor, #39FF88); }
 .hh-ug-tier {
@@ -147,8 +149,8 @@ const EXTRA_CSS = `
 .hh-ug-help {
   margin: 4px 0 10px;
   color: var(--color-ash, #8A8F85);
-  font-size: 12px;
-  line-height: 1.35;
+  font-size: 14px;
+  line-height: 1.4;
 }
 `;
 
@@ -181,7 +183,7 @@ export function mountTankGarage(root, { onDeploy, onSeance } = {}) {
   const header = el('div', { class: 'hh-garage__header' });
   const titleEl = el('h1', { class: 'hh-garage__title', text: 'GARAGE' });
   const subtitleEl = el('p', { class: 'hh-garage__subtitle' });
-  subtitleEl.textContent = 'Spend credits on tank bars. Win N pays N credits.';
+  subtitleEl.textContent = 'Spend credits on tank bars. Win N pays N. Loss pays 1.';
   header.append(titleEl, subtitleEl);
 
   const body = el('div', { class: 'hh-garage__body' });
@@ -194,7 +196,7 @@ export function mountTankGarage(root, { onDeploy, onSeance } = {}) {
   body.append(slotList, pickerPanel, previewCol);
 
   const help = el('p', { class: 'hh-ug-help' });
-  help.textContent = 'Fill every bar to unlock the next tank tier (new color + small base bonus). Bars reset; credits stay.';
+  help.textContent = 'Fill every bar to unlock the next tank tier (new color + small base bonus). Bars reset; credits stay. Win N pays N; a loss pays 1 consolation.';
   header.append(help);
 
   const footer = el('div', { class: 'hh-garage__footer' });
@@ -309,7 +311,7 @@ export function mountTankGarage(root, { onDeploy, onSeance } = {}) {
     const tip = el('div');
     tip.textContent = barsFull(state) && state.tier >= MAX_TIER
       ? 'Max tier. Bars full — trophy rack.'
-      : 'Win matches to earn credits. Losses pay 0.';
+      : 'Win N pays N credits. A loss pays 1 consolation.';
     meta.append(tier, credits, wins, hull, tip);
     if (banner) meta.append(el('div', { class: 'hh-ug-banner', text: banner }));
     const reset = el('button', { class: 'hh-ug-reset', type: 'button', text: 'RESET PROGRESS' });

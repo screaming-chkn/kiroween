@@ -29,22 +29,25 @@ const CSS = `
   text-shadow:0 0 6px #20B05C,0 0 22px rgba(57,255,136,.55),3px 0 0 rgba(255,59,92,.55),-3px 0 0 rgba(62,246,255,.35);
   animation:hh-flicker 4.2s steps(1) infinite}
 .hh-logo span{color:#FF3B5C;text-shadow:0 0 8px #C01640,0 0 24px rgba(255,59,92,.6)}
-.hh-pitch{max-width:34em;font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(10px,2.6vw,14px);color:var(--color-ash,#8F9A92);letter-spacing:.04em}
+.hh-pitch{max-width:34em;margin:0;line-height:1.45;font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(13px,2.8vw,16px);color:var(--color-ash,#8F9A92);letter-spacing:.04em}
 .hh-pitch b{color:var(--color-bone,#E8E2D0);font-weight:400}
 .hh-title-go{margin-top:10px;background:transparent;border:2px solid #47FF9A;color:#47FF9A;cursor:pointer;
   font-family:inherit;font-size:clamp(22px,6vw,34px);letter-spacing:.14em;padding:10px 26px;
-  box-shadow:0 0 14px rgba(57,255,136,.35),inset 0 0 12px rgba(57,255,136,.2);animation:hh-pulse 1.3s ease-in-out infinite;
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  box-shadow:0 0 14px rgba(57,255,136,.35),inset 0 0 12px rgba(57,255,136,.2);
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative;z-index:1}
+.hh-title-go__label{display:inline-block;animation:hh-pulse 1.3s ease-in-out infinite;pointer-events:none}
 .hh-title-garage{background:transparent;border:1px solid #8F9A92;color:#E8E2D0;cursor:pointer;
   font-family:inherit;font-size:20px;letter-spacing:.12em;padding:8px 20px;min-width:44px;min-height:44px;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .hh-title-garage:focus-visible,.hh-title-go:focus-visible{outline:2px solid #FF8A3D;outline-offset:2px}
-.hh-title-keys{font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(15px,3.2vw,18px);color:#E8E2D0;letter-spacing:.06em}
+.hh-title-keys{font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(14px,3vw,17px);color:#E8E2D0;letter-spacing:.06em;line-height:1.4;max-width:42em;padding:0 8px}
+.hh-title-path{font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(12px,2.6vw,14px);color:#8F9A92;letter-spacing:.04em;line-height:1.35;max-width:40em;margin:0}
+.hh-title-build{position:absolute;left:10px;bottom:calc(8px + env(safe-area-inset-bottom));font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:11px;color:rgba(143,154,146,.55);letter-spacing:.04em;pointer-events:none;z-index:2}
 .hh-title-lv{position:absolute;top:calc(10px + env(safe-area-inset-top));right:14px;font-size:18px;color:#FF8A3D;letter-spacing:.1em}
 @keyframes hh-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.97)}}
 @keyframes hh-fog{from{transform:translate(-4%,2%) scale(1)}to{transform:translate(4%,-3%) scale(1.08)}}
 @keyframes hh-flicker{0%,100%{opacity:1}91%{opacity:1}92%{opacity:.55;transform:translateX(2px)}93%{opacity:1;transform:none}96%{opacity:.8}97%{opacity:1}}
-@media (prefers-reduced-motion: reduce){.hh-title-fog,.hh-logo,.hh-title-go{animation:none}}
+@media (prefers-reduced-motion: reduce){.hh-title-fog,.hh-logo,.hh-title-go__label{animation:none}}
 /* Phone landscape with Safari toolbar: shrink so HAUNT//HOUND + CTA fit in the visible viewport */
 @media (orientation: landscape) and (max-height: 500px){
   .hh-title{gap:6px;padding:max(6px,env(safe-area-inset-top)) 16px max(6px,env(safe-area-inset-bottom));justify-content:safe center}
@@ -57,10 +60,11 @@ const CSS = `
 }
 /* Phone 390 landscape: prevent blurb overlap + controls wrap ("garage" 2nd line). */
 @media (orientation: landscape) and (max-height: 430px){
-  .hh-title{gap:8px}
+  .hh-title{gap:6px}
   .hh-logo{font-size:clamp(16px,5.5vh,34px);margin:0}
-  .hh-title-keys{display:none}
-  .hh-pitch{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:34em;margin:0;line-height:1.3}
+  .hh-title-keys{font-size:clamp(11px,2.6vh,13px);white-space:normal;overflow:visible;text-overflow:clip;max-width:94vw}
+  .hh-title-path{font-size:clamp(11px,2.5vh,13px)}
+  .hh-pitch{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:34em;margin:0;line-height:1.35;font-size:clamp(12px,3vh,14px)}
   .hh-title-go{margin-top:4px}
 }
 /* Ultra-short phone landscape (≈390): one-line blurb so it never kisses the CTA. */
@@ -131,15 +135,33 @@ export function mountTitle(root, { onDeploy, onStart, onGarage, touchUi = false,
   const keys = touchUi
     ? 'LEFT STICK move · RIGHT PAD aim + fire · DASH dodge · ❚❚ pause'
     : 'WASD move · MOUSE aim · CLICK fire · SHIFT dash · ESC pause · G garage';
+  const pathNote = touchUi
+    ? 'Phone: on-screen controls. Landscape recommended.'
+    : 'Desktop: keyboard + mouse. Phone: on-screen controls.';
+  const goLabel = `${touchUi ? 'TAP' : 'PRESS'} TO DEPLOY`;
   el.innerHTML = `
     <div class="hh-title-fog"></div>
     <div class="hh-title-lv">HAUNT LV ${hauntLv}</div>
     <h1 class="hh-logo">HAUNT<span>//</span>HOUND</h1>
     <p class="hh-pitch">Something is <b>possessing the other tank</b>. Duel it, dodge its tell, exorcise it. Climb <b>HAUNT LV 1–5</b>.</p>
-    <button class="hh-title-go" type="button">${touchUi ? 'TAP' : 'PRESS'} TO DEPLOY</button>
+    <button class="hh-title-go" type="button"><span class="hh-title-go__label">${goLabel}</span></button>
     <button class="hh-title-garage" type="button">GARAGE</button>
-    <p class="hh-title-keys">${keys}</p>`;
+    <p class="hh-title-path">${pathNote}</p>
+    <p class="hh-title-keys">${keys}</p>
+    <div class="hh-title-build" hidden></div>`;
   root.appendChild(el);
+  const buildEl = el.querySelector('.hh-title-build');
+  if (buildEl && typeof fetch === 'function') {
+    fetch('BUILD.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : '')).then((t) => {
+      const line = String(t || '').trim().split(/\r?\n/)[0] || '';
+      // BUILD.txt is usually "commit <sha>" or a short sha — show BUILD=<short>.
+      const m = line.match(/\b([0-9a-f]{7,40})\b/i);
+      if (m) {
+        buildEl.textContent = `BUILD=${m[1].slice(0, 7)}`;
+        buildEl.hidden = false;
+      }
+    }).catch(() => {});
+  }
   const goBtn = el.querySelector('.hh-title-go');
   const garageBtn = el.querySelector('.hh-title-garage');
   if (goBtn && typeof goBtn.focus === 'function') goBtn.focus({ preventScroll: true });

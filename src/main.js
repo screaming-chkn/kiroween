@@ -45,7 +45,7 @@ import { sfxEventsForTick }    from './combat/sfxEvents.js';
 import { createArena, updateArena } from './combat/arena.js';
 import { combatModsFor }       from './combat/loadoutEffects.js';
 import {
-  awardWin, awardCredits, creditsForNextWin, loadUpgradeState, saveUpgradeState, paletteForTier,
+  awardWin, awardLoss, awardCredits, creditsForNextWin, LOSS_CREDIT, loadUpgradeState, saveUpgradeState, paletteForTier,
 } from './mech/tankUpgrades.js';
 import { setTankPalette } from './ui/tankWire.js';
 import { buildPlayerActions }  from './combat/actions.js';
@@ -90,7 +90,7 @@ import {
 import {
   readHauntLevel, setHauntLevel, bumpHauntLevel, applyHauntPressure, MAX_HAUNT_LEVEL,
 }                              from './ui/hauntLevel.js';
-import { createTellCaption, drawTellCaption } from './ui/tellCaption.js';
+import { createTellCaption, drawTellCaption, TEACH_FIRE_GRACE_MS } from './ui/tellCaption.js';
 import { applyLevelParam } from './ui/levelParam.js';
 import { resetHpFx }           from './ui/phoneCombatUi.js';
 import {
@@ -314,6 +314,11 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   cueMusic('duel');
 
   arenaState = { ...arenaState, enemy: applyHauntPressure(arenaState.enemy, hauntLv) };
+  // E1 teach window: hold first enemy windup so the dash caption can land first.
+  arenaState = {
+    ...arenaState,
+    enemy: { ...arenaState.enemy, fireCooldown: Math.max(arenaState.enemy.fireCooldown || 0, TEACH_FIRE_GRACE_MS) },
+  };
   const hauntFx = createHauntFx({
     reducedMotion,
     arena: { width: arenaState.arena.width, height: arenaState.arena.height },
@@ -336,6 +341,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   tauntMachine.onSpawn(performance.now());
   let prevWindup = arenaState.enemy.windupRemainingMs ?? 0;
   const tellCaption = createTellCaption({ touchUi: isTouchUi() });
+  tellCaption.onFightStart(performance.now());
   let cardShownAtMs = 0;     // when the end card first drew (count-up clock)
 
   // ── Input ──────────────────────────────────────────────────────────────────
@@ -999,7 +1005,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       if (arenaState.phase === 'win') {
         advanceHaunt = true;
         tauntMachine.onDeath(killNow);
-        // Win N pays N credits (losses pay 0). Coin grabs already persisted.
+        // Win N pays N credits. Coin grabs already persisted.
         const before = loadUpgradeState();
         fightWinPayout = creditsForNextWin(before.wins);
         const next = awardWin(before);
@@ -1007,6 +1013,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         fightCreditBalance = next.credits;
       } else if (arenaState.phase === 'lose') {
         tauntMachine.onPlayerDeath(killNow, specTauntLine(seanceTasks));
+        // E6: 1 consolation credit on any loss (wins unchanged). First round still starts at 0.
+        const before = loadUpgradeState();
+        fightWinPayout = LOSS_CREDIT;
+        const next = awardLoss(before);
+        saveUpgradeState(next);
+        fightCreditBalance = next.credits;
       }
       if (touch) touch.setActive(false);
     }

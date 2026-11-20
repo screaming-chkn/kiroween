@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   createTellCaption, tellCaptionText, drawTellCaption, TELL_CAPTION_KEY, TELL_CAPTION_MS,
+  TEACH_FIRE_GRACE_MS,
 } from '../../src/ui/tellCaption.js';
 
 let passed = 0;
@@ -17,9 +18,18 @@ const memStore = () => {
   return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)) };
 };
 
-test('first windup shows the caption, then it hides after TELL_CAPTION_MS', () => {
+test('fight-start shows the caption before any windup', () => {
   const c = createTellCaption({ storage: memStore() });
   assert.equal(c.current(0), '');
+  assert.equal(c.onFightStart(500), true);
+  assert.equal(c.current(500), tellCaptionText(false));
+  assert.equal(c.onWindup(800), false);
+  assert.equal(c.current(500 + TELL_CAPTION_MS - 1), tellCaptionText(false));
+  assert.equal(c.current(500 + TELL_CAPTION_MS), '');
+});
+
+test('first windup shows the caption when fight-start was skipped', () => {
+  const c = createTellCaption({ storage: memStore() });
   assert.equal(c.onWindup(1000), true);
   assert.equal(c.current(1000), tellCaptionText(false));
   assert.equal(c.current(1000 + TELL_CAPTION_MS - 1), tellCaptionText(false));
@@ -28,32 +38,38 @@ test('first windup shows the caption, then it hides after TELL_CAPTION_MS', () =
 
 test('later windups in the same duel do not restart it', () => {
   const c = createTellCaption({ storage: memStore() });
-  c.onWindup(0);
+  c.onFightStart(0);
   assert.equal(c.onWindup(2000), false);
   assert.equal(c.current(TELL_CAPTION_MS + 10), '');
 });
 
 test('a second duel or reload (same storage) never shows it', () => {
   const s = memStore();
-  createTellCaption({ storage: s }).onWindup(0);
+  createTellCaption({ storage: s }).onFightStart(0);
   assert.equal(s.getItem(TELL_CAPTION_KEY), '1');
   const next = createTellCaption({ storage: s });
+  assert.equal(next.onFightStart(5000), false);
   assert.equal(next.onWindup(5000), false);
   assert.equal(next.current(5000), '');
 });
 
 test('no storage (or throwing storage) still shows once per match', () => {
   const c = createTellCaption({ storage: null });
-  assert.equal(c.onWindup(0), true);
+  assert.equal(c.onFightStart(0), true);
   assert.equal(c.onWindup(100), false);
   const bad = { getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); } };
   const d = createTellCaption({ storage: bad });
-  assert.equal(d.onWindup(0), true);
+  assert.equal(d.onFightStart(0), true);
   assert.equal(d.current(10), tellCaptionText(false));
 });
 
 test('caption key is versioned so a retune can re-teach once', () => {
   assert.match(TELL_CAPTION_KEY, /^hh-tell-caption-seen-v\d+$/);
+  assert.ok(TELL_CAPTION_KEY.endsWith('v3'));
+});
+
+test('teach fire grace is 2–3 seconds', () => {
+  assert.ok(TEACH_FIRE_GRACE_MS >= 2000 && TEACH_FIRE_GRACE_MS <= 3000);
 });
 
 test('text names the real dash control per input', () => {
@@ -63,7 +79,7 @@ test('text names the real dash control per input', () => {
   assert.doesNotMatch(tellCaptionText(true), /SHIFT/);
   assert.equal(tellCaptionText(false), 'RED RING = INCOMING SHOT - SHIFT TO DASH NOW');
   assert.equal(tellCaptionText(true), 'RED RING = INCOMING SHOT - TAP DASH NOW');
-  assert.equal(createTellCaption({ storage: memStore(), touchUi: true }).onWindup(0), true);
+  assert.equal(createTellCaption({ storage: memStore(), touchUi: true }).onFightStart(0), true);
 });
 
 test('drawTellCaption: draws once, balanced save/restore, skips empty', () => {

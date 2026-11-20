@@ -280,7 +280,7 @@ export function drawPossessedTaunt(ctx, line, pos) {
   if (!line || !line.typed) return;
   const scale = pos.scale > 0 ? pos.scale : 1;
   // C9j: phone-readable floor; still shrink/ellipsize before overlapping HP.
-  const px = Math.max(13, Math.round(13 * scale));
+  const px = Math.max(14, Math.round(14 * scale));
   ctx.save();
   ctx.font = `${px}px ${TAUNT_FONT}`;
   ctx.textAlign = 'left';
@@ -297,25 +297,32 @@ export function drawPossessedTaunt(ctx, line, pos) {
   // C9e: sidePad already includes TAUNT_HP_GAP (≥16 CSS) past each HP block.
   const margin = Math.max(8 * scale, side);
   const usable = Number.isFinite(viewW) ? viewW - 2 * margin : Infinity;
-  // Too wide: shrink (floor = 10 CSS px), then ellipsize — never touch HP numbers.
+  // Too wide: shrink a little, then wrap to 2 lines before ellipsizing.
   if (fullW > usable && usable > 0) {
-    drawPx = Math.max(11 * scale, Math.floor(px * usable / fullW));
+    drawPx = Math.max(12 * scale, Math.floor(px * Math.min(1, usable / fullW)));
     ctx.font = `${drawPx}px ${TAUNT_FONT}`;
     fullW = measure(drawText);
   }
+  let lines;
   if (usable > 0 && hasMeasure && measure(drawText) > usable) {
-    const ell = '…';
-    let lo = 0, hi = drawText.length;
-    while (lo < hi) {
-      const mid = Math.ceil((lo + hi) / 2);
-      const cand = drawText.slice(0, mid).trimEnd() + ell;
-      if (measure(cand) <= usable) lo = mid; else hi = mid - 1;
-    }
-    drawText = (lo > 0 ? drawText.slice(0, lo).trimEnd() : drawText.slice(0, 1)) + ell;
-    fullW = measure(drawText);
+    lines = wrapLines(drawText, usable, measure, 2);
+    // If still too wide on a line, ellipsize that line only.
+    lines = lines.map((ln) => {
+      if (measure(ln.text) <= usable) return ln;
+      const ell = '…';
+      let lo = 0, hi = ln.text.length;
+      while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        const cand = ln.text.slice(0, mid).trimEnd() + ell;
+        if (measure(cand) <= usable) lo = mid; else hi = mid - 1;
+      }
+      return { start: ln.start, text: (lo > 0 ? ln.text.slice(0, lo).trimEnd() : ln.text.slice(0, 1)) + ell };
+    });
+    drawText = lines.map((l) => l.text).join(' ');
+    fullW = Math.max(...lines.map((l) => measure(l.text)));
+  } else {
+    lines = [{ start: 0, text: drawText }];
   }
-  // Keep a single centered line (no wrap into the HP lane).
-  const lines = [{ start: 0, text: drawText }];
   const lineH = Math.round(drawPx * 1.25);
   // pos.y = BOTTOM baseline of the taunt block (gap above field). Multi-line grows UP.
   const yLast = Math.max(drawPx + 8 * scale, pos.y);

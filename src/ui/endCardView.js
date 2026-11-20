@@ -149,6 +149,7 @@ export function drawEndCardView(ctx, state, _camera, vpW, vpH, restartReady = fa
   if (winCredits || pickedCredits) {
     const parts = [];
     if (isWin && winCredits) parts.push(`+${winCredits} win`);
+    if (!isWin && winCredits) parts.push(`+${winCredits} consolation`);
     if (pickedCredits) parts.push(`+${pickedCredits} picked up`);
     const line = parts.join('   ·   ');
     const payY = cardY + cardH - 44 - BTN_H - 28;

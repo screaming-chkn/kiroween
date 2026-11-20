@@ -17,6 +17,7 @@ function fakeCtx() {
   const target = {
     save() { log.saves++; },
     restore() { log.restores++; },
+    measureText(t) { return { width: String(t).length * 8 }; },
     fillText(t, x, y, w) {
       log.texts.push(String(t));
       log.fillCalls.push({ t: String(t), x, y, w, style: target.fillStyle, font: target.font });
@@ -160,6 +161,18 @@ test('formatArenaSpecStamp returns null on empty / missing data', () => {
   assert.equal(formatArenaSpecStamp({}), null);
   assert.equal(formatArenaSpecStamp([{ spec: '01-core-engine', done: true }]), null);
 });
+
+
+test('loss shows consolation payout', () => {
+  const { log } = draw(lose, { winCredits: 1 });
+  assert.ok(log.texts.some((t) => /\+1 consolation/.test(t)), log.texts.join('|'));
+});
+
+test('win still shows win payout', () => {
+  const { log } = draw(win, { winCredits: 3 });
+  assert.ok(log.texts.some((t) => /\+3 win/.test(t)), log.texts.join('|'));
+});
+
 
 console.log(`endCardView: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

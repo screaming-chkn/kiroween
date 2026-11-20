@@ -222,7 +222,8 @@ export const GARAGE_CSS = `
 }
 .hh-garage__subtitle {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1.4;
   color: #8F9A92; /* ash */
 }
 
