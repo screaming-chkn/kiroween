@@ -2,7 +2,7 @@
 
 Something is possessing the other tank. Duel it, dodge its tell, exorcise it. Climb HAUNT LV 1–5.
 
-HAUNT//HOUND is a 1v1 tank duel that runs in the browser, shown through a haunted CRT cockpit. You bolt a tank together in the garage: legs, a core and two arm slots, with weight and power limits. Then you fight one possessed enemy tank in an arena. It is a static site (HTML, JavaScript ES modules, Canvas 2D) with no backend, no dependencies and no bundler. It plays on desktop and on a phone held in landscape. Built with Kiro for Kiroween 2026.
+HAUNT//HOUND is a 1v1 tank duel that runs in the browser, shown through a haunted CRT cockpit. You bolt a tank together in the garage: legs, a core and two arm slots, with weight and power limits. Then you fight one possessed enemy tank in an arena. It is a static site (HTML, JavaScript ES modules, Canvas 2D) with no backend, no dependencies and no bundler. It plays on desktop and on a phone held in landscape. On a phone in portrait, a full-screen prompt asks you to rotate. Built with Kiro for Kiroween 2026.
 
 ## Try it
 

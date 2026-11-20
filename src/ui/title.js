@@ -136,7 +136,7 @@ export function mountTitle(root, { onDeploy, onStart, onGarage, touchUi = false,
     ? 'LEFT STICK move · RIGHT PAD aim + fire · DASH dodge · ❚❚ pause'
     : 'WASD move · MOUSE aim · CLICK fire · SHIFT dash · ESC pause · G garage';
   const pathNote = touchUi
-    ? 'Phone: on-screen controls. Landscape recommended.'
+    ? 'Phone: on-screen controls. Landscape required.'
     : 'Desktop: keyboard + mouse. Phone: on-screen controls.';
   const goLabel = `${touchUi ? 'TAP' : 'PRESS'} TO DEPLOY`;
   el.innerHTML = `

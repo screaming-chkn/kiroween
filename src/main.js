@@ -37,6 +37,7 @@ import { cueMusic }           from './engine/music.js';
 import { loadGameFonts }      from './engine/fonts.js';
 import { loadSettings, saveSettings, busLevels } from './engine/settings.js';
 import { mountTitle }          from './ui/title.js';
+import { mountRotateGate, tryLockLandscape } from './ui/rotateGate.js';
 import { mountPauseMenu, mountPauseButton } from './ui/pauseMenu.js';
 import {
   gateTick, addHitStop, HITSTOP_HIT_MS, HITSTOP_HURT_MS, traumaForImpact,
@@ -111,6 +112,8 @@ let specStampRequested = false;
 let seanceTasks = null;
 /** C9b gutter haunt style: 'silver' | 'purple' | 'off'. */
 let gutterHauntStyle = 'silver';
+/** True while the phone rotate gate is visible; freezes the arena sim (no pause menu). */
+let rotateBlocksSim = false;
 
 /** Fetch the seance JSON once. Real counts only; any failure leaves null. */
 function loadSpecStamp() {
@@ -147,11 +150,23 @@ document.body.appendChild(appRoot);
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 
+function requestLandscapeLock() {
+  if (!isTouchUi()) return;
+  Promise.resolve(tryLockLandscape()).catch(() => {});
+}
+
 function boot() {
   // Declare the sterile/possessed palette custom properties up front so themed
   // components (e.g. the garage) read live var(--hh-*) values; opening the
   // séance flips to the possessed palette via setPossessed(true).
   injectPossessionCSS();
+
+  // Portrait phones: full-screen rotate prompt. Desktop never sees it.
+  // iOS cannot lock orientation; Android may lock after a later gesture.
+  mountRotateGate(document.body, {
+    isTouchUi,
+    onChange(visible) { rotateBlocksSim = visible; },
+  });
 
   const renderer = createRenderer(canvas);
   resizeToDisplay(renderer);
@@ -225,6 +240,7 @@ function showTitle(renderer, reducedMotion) {
     touchUi: isTouchUi(),
     hauntLv: readHauntLevel(),
     onDeploy() {
+      requestLandscapeLock();
       // Same gesture already unlocked Web Audio (installAudioGestures).
       cueMusic('title-go');
       playSfx(SFX.UI_CLICK);
@@ -236,6 +252,7 @@ function showTitle(renderer, reducedMotion) {
       }
     },
     onGarage() {
+      requestLandscapeLock();
       cueMusic('title-go');
       playSfx(SFX.UI_CLICK);
       showGarage(renderer, reducedMotion);
@@ -260,6 +277,7 @@ function showGarage(renderer, reducedMotion) {
 
   const garage = mountGarage(appRoot, {
     onDeploy(loadout, loadoutTotals) {
+      requestLandscapeLock();
       garage.destroy();
       // Canvas text must not first-draw in the fallback face (usually
       // already loaded by now; capped wait inside loadGameFonts).
@@ -820,6 +838,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     // Keyboard events carry no stale-click risk → pass null.
     if (!cardInteractive(null)) return;
     e.preventDefault();
+    requestLandscapeLock();
     pendingAction = action.id;
     if (action.id === 'retry') focusIndex = 0;
     else if (action.id === 'garage') focusIndex = 1;
@@ -836,6 +855,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const hit = buttonAtPoint(px, py);
     if (!hit) return;
     focusIndex    = hit.id === 'retry' ? 0 : 1;
+    requestLandscapeLock();
     pendingAction = hit.id;
   }
 
@@ -855,7 +875,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         onPreview: () => playSfx(SFX.PLAYER_SHOT),
         touchUi,
         onResume: () => setPaused(false),
-        onQuit: () => { setPaused(false); pendingAction = 'garage'; },
+        onQuit: () => { requestLandscapeLock(); setPaused(false); pendingAction = 'garage'; },
       });
     } else {
       if (pauseMenu) { pauseMenu.destroy(); pauseMenu = null; }
@@ -1095,6 +1115,9 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         }
         return;
       }
+
+      // Portrait rotate gate: freeze the sim without opening the pause menu.
+      if (rotateBlocksSim) return;
 
       // Pause freezes everything (sim, hit-stop timer, camera, sparks).
       const gate = gateTick({ paused, hitStopMs }, dt * 1000);
