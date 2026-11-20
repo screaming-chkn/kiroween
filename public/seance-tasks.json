@@ -1319,6 +1319,36 @@
     "done": true
   },
   {
+    "spec": "15-haunt-factory",
+    "id": 1,
+    "title": "Add FACTORY_TAUNTS + isFactoryTauntPack + pack-aware pickTaunt / createTauntMachine in src/ui/possessedTaunts.js (R1–R3)",
+    "done": true
+  },
+  {
+    "spec": "15-haunt-factory",
+    "id": 2,
+    "title": "Wire main.js createTauntMachine pack from location.search (R1)",
+    "done": true
+  },
+  {
+    "spec": "15-haunt-factory",
+    "id": 3,
+    "title": "Extend tests/ui/possessedTaunts.test.js for pack gate + factory picks; keep default 16-line asserts (R4)",
+    "done": true
+  },
+  {
+    "spec": "15-haunt-factory",
+    "id": 4,
+    "title": "Confirm npm test green; no balance/HUD/combat edits (R1)",
+    "done": true
+  },
+  {
+    "spec": "15-haunt-factory",
+    "id": 5,
+    "title": "Tick this checklist when done; leave default TAUNTS and possessed-taunts.md unchanged",
+    "done": true
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",
