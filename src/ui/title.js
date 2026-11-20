@@ -49,14 +49,21 @@ const CSS = `
 @media (orientation: landscape) and (max-height: 500px){
   .hh-title{gap:6px;padding:max(6px,env(safe-area-inset-top)) 16px max(6px,env(safe-area-inset-bottom));justify-content:safe center}
   .hh-logo{font-size:clamp(18px,6.5vh,40px)}
-  .hh-pitch{font-size:clamp(12px,3.2vh,15px);max-width:42em}
+  .hh-pitch{font-size:clamp(12px,3.2vh,15px);max-width:36em;line-height:1.25}
   .hh-title-go{margin-top:2px;font-size:clamp(12px,3.6vh,16px);padding:8px 18px;min-height:44px}
   .hh-title-garage{font-size:15px;padding:8px 14px;min-height:44px}
-  .hh-title-keys{font-size:clamp(12px,2.8vh,14px)}
+  .hh-title-keys{font-size:clamp(12px,2.8vh,14px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92vw}
   .hh-title-lv{top:calc(4px + env(safe-area-inset-top));right:10px;font-size:13px}
 }
-@media (orientation: landscape) and (max-height: 380px){
+/* Phone 390 landscape: prevent blurb overlap + controls wrap ("garage" 2nd line). */
+@media (orientation: landscape) and (max-height: 430px){
+  .hh-title{gap:8px}
+  .hh-logo{font-size:clamp(16px,5.5vh,34px);margin:0}
   .hh-title-keys{display:none}
+  .hh-pitch{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:34em;margin:0;line-height:1.3}
+  .hh-title-go{margin-top:4px}
+}
+@media (orientation: landscape) and (max-height: 380px){
   .hh-pitch{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 }
 `;

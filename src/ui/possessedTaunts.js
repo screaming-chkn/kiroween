@@ -245,8 +245,8 @@ export function tauntAboveLineY({ lineTop, scale = 1, gap = TAUNT_ABOVE_GAP }) {
 export function drawPossessedTaunt(ctx, line, pos) {
   if (!line || !line.typed) return;
   const scale = pos.scale > 0 ? pos.scale : 1;
-  // C9: slightly smaller so long lines + plate clear the top neon with HUD_SPACE gap.
-  const px = Math.max(12, Math.round(12 * scale));
+  // C9j: phone-readable floor; still shrink/ellipsize before overlapping HP.
+  const px = Math.max(13, Math.round(13 * scale));
   ctx.save();
   ctx.font = `${px}px ${TAUNT_FONT}`;
   ctx.textAlign = 'left';
@@ -265,7 +265,7 @@ export function drawPossessedTaunt(ctx, line, pos) {
   const usable = Number.isFinite(viewW) ? viewW - 2 * margin : Infinity;
   // Too wide: shrink (floor = 10 CSS px), then ellipsize — never touch HP numbers.
   if (fullW > usable && usable > 0) {
-    drawPx = Math.max(10 * scale, Math.floor(px * usable / fullW));
+    drawPx = Math.max(11 * scale, Math.floor(px * usable / fullW));
     ctx.font = `${drawPx}px ${TAUNT_FONT}`;
     fullW = measure(drawText);
   }

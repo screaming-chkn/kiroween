@@ -157,8 +157,8 @@ export function sideOutGeometry(vpW, vpH, opts = {}) {
     : Math.max(10, Math.min(14, Math.round((vpW / s) * 0.012)))) * s;
   const h = (opts.compact ? 48 : Math.max(72, Math.min(130, Math.round((vpH / s) * 0.15)))) * s;
   // C9e: Press Start ~1em/glyph — reserve full "P1 · RUSTBIT" / "440/440".
-  const fontPx = (opts.compact ? 12 : 12) * s;       // mech name
-  const hpFontPx = (opts.compact ? 14 : 12) * s;     // cur/max
+  const fontPx = (opts.compact ? 13 : 12) * s;       // mech name (C9j: phone-readable)
+  const hpFontPx = (opts.compact ? 15 : 12) * s;     // cur/max
   const gapX = METER_LABEL_GAP * s; // ≥8 CSS px between bar and HP text
   // Labels sit BESIDE the bar (outward), so group height ≈ bar height.
   const labelW = Math.max(13 * fontPx, 8 * hpFontPx); // "P1 · RUSTBIT" / "440/440"

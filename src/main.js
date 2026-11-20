@@ -708,7 +708,15 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       cueMusic(st.phase === 'win' ? 'win' : 'lose');
     }
     const restartReady = canRestart(phaseEndedAtMs, nowMs, null);
-    const cardOpts = { shownAtMs: cardShownAtMs, nowMs, specStamp: specStampText,
+    // Player builds: hide `.kiro/specs… tasks [x]` (cold-pass S). Keep with ?dev=1.
+    const showSpecStamp = (() => {
+      try {
+        const q = new URLSearchParams(location.search.startsWith('?') ? location.search.slice(1) : location.search);
+        return q.get('dev') === '1';
+      } catch (_) { return false; }
+    })();
+    const cardOpts = { shownAtMs: cardShownAtMs, nowMs,
+      specStamp: showSpecStamp ? specStampText : null,
       level: hauntLv, maxLevel: MAX_HAUNT_LEVEL };
     if (touchUi) {
       const { sx, sy } = endCardScale({
