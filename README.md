@@ -4,6 +4,13 @@ Something is possessing the other tank. Duel it, dodge its tell, exorcise it. Cl
 
 HAUNT//HOUND is a 1v1 tank duel that runs in the browser, shown through a haunted CRT cockpit. You bolt a tank together in the garage: legs, a core and two arm slots, with weight and power limits. Then you fight one possessed enemy tank in an arena. It is a static site (HTML, JavaScript ES modules, Canvas 2D) with no backend, no dependencies and no bundler. It plays on desktop and on a phone held in portrait. Built with Kiro for Kiroween 2026.
 
+## Try it
+
+Private judge preview (access-locked, noindex): **https://void-ring-k7m2.pages.dev**  
+(Public play URL TBD at submit — swap this link when the friend preview is promoted.)
+
+Build stamp on that preview tracks the locked tip (`BUILD.txt` in the deployed site).
+
 ## How to play
 
 The loop: title → garage → duel → kill moment and end card → REDEPLOY or GARAGE. HAUNT LV 1–5 rises only when you win. Add `?lv=N` (1–5) to the URL to start at that HAUNT LV.
