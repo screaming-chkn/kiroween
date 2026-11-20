@@ -371,7 +371,7 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
   - HF2 prompt/transcript: `runHF2-prompt.txt`, `runHF2-transcript.txt`. Ticked task 4; JSDoc; HF-COMPLETE.md. Hooks:
     - `2026-11-20T00:03:00.071Z seance-on-spec-save … tasks.md exit=0`
     - `2026-11-20T00:03:10.796Z test-on-save … possessedTaunts.js exit=0`
-- **Credits (Pro / GitHub login):** `/usage` before HF2 finish: **296.89 / 877**; after HF2 still **296.89** (metering lag — recheck next run). HF1 earlier the same afternoon. No credits bought, no plan change, no IDE.
+- **Credits (Pro / GitHub login):** `/usage` before HF2: **296.89 / 877**; shortly after HF2: **297.20 / 877** (~**0.31** metered for HF2; HF1 earlier same afternoon already in the 296.89 baseline). No credits bought, no plan change, no IDE.
 - **Enable:** `?tauntPack=factory` (or `haunt-factory`). Default bank unchanged without flag.
 - **Drop:** delete FACTORY_* + gate + pack arg + steering + spec 15, or drop the branch.
 - **Shots / review:** `build-review/HAUNT-FACTORY.md`, `build-review/shots-haunt-factory/`, mirror `team-archive/haunt-factory/`.
