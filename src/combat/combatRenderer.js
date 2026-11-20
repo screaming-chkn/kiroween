@@ -169,11 +169,12 @@ export function drawWorld(ctx, state, gridAlpha = 0.12) {
   }
   ctx.restore();
 
-  if (state.arena.wall) drawSeverWall(ctx, state.arena.wall, state.elapsedMs ?? 0);
+  const walls = state.arena.walls ?? (state.arena.wall ? [state.arena.wall] : []);
+  for (const w of walls) drawSeverWall(ctx, w, state.elapsedMs ?? 0);
 }
 
 /**
- * Sever Wall (LV3+): void-filled slab with a double wireframe stroke, bone
+ * Cover wall: void-filled slab with a double wireframe stroke, bone
  * outside and phosphor inside, so it reads on a phone. World space, opaque.
  * C9b: severWallLabelText is always empty (wall drawn; no name callout).
  * callout sits just above the slab (under the HUD / meters in screen space).

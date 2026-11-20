@@ -119,6 +119,18 @@ export function awardLoss(state) {
   return normalizeUpgradeState(state);
 }
 
+/**
+ * Add N garage credits (arena coin grabs). Does not change wins.
+ * @param {TankUpgradeState} state
+ * @param {number} [n=1]
+ * @returns {TankUpgradeState}
+ */
+export function awardCredits(state, n = 1) {
+  const s = normalizeUpgradeState(state);
+  const add = Math.max(0, Math.floor(Number(n)) || 0);
+  return { ...s, credits: s.credits + add };
+}
+
 export function barsFull(state) {
   const s = normalizeUpgradeState(state);
   return SLOT_ORDER.every((k) => s[k] >= MAX_NOTCH);

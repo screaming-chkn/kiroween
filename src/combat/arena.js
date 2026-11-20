@@ -34,7 +34,8 @@ import {
   SEVER_WALL_MIN_LV,
   dashCooldownForLoad,
 } from './config.js';
-import { wallForLevel } from './obstacle.js';
+import { wallsForLevel } from './obstacle.js';
+import { createCreditPickups, stepCreditPickups } from './creditPickup.js';
 import { createMech, moveMech, aimMech } from './mech.js';
 import { createEnemy, stepEnemy }        from './enemy.js';
 import { createProjectile, stepProjectile, hitTestCircle } from './projectile.js';
@@ -84,12 +85,15 @@ export function createArena(loadoutTotals = {}, stats = {}) {
   _nextId = 0;
 
   const arena = { width: ARENA_WIDTH, height: ARENA_HEIGHT };
-  // Sever Wall: HAUNT LV 3+ only. stats.severWall (true/false) overrides for
-  // test harnesses; otherwise stats.hauntLv decides. Absent -> open field.
-  const wall = stats.severWall === false ? null
-    : stats.severWall === true ? wallForLevel(SEVER_WALL_MIN_LV)
-    : wallForLevel(stats.hauntLv);
-  if (wall) arena.wall = wall;
+  // Cover walls: LV2+. stats.severWall (true/false) overrides for test
+  // harnesses; otherwise stats.hauntLv decides. Absent -> open field.
+  const walls = stats.severWall === false ? []
+    : stats.severWall === true ? wallsForLevel(SEVER_WALL_MIN_LV)
+    : wallsForLevel(stats.hauntLv);
+  if (walls.length) {
+    arena.walls = walls;
+    arena.wall = walls[0];
+  }
 
   const player = createMech({
     id:           'player',
@@ -168,6 +172,9 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     floaters: [],
     // Preview C: opt-in so goldens / flag-off fights stay stable.
     ghostPerk: stats.enableGhostPerk ? createGhostPerk() : null,
+    creditPickups: createCreditPickups(stats.hauntLv, walls),
+    creditsGrabbedThisTick: 0,
+    creditsGrabbed: 0,
     phase: 'playing',   // 'playing' | 'win' | 'lose'
     elapsedMs: 0,       // time survived so far (R8 end card)
     wallHitsThisTick: 0, // C9b: projectile → Sever Wall / arena bound deaths
@@ -405,6 +412,14 @@ export function updateArena(state, actions, dt) {
     ({ perk: ghostPerk, player: playerAfterHits } = tryGrabGhost(ghostPerk, playerAfterHits));
   }
 
+  // ── 8d. Credit coins (LV3+): stagger-pop, player-only grab (+1 each)
+  let creditPickups = state.creditPickups;
+  let creditsGrabbedThisTick = 0;
+  const steppedCredits = stepCreditPickups(creditPickups, elapsedNext, playerAfterHits);
+  creditPickups = steppedCredits.pickups;
+  creditsGrabbedThisTick = steppedCredits.grabbed;
+  const creditsGrabbed = (state.creditsGrabbed ?? 0) + creditsGrabbedThisTick;
+
   // ── 9. Phase transitions (R6) ────────────────────────────────────────────
   let phase = 'playing';
   if (enemyAfterHits.hp <= 0) {
@@ -426,6 +441,9 @@ export function updateArena(state, actions, dt) {
     projectiles: liveProjectiles,
     floaters,
     ghostPerk,
+    creditPickups,
+    creditsGrabbedThisTick,
+    creditsGrabbed,
     phase,
     // Accumulate survived time (R8). dt is seconds → convert to ms.
     elapsedMs:   elapsedNext,

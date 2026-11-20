@@ -1,7 +1,7 @@
 /**
  * tests/combat/severWall.test.js
  *
- * Sever Wall: LV3+ only. Run with: node tests/combat/severWall.test.js
+ * Sever Wall (mid vertical) + cover-wall compat. Run: node tests/combat/severWall.test.js
  */
 
 import assert from 'node:assert/strict';
@@ -20,13 +20,18 @@ function test(name, fn) {
 
 const DT = 1 / 60;
 
-test('LV1 and LV2 have no wall; LV3-5 have one', () => {
-  for (const lv of [1, 2]) assert.equal(createArena({}, { hauntLv: lv }).arena.wall, undefined);
+test('LV1 is open; LV2+ have cover walls; LV3+ mid wall is the vertical Sever Wall', () => {
+  assert.equal(createArena({}, { hauntLv: 1 }).arena.wall, undefined);
   assert.equal(createArena({}).arena.wall, undefined);
+  const a2 = createArena({}, { hauntLv: 2 });
+  assert.ok(a2.arena.walls && a2.arena.walls.length >= 2);
+  assert.ok(a2.arena.wall);
   for (const lv of [3, 4, 5]) {
-    const w = createArena({}, { hauntLv: lv }).arena.wall;
+    const a = createArena({}, { hauntLv: lv });
+    assert.ok(a.arena.walls && a.arena.walls.length >= 2, `lv${lv} walls`);
+    const w = a.arena.wall;
     assert.ok(w);
-    assert.equal(w.x1, w.x2, 'vertical');
+    assert.equal(w.x1, w.x2, 'first wall is vertical mid');
     assert.equal(w.x1, SEVER_WALL_X);
   }
 });

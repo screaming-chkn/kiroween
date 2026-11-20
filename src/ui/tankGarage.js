@@ -12,6 +12,7 @@ import {
   notchLabel, deployTotalsFromUpgrades, barsFull, creditsForNextWin,
   paletteForTier,
 } from '../mech/tankUpgrades.js';
+import { creditIconSvg } from './creditIcon.js';
 
 function el(tag, attrs = {}) {
   const node = document.createElement(tag);
@@ -299,10 +300,10 @@ export function mountTankGarage(root, { onDeploy, onSeance } = {}) {
     const meta = el('div', { class: 'hh-ug-meta' });
     const tier = el('div', { class: 'hh-ug-tier', text: `TIER ${state.tier}` });
     const pal = paletteForTier(state.tier);
-    const credits = el('div');
-    credits.innerHTML = `Credits: <strong>${state.credits}</strong>`;
+    const credits = el('div', { class: 'hh-ug-credits' });
+    credits.innerHTML = `${creditIconSvg(16)} Credits: <strong>${state.credits}</strong>`;
     const wins = el('div');
-    wins.innerHTML = `Wins: <strong>${state.wins}</strong> · next payout <strong>${creditsForNextWin(state.wins)}</strong>`;
+    wins.innerHTML = `Wins: <strong>${state.wins}</strong> · next payout ${creditIconSvg(14)} <strong>${creditsForNextWin(state.wins)}</strong>`;
     const hull = el('div');
     hull.innerHTML = `Hull palette: <strong>${pal}</strong> (C9e silhouette)`;
     const tip = el('div');

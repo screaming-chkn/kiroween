@@ -22,7 +22,7 @@ import {
   PLAYER_PROJECTILE_RADIUS,
   ENEMY_PROJECTILE_RADIUS,
 } from './config.js';
-import { circleHitsWall } from './obstacle.js';
+import { circleHitsWalls, wallsOf } from './obstacle.js';
 
 // ── createProjectile ──────────────────────────────────────────────────────────
 
@@ -71,13 +71,13 @@ export function stepProjectile(proj, dt, arena) {
   const nx = proj.x + proj.vx * dt;
   const ny = proj.y + proj.vy * dt;
 
-  // Destroy when the centre leaves the arena rectangle (R1) or hits Sever Wall.
+  // Destroy when the centre leaves the arena rectangle (R1) or hits a wall.
   // Tag deadReason so sfxEvents can play a metallic wall-hit (not a tank hit).
   const outOfBounds =
     nx < 0 || nx > arena.width ||
     ny < 0 || ny > arena.height;
-  const hitSever = circleHitsWall(arena.wall, nx, ny, PROJECTILE_RADIUS);
-  if (hitSever) return { ...proj, x: nx, y: ny, dead: true, deadReason: 'wall' };
+  const hitWall = circleHitsWalls(wallsOf(arena), nx, ny, PROJECTILE_RADIUS);
+  if (hitWall) return { ...proj, x: nx, y: ny, dead: true, deadReason: 'wall' };
   if (outOfBounds) return { ...proj, x: nx, y: ny, dead: true, deadReason: 'bounds' };
   return { ...proj, x: nx, y: ny, dead: false, deadReason: undefined };
 }

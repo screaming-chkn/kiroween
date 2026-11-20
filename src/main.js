@@ -46,7 +46,7 @@ import { sfxEventsForTick }    from './combat/sfxEvents.js';
 import { createArena, updateArena } from './combat/arena.js';
 import { combatModsFor }       from './combat/loadoutEffects.js';
 import {
-  awardWin, loadUpgradeState, saveUpgradeState, paletteForTier,
+  awardWin, awardCredits, creditsForNextWin, loadUpgradeState, saveUpgradeState, paletteForTier,
 } from './mech/tankUpgrades.js';
 import { setTankPalette } from './ui/tankWire.js';
 import { buildPlayerActions }  from './combat/actions.js';
@@ -59,6 +59,8 @@ import {
 } from './combat/screenHpMeters.js';
 import { drawTopBarHud, topBarHeight, TOP_BAR } from './combat/topBarHud.js';
 import { drawGhostPerk } from './combat/ghostPerk.js';
+import { drawCreditPickups } from './combat/creditPickup.js';
+import { drawCreditIcon } from './ui/creditIcon.js';
 import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
@@ -310,11 +312,14 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   setTankPalette(paletteForTier(ug.tier));
 
   // Difficulty ramp (HAUNT LV): applied at spawn, outside createArena math.
-  // Read the level first: the Sever Wall (LV3+) is part of the arena itself.
+  // Read the level first: cover walls (LV2+) are part of the arena itself.
   if (advanceHaunt) { bumpHauntLevel(); advanceHaunt = false; }
   const hauntLv = readHauntLevel();
 
   let arenaState = createArena(arenaStats, { enableGhostPerk: true, hauntLv });
+  let fightCreditBalance = ug.credits ?? 0;
+  let fightPickedCredits = 0;
+  let fightWinPayout = 0;
   cueMusic('duel');
 
   arenaState = { ...arenaState, enemy: applyHauntPressure(arenaState.enemy, hauntLv) };
@@ -453,6 +458,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => { syncTankFx(st); });
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawEntities(ctx, st));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawGhostPerk(ctx, st.ghostPerk, st.elapsedMs ?? 0));
+  registerLayer(renderer, LAYERS.ENTITY,  (ctx, st) => drawCreditPickups(ctx, st.creditPickups, st.elapsedMs ?? 0));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => drawSparks(ctx, sparks));
   registerLayer(renderer, LAYERS.ENTITY,  (ctx) => {
     if (killMomentPhase() === 'shatter') {
@@ -529,7 +535,27 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         alpha: Number.isFinite(gutterAlpha) ? gutterAlpha : undefined,
       });
     }
-    drawTopBarHud(ctx, st, vpW, stripBottomPx(vpW), stripOpts());
+    const stripH = stripBottomPx(vpW);
+    drawTopBarHud(ctx, st, vpW, stripH, stripOpts());
+    // Credit balance in the top-strip left, clear of meters and the taunt.
+    {
+      const s = hudScale;
+      const r = 8 * s;
+      const x = 14 * s + r;
+      const y = Math.max(r + 2 * s, stripH / 2);
+      drawCreditIcon(ctx, x, y, r);
+      ctx.save();
+      ctx.font = `700 ${13 * s}px "Press Start 2P", Orbitron, "Share Tech Mono", monospace`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 3 * s;
+      ctx.strokeStyle = '#0A0D0B';
+      ctx.fillStyle = '#E8E2D0';
+      const label = String(fightCreditBalance);
+      ctx.strokeText(label, x + r + 6 * s, y + s);
+      ctx.fillText(label, x + r + 6 * s, y + s);
+      ctx.restore();
+    }
 
     // C4 side-out HP meters — outside the green L/R borders.
     const lineBottom = lineBottomPx(vpW, vpH);
@@ -728,7 +754,8 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     })();
     const cardOpts = { shownAtMs: cardShownAtMs, nowMs,
       specStamp: showSpecStamp ? specStampText : null,
-      level: hauntLv, maxLevel: MAX_HAUNT_LEVEL };
+      level: hauntLv, maxLevel: MAX_HAUNT_LEVEL,
+      winCredits: fightWinPayout, pickedCredits: fightPickedCredits };
     if (touchUi) {
       const { sx, sy } = endCardScale({
         touchUi, dpr: uiDpr, cssW: canvas.clientWidth || window.innerWidth,
@@ -889,6 +916,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     // Step the arena, then voice whatever happened this tick (M1 SFX).
     const prevState = arenaState;
     arenaState = updateArena(arenaState, actions, dt);
+    if ((arenaState.creditsGrabbedThisTick ?? 0) > 0) {
+      const next = awardCredits(loadUpgradeState(), arenaState.creditsGrabbedThisTick);
+      saveUpgradeState(next);
+      fightCreditBalance = next.credits;
+      fightPickedCredits += arenaState.creditsGrabbedThisTick;
+    }
     const sfxEvents = sfxEventsForTick(prevState, arenaState);
     for (const name of sfxEvents) playSfx(name);
     pushAfterimage(afterimages, arenaState.player);
@@ -959,9 +992,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
       if (arenaState.phase === 'win') {
         advanceHaunt = true;
         tauntMachine.onDeath(killNow);
-        // Win N pays N credits (losses pay 0).
-        const next = awardWin(loadUpgradeState());
+        // Win N pays N credits (losses pay 0). Coin grabs already persisted.
+        const before = loadUpgradeState();
+        fightWinPayout = creditsForNextWin(before.wins);
+        const next = awardWin(before);
         saveUpgradeState(next);
+        fightCreditBalance = next.credits;
       } else if (arenaState.phase === 'lose') {
         tauntMachine.onPlayerDeath(killNow, specTauntLine(seanceTasks));
       }

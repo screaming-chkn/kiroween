@@ -17,7 +17,7 @@
  */
 
 import { BASE_SPEED, MECH_RADIUS, MECH_CORNER_MARGIN } from './config.js';
-import { resolveWallMove } from './obstacle.js';
+import { resolveWallsMove, wallsOf } from './obstacle.js';
 
 // ── createMech ────────────────────────────────────────────────────────────────
 
@@ -91,9 +91,10 @@ export function moveMech(mech, dir, dt, arena, speedMult = 1) {
   const cx = Math.max(MECH_CORNER_MARGIN, Math.min(arena.width  - MECH_CORNER_MARGIN, nx));
   const cy = Math.max(MECH_CORNER_MARGIN, Math.min(arena.height - MECH_CORNER_MARGIN, ny));
 
-  // Sever Wall (LV3+): only present on arena.wall; open-field arenas skip this.
-  if (arena.wall) {
-    const r = resolveWallMove(arena.wall, mech, { x: cx, y: cy }, MECH_RADIUS);
+  // Cover walls (LV2+): open-field arenas skip this.
+  const walls = wallsOf(arena);
+  if (walls.length) {
+    const r = resolveWallsMove(walls, mech, { x: cx, y: cy }, MECH_RADIUS);
     if (r.bumped) return { ...mech, x: r.x, y: r.y, wallBump: true };
   }
 

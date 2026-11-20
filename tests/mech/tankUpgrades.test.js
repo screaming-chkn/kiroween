@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import {
   defaultUpgradeState, normalizeUpgradeState, spendNotch, awardWin,
-  creditsForNextWin, barsFull, notchLabel, combatModsFromUpgrades,
+  creditsForNextWin, awardCredits, barsFull, notchLabel, combatModsFromUpgrades,
   enemyScaleFromUpgrades, hitsToKill, MAX_NOTCH, SLOT_ORDER, paletteForTier,
 } from '../../src/mech/tankUpgrades.js';
 import { PLAYER_PROJECTILE_DAMAGE, PLAYER_MAX_HP, FIRE_COOLDOWN_MS } from '../../src/combat/config.js';
@@ -136,6 +136,20 @@ test('enemy scale is 1 at default; rises with notch fill; LV1 table still 220', 
   const e = enemyScaleFromUpgrades(maxed);
   assert.ok(e.hpMult > 1.35 && e.hpMult < 1.5, `hpMult=${e.hpMult}`);
   assert.ok(e.damageMult > 1.2 && e.damageMult < 1.4, `dmgMult=${e.damageMult}`);
+});
+
+
+test('awardCredits adds N credits without touching wins', () => {
+  let s = defaultUpgradeState();
+  s = awardCredits(s, 1);
+  assert.equal(s.credits, 1);
+  assert.equal(s.wins, 0);
+  s = awardCredits(s, 5);
+  assert.equal(s.credits, 6);
+  s = awardCredits(s, 0);
+  assert.equal(s.credits, 6);
+  s = awardCredits(s, -3);
+  assert.equal(s.credits, 6, 'negative adds nothing');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

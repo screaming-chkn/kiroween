@@ -16,9 +16,12 @@ export const ARENA_WIDTH  = 1200;
 /** World-unit height of the arena. */
 export const ARENA_HEIGHT = 900;
 
-// ── Sever Wall (HAUNT LV 3+ only) ─────────────────────────────────────────────
+// ── Cover walls (LV2+; mid Sever Wall from LV3) ───────────────────────────────
 
-/** First HAUNT LV that has the Sever Wall. LV1-2 stay an open field. */
+/** First HAUNT LV that has cover walls. LV1 stays an open floor. */
+export const WALLS_MIN_LV = 2;
+
+/** First HAUNT LV that has the mid vertical Sever Wall. */
 export const SEVER_WALL_MIN_LV = 3;
 
 /** Wall centre (world units): arena midline. */

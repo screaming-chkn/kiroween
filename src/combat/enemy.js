@@ -28,7 +28,7 @@ import {
   ARENA_HEIGHT,
 } from './config.js';
 import { createProjectile } from './projectile.js';
-import { resolveWallMove } from './obstacle.js';
+import { resolveWallsMove, wallsOf } from './obstacle.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -198,9 +198,10 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
     if (arena) {
       ex = Math.max(MECH_RADIUS, Math.min(arena.width  - MECH_RADIUS, ex));
       ey = Math.max(MECH_RADIUS, Math.min(arena.height - MECH_RADIUS, ey));
-      // Sever Wall (LV3+): slide around it instead of sticking head-on.
-      if (arena.wall) {
-        const r = resolveWallMove(arena.wall, enemy, { x: ex, y: ey }, MECH_RADIUS, { slide: true });
+      // Cover walls (LV2+): slide around them instead of sticking head-on.
+      const walls = wallsOf(arena);
+      if (walls.length) {
+        const r = resolveWallsMove(walls, enemy, { x: ex, y: ey }, MECH_RADIUS, { slide: true });
         ex = r.x;
         ey = r.y;
       }
@@ -232,8 +233,9 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
 
       ex = clampedX;
       ey = clampedY;
-      if (arena.wall) {
-        const r = resolveWallMove(arena.wall, enemy, { x: ex, y: ey }, MECH_RADIUS);
+      const walls = wallsOf(arena);
+      if (walls.length) {
+        const r = resolveWallsMove(walls, enemy, { x: ex, y: ey }, MECH_RADIUS);
         if (r.bumped) strafeDir = -strafeDir;
         ex = r.x;
         ey = r.y;

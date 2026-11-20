@@ -11,6 +11,7 @@
 
 import { formatTimeSurvived, titleText, subtitleText, causeText } from '../combat/endcard.js';
 import { levelUpText } from './hauntLevel.js';
+import { drawCreditIcon } from './creditIcon.js';
 
 export const COUNT_UP_MS = 600;
 export const STAMP_WIN = 'EXORCISED';
@@ -139,6 +140,28 @@ export function drawEndCardView(ctx, state, _camera, vpW, vpH, restartReady = fa
     ctx.font = '13px "Share Tech Mono", monospace';
     ctx.fillText(o.specStamp, cx, cardY + 250, cardW - 24);
     ctx.globalAlpha = 1;
+  }
+
+  // Credit payout (win N + coins picked up). Drawn above the buttons so
+  // existing stamp / time / level-up positions stay put.
+  const winCredits = Math.max(0, Math.floor(Number(o.winCredits)) || 0);
+  const pickedCredits = Math.max(0, Math.floor(Number(o.pickedCredits)) || 0);
+  if (winCredits || pickedCredits) {
+    const parts = [];
+    if (isWin && winCredits) parts.push(`+${winCredits} win`);
+    if (pickedCredits) parts.push(`+${pickedCredits} picked up`);
+    const line = parts.join('   ·   ');
+    const payY = cardY + cardH - 44 - BTN_H - 28;
+    const iconR = 8;
+    ctx.font = '16px "Share Tech Mono", monospace';
+    const tw = ctx.measureText(line).width;
+    const iconX = cx - tw / 2 - 14;
+    drawCreditIcon(ctx, iconX, payY - 4, iconR);
+    ctx.fillStyle = C.bone;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(line, iconX + 14, payY);
+    ctx.textAlign = 'center';
   }
 
   // Buttons.

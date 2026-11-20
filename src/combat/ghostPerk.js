@@ -34,12 +34,31 @@ export function createGhostPerk() {
 export function ghostSpawnPoint(player, enemy, arena) {
   let x = ((player?.x ?? 0) + (enemy?.x ?? 0)) / 2;
   let y = ((player?.y ?? 0) + (enemy?.y ?? 0)) / 2;
-  // Keep off walls a bit.
+  // Keep off arena edges, and off cover walls when present.
   const pad = 60;
   const W = arena?.width ?? 1200;
   const H = arena?.height ?? 900;
   x = Math.max(pad, Math.min(W - pad, x));
   y = Math.max(pad, Math.min(H - pad, y));
+  const walls = arena?.walls ?? (arena?.wall ? [arena.wall] : []);
+  if (walls.length) {
+    // Local import avoided at top to keep this module free of a hard cycle
+    // in older tests that stub arena without walls. Inline a tiny nudge:
+    const hits = (px, py) => walls.some((w) => {
+      const sx = w.x2 - w.x1, sy = w.y2 - w.y1;
+      const len2 = sx * sx + sy * sy;
+      let t = len2 > 0 ? ((px - w.x1) * sx + (py - w.y1) * sy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const d = Math.hypot(px - (w.x1 + t * sx), py - (w.y1 + t * sy));
+      return d < GHOST_RADIUS + 8 + (w.thickness ?? 0) / 2;
+    });
+    if (hits(x, y)) {
+      for (const dy of [-80, 80, -140, 140, -200, 200]) {
+        const ny = Math.max(pad, Math.min(H - pad, y + dy));
+        if (!hits(x, ny)) return { x, y: ny };
+      }
+    }
+  }
   return { x, y };
 }
 
