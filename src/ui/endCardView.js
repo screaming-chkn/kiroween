@@ -20,6 +20,26 @@ export const STAMP_MAX = 'LAID TO REST';
 export const BTN_W = 200;
 export const BTN_H = 52;
 
+/**
+ * Pure end-card keyboard map. Click targets are unchanged.
+ * Enter/Space activate the focused button (default focus is REDEPLOY).
+ * R always REDEPLOY; G always GARAGE. Arrows/Tab move focus.
+ * a/d stay unbound so a death mid-strafe cannot flip the action.
+ *
+ * @param {string} key
+ * @param {number} [focusIndex]  0 = REDEPLOY, 1 = GARAGE
+ * @returns {{type:'focus', index:0|1}|{type:'activate', id:'retry'|'garage'}|null}
+ */
+export function endCardKeyAction(key, focusIndex = 0) {
+  if (key === 'ArrowLeft') return { type: 'focus', index: 0 };
+  if (key === 'ArrowRight') return { type: 'focus', index: 1 };
+  if (key === 'Tab') return { type: 'focus', index: focusIndex === 0 ? 1 : 0 };
+  if (key === 'r' || key === 'R') return { type: 'activate', id: 'retry' };
+  if (key === 'g' || key === 'G') return { type: 'activate', id: 'garage' };
+  if (key === 'Enter' || key === ' ') return { type: 'activate', id: focusIndex === 0 ? 'retry' : 'garage' };
+  return null;
+}
+
 const C = {
   void:    '#0A0D0B',
   panel:   '#121A15',

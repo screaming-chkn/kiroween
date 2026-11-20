@@ -198,7 +198,7 @@ export const GARAGE_CSS = `
   background: var(--color-void, #0A0D0B);   /* void — flips on possession */
   color: var(--color-bone, #E8E2D0);        /* bone text — flips on possession */
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
-  font-size: 14px;
+  font-size: 16px;
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
@@ -222,9 +222,9 @@ export const GARAGE_CSS = `
 }
 .hh-garage__subtitle {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 15px;
-  line-height: 1.4;
-  color: #8F9A92; /* ash */
+  font-size: 16px;
+  line-height: 1.45;
+  color: #C8D0C8;
 }
 
 /* body — columns.
@@ -301,8 +301,8 @@ export const GARAGE_CSS = `
 }
 .hh-slot__label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;
-  color: #8F9A92; /* ash */
+  font-size: 15px;
+  color: #C8D0C8;
   min-width: 48px;
 }
 .hh-slot__name {
@@ -331,8 +331,8 @@ export const GARAGE_CSS = `
 }
 .hh-picker__heading {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 13px;
-  color: #8F9A92; /* ash */
+  font-size: 15px;
+  color: #C8D0C8;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 4px;
@@ -432,16 +432,16 @@ export const GARAGE_CSS = `
   color: #E8E2D0;
 }
 .hh-option__flavor {
-  font-size: 14px;        /* R8: body text ≥14px, non-italic */
-  line-height: 1.35;
-  color: #B9C2BA;         /* lighter ash — ≥4.5:1 on panel */
+  font-size: 16px;        /* R8: body text ≥14px, non-italic */
+  line-height: 1.4;
+  color: #C8D0C8;         /* lighter ash — ≥4.5:1 on panel */
 }
 .hh-option__effect {
   /* M4.6: fixed phosphor, like .hh-delta--up. var(--color-phosphor) is a
      possession slot that the sterile (unpossessed) garage palette repaints
      steel grey (#C3CBD2), so the COMBAT line read grey outside the séance. */
   font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;        /* accessibility: text ≥14px */
+  font-size: 15px;        /* accessibility: text ≥14px */
   line-height: 1.5;
   color: #39FF88;         /* phosphor (design-tokens.md) — ≥4.5:1 on panel */
   display: flex;
@@ -492,7 +492,7 @@ export const GARAGE_CSS = `
 
 /* hex marker */
 .hh-option__hex {
-  font-size: 11px;
+  font-size: 13px;
   color: #FF8A3D;   /* ember */
   font-family: 'Share Tech Mono', monospace;
   text-transform: uppercase;
@@ -527,8 +527,8 @@ export const GARAGE_CSS = `
 }
 .hh-stat__label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
-  color: #8F9A92;
+  font-size: 13px;
+  color: #C8D0C8;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -554,8 +554,8 @@ export const GARAGE_CSS = `
 }
 .hh-bar-group__label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 12px;        /* R10: ≥12px bar labels */
-  color: #8F9A92;
+  font-size: 14px;        /* R10: ≥12px bar labels */
+  color: #C8D0C8;
   text-transform: uppercase;
 }
 .hh-bar-track {
@@ -641,7 +641,7 @@ export const GARAGE_CSS = `
 }
 .hh-deploy-confirm {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 14px;            /* R8: ≥14px, non-italic */
+  font-size: 15px;            /* R8: ≥14px, non-italic */
   color: #FF8A3D;             /* ember — ≥4.5:1 on void */
   text-align: right;
   max-width: 240px;
@@ -651,9 +651,9 @@ export const GARAGE_CSS = `
 /* overdraw / blocked notice — height reserved so the footer never jumps (R10) */
 .hh-notice {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 13px;
-  line-height: 1.4;
-  min-height: 1.4em;   /* reserve one line even when empty */
+  font-size: 15px;
+  line-height: 1.45;
+  min-height: 1.45em;   /* reserve one line even when empty */
   margin-top: 4px;
 }
 .hh-notice--overdraw { color: #FF8A3D; }   /* ember */

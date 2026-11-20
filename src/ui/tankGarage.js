@@ -46,7 +46,7 @@ const EXTRA_CSS = `
 }
 .hh-ug-row__label {
   font-family: 'Share Tech Mono', 'IBM Plex Mono', monospace;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.06em;
   color: var(--color-phosphor, #39FF88);
 }
@@ -86,9 +86,9 @@ const EXTRA_CSS = `
 }
 .hh-ug-flavor {
   margin: 0 0 12px;
-  color: var(--color-ash, #8A8F85);
-  font-size: 15px;
-  line-height: 1.4;
+  color: #C8D0C8;
+  font-size: 17px;
+  line-height: 1.45;
   font-style: italic;
 }
 .hh-ug-spend {
@@ -116,8 +116,8 @@ const EXTRA_CSS = `
   border: 1px solid var(--color-phosphor-dim, #1F3D2A);
   border-radius: 4px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 16px;
+  line-height: 1.45;
 }
 .hh-ug-meta strong { color: var(--color-phosphor, #39FF88); }
 .hh-ug-tier {
@@ -131,7 +131,7 @@ const EXTRA_CSS = `
   background: rgba(57,255,136,0.12);
   border: 1px solid var(--color-phosphor, #39FF88);
   color: var(--color-phosphor, #39FF88);
-  font-size: 13px;
+  font-size: 15px;
   border-radius: 4px;
 }
 .hh-ug-reset {
@@ -143,14 +143,14 @@ const EXTRA_CSS = `
   border: 1px solid var(--color-ghost, #9BB0A0);
   border-radius: 4px;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 .hh-ug-help {
   margin: 4px 0 10px;
-  color: var(--color-ash, #8A8F85);
-  font-size: 14px;
-  line-height: 1.4;
+  color: #C8D0C8;
+  font-size: 16px;
+  line-height: 1.45;
 }
 `;
 

@@ -3,7 +3,7 @@
  * Run: node tests/ui/endCardView.test.js
  */
 import assert from 'node:assert/strict';
-import { drawEndCardView, COUNT_UP_MS, countUpMs, stampText } from '../../src/ui/endCardView.js';
+import { drawEndCardView, COUNT_UP_MS, countUpMs, stampText, endCardKeyAction } from '../../src/ui/endCardView.js';
 import { formatArenaSpecStamp, countSpecTasks } from '../../src/ui/specStamp.js';
 
 let passed = 0;
@@ -173,6 +173,29 @@ test('win still shows win payout', () => {
   assert.ok(log.texts.some((t) => /\+3 win/.test(t)), log.texts.join('|'));
 });
 
+
+test('Enter and Space activate the focused button', () => {
+  assert.deepEqual(endCardKeyAction('Enter', 0), { type: 'activate', id: 'retry' });
+  assert.deepEqual(endCardKeyAction(' ', 0), { type: 'activate', id: 'retry' });
+  assert.deepEqual(endCardKeyAction('Enter', 1), { type: 'activate', id: 'garage' });
+  assert.deepEqual(endCardKeyAction(' ', 1), { type: 'activate', id: 'garage' });
+});
+
+test('R always redeploys; G always opens garage', () => {
+  assert.deepEqual(endCardKeyAction('r', 1), { type: 'activate', id: 'retry' });
+  assert.deepEqual(endCardKeyAction('R', 1), { type: 'activate', id: 'retry' });
+  assert.deepEqual(endCardKeyAction('g', 0), { type: 'activate', id: 'garage' });
+  assert.deepEqual(endCardKeyAction('G', 0), { type: 'activate', id: 'garage' });
+});
+
+test('arrows and Tab move focus; a/d stay unbound', () => {
+  assert.deepEqual(endCardKeyAction('ArrowLeft', 1), { type: 'focus', index: 0 });
+  assert.deepEqual(endCardKeyAction('ArrowRight', 0), { type: 'focus', index: 1 });
+  assert.deepEqual(endCardKeyAction('Tab', 0), { type: 'focus', index: 1 });
+  assert.deepEqual(endCardKeyAction('Tab', 1), { type: 'focus', index: 0 });
+  assert.equal(endCardKeyAction('a', 0), null);
+  assert.equal(endCardKeyAction('d', 0), null);
+});
 
 console.log(`endCardView: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

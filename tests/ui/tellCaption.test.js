@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import {
   createTellCaption, tellCaptionText, drawTellCaption, TELL_CAPTION_KEY, TELL_CAPTION_MS,
-  TEACH_FIRE_GRACE_MS,
+  TEACH_FIRE_GRACE_MS, TELL_CAPTION_FONT_PX, TELL_CAPTION_MIN_PX, TELL_CAPTION_FILL,
 } from '../../src/ui/tellCaption.js';
 
 let passed = 0;
@@ -83,14 +83,37 @@ test('text names the real dash control per input', () => {
 });
 
 test('drawTellCaption: draws once, balanced save/restore, skips empty', () => {
-  const log = { saves: 0, restores: 0, texts: [] };
-  const ctx = { save() { log.saves++; }, restore() { log.restores++; },
-    strokeText() {}, fillText(t) { log.texts.push(t); } };
+  const log = { saves: 0, restores: 0, texts: [], fonts: [], fills: [], rects: 0 };
+  const ctx = {
+    save() { log.saves++; }, restore() { log.restores++; },
+    strokeText() {}, fillText(t) { log.texts.push(t); },
+    measureText(t) { return { width: String(t).length * 12 }; },
+    fillRect() { log.rects++; },
+    set font(v) { log.fonts.push(v); }, get font() { return log.fonts.at(-1) || ''; },
+    set fillStyle(v) { log.fills.push(v); }, get fillStyle() { return log.fills.at(-1) || ''; },
+  };
   drawTellCaption(ctx, '', { x: 0, y: 0 });
   assert.equal(log.saves, 0);
   drawTellCaption(ctx, 'HI', { x: 10, y: 20, scale: 2 });
   assert.deepEqual(log.texts, ['HI']);
   assert.equal(log.saves, log.restores);
+  assert.ok(log.fonts.some((f) => f.includes(`${TELL_CAPTION_FONT_PX * 2}px`)));
+  assert.equal(log.fills.at(-1), TELL_CAPTION_FILL);
+  assert.equal(log.rects, 1);
+});
+
+test('drawTellCaption: shrinks to fit maxWidth but stays at or above the floor', () => {
+  const log = { fonts: [] };
+  const ctx = {
+    save() {}, restore() {}, strokeText() {}, fillText() {}, fillRect() {},
+    measureText() { return { width: 400 }; },
+    set font(v) { log.fonts.push(v); }, get font() { return log.fonts.at(-1) || ''; },
+    set fillStyle(v) {}, get fillStyle() { return ''; },
+  };
+  drawTellCaption(ctx, 'HI', { x: 0, y: 0, scale: 1, maxWidth: 200 });
+  const px = log.fonts.map((f) => Number((/(\d+)px/.exec(f) || [])[1])).filter(Boolean);
+  assert.ok(px.at(-1) >= TELL_CAPTION_MIN_PX);
+  assert.ok(px.at(-1) < TELL_CAPTION_FONT_PX);
 });
 
 console.log(`tellCaption: ${passed} passed, ${failed} failed`);

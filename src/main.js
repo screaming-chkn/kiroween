@@ -7,8 +7,9 @@
  *   3. Arena loop: each fixed step builds player actions from input (WASD +
  *      mouse aim + LMB fire), calls updateArena, then renders all layers
  *      through the renderer.
- *   4. Win / Lose: overlay is drawn; Enter / Space / click on canvas restarts
- *      (loop stops, Garage remounts).
+ *   4. Win / Lose: overlay is drawn; Enter / Space activate the focused
+ *      button (default REDEPLOY); R redeploys, G opens Garage; click on a
+ *      button still works (loop stops, Garage remounts).
  *   5. Reduced-motion: camera.reducedMotion is set from prefers-reduced-motion.
  *
  * All game state is local to the boot() function; refreshing the page resets
@@ -82,7 +83,7 @@ import {
 }                              from './ui/killMoment.js';
 import { formatArenaSpecStamp } from './ui/specStamp.js';
 import { SEANCE_DATA_URL }     from './ui/seance.js';
-import { drawEndCardView }     from './ui/endCardView.js';
+import { drawEndCardView, endCardKeyAction } from './ui/endCardView.js';
 import {
   createTauntMachine, isDemoTaunts, isFactoryTauntPack, drawPossessedTaunt, specTauntLine,
   tauntUnderLineY, tauntAboveLineY, TAUNT_ABOVE_GAP,
@@ -700,7 +701,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     const lineBottom = lineBottomPx(vpW, vpH);
     if (!cardUp) {
       const capTop = lineBottom / hudScale + 36;
-      drawTellCaption(ctx, tellCaption.current(nowMs), { x: vpW / 2, y: capTop * hudScale, scale: hudScale });
+      drawTellCaption(ctx, tellCaption.current(nowMs), { x: vpW / 2, y: capTop * hudScale, scale: hudScale, maxWidth: Math.max(0, vpW - 128 * hudScale) });
     }
 
     // Possessed taunt. C9 in-fight: centred ABOVE the neon field top (HUD_SPACE
@@ -805,24 +806,23 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   function onCardKeyDown(e) {
     if (arenaState.phase === 'playing') return;
 
+    const action = endCardKeyAction(e.key, focusIndex);
+    if (!action) return;
+
     // Focus navigation is always allowed (no restart risk).
-    // Arrows + Tab only. Do not bind a/d — those are move keys and flip focus
-    // to GARAGE when the player dies while strafing.
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
+    if (action.type === 'focus') {
       e.preventDefault();
-      if (e.key === 'ArrowLeft') focusIndex = 0;
-      else if (e.key === 'ArrowRight') focusIndex = 1;
-      else focusIndex = focusIndex === 0 ? 1 : 0;   // Tab toggles
+      focusIndex = action.index;
       return;
     }
 
-    // Activation — Enter or Space activates the focused button.
-    if (e.key === 'Enter' || e.key === ' ') {
-      // Keyboard events carry no stale-click risk → pass null.
-      if (!cardInteractive(null)) return;
-      e.preventDefault();
-      pendingAction = focusIndex === 0 ? 'retry' : 'garage';
-    }
+    // Activation — Enter/Space use focus; R is REDEPLOY, G is GARAGE.
+    // Keyboard events carry no stale-click risk → pass null.
+    if (!cardInteractive(null)) return;
+    e.preventDefault();
+    pendingAction = action.id;
+    if (action.id === 'retry') focusIndex = 0;
+    else if (action.id === 'garage') focusIndex = 1;
   }
 
   function onCardClick(e) {

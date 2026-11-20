@@ -67,19 +67,51 @@ export function createTellCaption({ storage = defaultStore(), touchUi = false } 
  * @param {string} text
  * @param {{x:number,y:number,scale?:number}} pos  x = center, y = top
  */
+/** Base CSS-px size of the teach caption at scale 1. Shrinks only to fit maxWidth. */
+export const TELL_CAPTION_FONT_PX = 22;
+export const TELL_CAPTION_MIN_PX = 14;
+export const TELL_CAPTION_FILL = '#FF6B82';
+export const TELL_CAPTION_STROKE = '#050706';
+
 export function drawTellCaption(ctx, text, pos) {
   if (!text) return;
   const scale = pos.scale > 0 ? pos.scale : 1;
+  let px = Math.round(TELL_CAPTION_FONT_PX * scale);
   ctx.save();
-  // E4: slightly larger + stroke for phone/desk readability (HUD floors still OK).
-  ctx.font = `700 ${Math.round(18 * scale)}px "Share Tech Mono", monospace`;
+  ctx.font = `700 ${px}px "Share Tech Mono", monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.lineWidth = 4 * scale;
+  if (typeof ctx.measureText === 'function' && pos.maxWidth > 0) {
+    const w = ctx.measureText(text).width;
+    if (w > pos.maxWidth) {
+      px = Math.max(Math.round(TELL_CAPTION_MIN_PX * scale), Math.floor(px * pos.maxWidth / w));
+      ctx.font = `700 ${px}px "Share Tech Mono", monospace`;
+    }
+  }
+  const width = typeof ctx.measureText === 'function' ? ctx.measureText(text).width : 0;
+  if (width > 0 && typeof ctx.fillRect === 'function') {
+    const padX = 12 * scale;
+    const padY = 7 * scale;
+    const x = pos.x - width / 2 - padX;
+    const y = pos.y - padY;
+    const w = width + padX * 2;
+    const h = px + padY * 2;
+    ctx.fillStyle = 'rgba(5,7,6,0.88)';
+    if (typeof ctx.roundRect === 'function' && typeof ctx.beginPath === 'function') {
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, 4 * scale);
+      ctx.fill();
+    } else {
+      ctx.fillRect(x, y, w, h);
+    }
+  }
+  // Dark plate + thicker stroke + brighter red: readable on phone and desk.
+  // Grows downward from y (baseline top), so it does not crowd meters above.
+  ctx.lineWidth = 5 * scale;
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#0A0D0B';
+  ctx.strokeStyle = TELL_CAPTION_STROKE;
   ctx.strokeText(text, pos.x, pos.y);
-  ctx.fillStyle = '#FF3B5C';
+  ctx.fillStyle = TELL_CAPTION_FILL;
   ctx.fillText(text, pos.x, pos.y);
   ctx.restore();
 }
