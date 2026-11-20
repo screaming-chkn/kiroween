@@ -29,7 +29,6 @@ import {
 }                              from './engine/render.js';
 import { mountGarage, quickDeployPlan } from './ui/garage.js';
 import { syncTankFx }          from './ui/tankFx.js';
-import { setTankStyle, TANK_STYLE_NAMES } from './ui/tankWire.js';
 import { mountSeance }         from './ui/seance.js';
 import { injectPossessionCSS } from './ui/possession.js';
 import { installAudioGestures, playSfx, SFX, setBusVolume, BUSES } from './engine/audio.js';
@@ -186,14 +185,6 @@ function boot() {
   let session = null;
   try { session = globalThis.sessionStorage ?? null; } catch (_) { /* blocked */ }
   applyLevelParam(location.search, { set: setHauntLevel, storage: session });
-
-  // Tank silhouette (draw-only). Default wheeled; override with ?tank= or __HH_TANK_STYLE__.
-  try {
-    const params = new URLSearchParams(location.search.startsWith('?') ? location.search.slice(1) : location.search);
-    const raw = params.get('tank') || globalThis.__HH_TANK_STYLE__ || null;
-    if (raw && TANK_STYLE_NAMES.includes(raw)) setTankStyle(raw);
-  } catch (_) { /* ignore */ }
-  globalThis.__HH_SET_TANK_STYLE__ = (v) => { if (TANK_STYLE_NAMES.includes(v)) setTankStyle(v); };
 
   // C9b gutter haunt: ?gutter=silver|purple|off (default silver, ~5% opacity).
   gutterHauntStyle = readGutterHaunt(location.search);
