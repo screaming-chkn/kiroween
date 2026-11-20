@@ -3,6 +3,7 @@
 **Date:** 2026-11-19 ~4:03 PM PT (America/Los_Angeles)  
 **Branch:** `kiro-steering-haunt-factory` off `main` / tag `hud-lock-c8` tip `455cf29`  
 **Did not touch:** `hud-c9`  
+**Tip:** `fd1d8b5` (pushed, not merged)
 **No merge. No public deploy/submit.**
 
 ## Honesty label
