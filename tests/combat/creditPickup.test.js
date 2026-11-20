@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { createArena, updateArena } from '../../src/combat/arena.js';
 import {
   CREDIT_MIN_LV, CREDIT_COUNT, CREDIT_RADIUS, CREDIT_STAGGER_MS,
+  CREDIT_LIFE_MS, CREDIT_FADE_MS,
   createCreditPickups, creditPadsForLevel, stepCreditPickups,
 } from '../../src/combat/creditPickup.js';
 import { wallsForLevel, circleHitsWalls } from '../../src/combat/obstacle.js';
@@ -28,18 +29,18 @@ function test(name, fn) {
 const DT = 1 / 60;
 const SPAWN_CLEAR = 140;
 
-test('LV1–2 have no coins; LV3 start has at least 6', () => {
+test('LV1–2 have no coins; LV3 start has 10', () => {
   assert.equal(CREDIT_MIN_LV, 3);
-  assert.ok(CREDIT_COUNT >= 6);
+  assert.equal(CREDIT_COUNT, 10);
   for (const lv of [1, 2]) {
     const a = createArena({}, { hauntLv: lv });
     assert.equal(a.creditPickups.coins.length, 0, `lv${lv}`);
   }
   const a3 = createArena({}, { hauntLv: 3 });
-  assert.ok(a3.creditPickups.coins.length >= 6, `lv3 has ${a3.creditPickups.coins.length}`);
+  assert.equal(a3.creditPickups.coins.length, 10, `lv3 has ${a3.creditPickups.coins.length}`);
   for (const lv of [4, 5]) {
     const a = createArena({}, { hauntLv: lv });
-    assert.ok(a.creditPickups.coins.length >= 6, `lv${lv} has ${a.creditPickups.coins.length}`);
+    assert.equal(a.creditPickups.coins.length, 10, `lv${lv} has ${a.creditPickups.coins.length}`);
   }
 });
 
@@ -47,7 +48,7 @@ test('coins sit clear of walls and spawn pads', () => {
   for (const lv of [3, 4, 5]) {
     const walls = wallsForLevel(lv);
     const pads = creditPadsForLevel(lv, walls);
-    assert.ok(pads.length >= 6, `lv${lv} pads ${pads.length}`);
+    assert.equal(pads.length, 10, `lv${lv} pads ${pads.length}`);
     for (const p of pads) {
       assert.equal(
         circleHitsWalls(walls, p.x, p.y, CREDIT_RADIUS + MECH_RADIUS),
@@ -65,7 +66,7 @@ test('coins sit clear of walls and spawn pads', () => {
 test('coins pop in on a stagger at the start of the fight', () => {
   const pickups = createCreditPickups(3, wallsForLevel(3));
   const appears = pickups.coins.map((c) => c.appearAtMs);
-  assert.ok(appears.length >= 6);
+  assert.equal(appears.length, 10);
   assert.equal(appears[0], 0);
   for (let i = 1; i < appears.length; i++) {
     assert.equal(appears[i], i * CREDIT_STAGGER_MS);
@@ -122,7 +123,7 @@ test('arena tick: walk onto a live coin, then persist +1 credit', () => {
 test('grabbing every coin awards CREDIT_COUNT and is player-only in the arena', () => {
   let s = createArena({}, { hauntLv: 3 });
   const n = s.creditPickups.coins.length;
-  assert.ok(n >= 6);
+  assert.equal(n, 10);
   // Advance time past the last pop, stand on each coin in turn.
   const last = s.creditPickups.coins[n - 1].appearAtMs;
   let elapsed = 0;
@@ -139,6 +140,18 @@ test('grabbing every coin awards CREDIT_COUNT and is player-only in the arena', 
   }
   assert.equal(total, n);
   assert.ok(s.creditPickups.coins.every((c) => c.grabbed));
+});
+
+test('coins despawn 30s after pop and cannot be grabbed', () => {
+  assert.equal(CREDIT_LIFE_MS, 30000);
+  assert.equal(CREDIT_FADE_MS, 3000);
+  const pickups = createCreditPickups(3, wallsForLevel(3));
+  const c0 = pickups.coins[0];
+  const alive = stepCreditPickups(pickups, (c0.appearAtMs ?? 0) + CREDIT_LIFE_MS - 1, { x: 0, y: 0 });
+  assert.equal(!!alive.pickups.coins[0].expired, false);
+  const gone = stepCreditPickups(pickups, (c0.appearAtMs ?? 0) + CREDIT_LIFE_MS, { x: c0.x, y: c0.y });
+  assert.equal(gone.grabbed, 0);
+  assert.equal(gone.pickups.coins[0].expired, true);
 });
 
 if (failed) { console.error(`${failed} failed`); process.exit(1); }

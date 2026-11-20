@@ -198,8 +198,10 @@ export function notchLabel(slot, notch, baseState = defaultUpgradeState()) {
       const pct = Math.round((m.moveSpeedMult - 1) * 100);
       return pct === 0 ? 'Speed +0%' : `Speed +${pct}%`;
     }
-    case 'turret':
-      return `Dmg ${m.shotDamage}`;
+    case 'turret': {
+      const label = `Dmg ${m.shotDamage}`;
+      return m.breaksWalls ? `${label} · Breaks walls` : label;
+    }
     case 'loader': {
       const ms = Math.round(FIRE_COOLDOWN_MS * m.fireCooldownMult);
       return `Reload ${(ms / 1000).toFixed(2)}s`;
@@ -260,6 +262,7 @@ export function combatModsFromUpgrades(state) {
     incomingDamageMult: tierIncoming,
     moveSpeedMult: moveSpeedMult * tierSpeed,
     dashDurationMult,
+    breaksWalls: u >= MAX_NOTCH,
   };
 }
 
@@ -274,9 +277,13 @@ export function enemyScaleFromUpgrades(state) {
   const s = normalizeUpgradeState(state);
   let notchSum = 0;
   for (const k of SLOT_ORDER) notchSum += s[k];
-  // all-max (20) → hp ×1.40, dmg ×1.30 — cold can lose; HTK stays ≥8
-  const hpMult = 1 + notchSum * 0.02;
-  const damageMult = 1 + notchSum * 0.015;
+  // First 13 notches (a realistic post-LV3 spread: 1+2+3 payouts + ~7 of 10
+  // coins) do not inflate the enemy. Past that, scale ramps to all-max (20):
+  // hp ×1.40, dmg ×1.30 — a fully maxed tank still cannot trivialize LV5.
+  const free = 13;
+  const ramp = Math.max(0, notchSum - free) / (20 - free);
+  const hpMult = 1 + 0.40 * ramp;
+  const damageMult = 1 + 0.30 * ramp;
   return { hpMult, damageMult, notchSum };
 }
 

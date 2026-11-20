@@ -916,6 +916,12 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     // Step the arena, then voice whatever happened this tick (M1 SFX).
     const prevState = arenaState;
     arenaState = updateArena(arenaState, actions, dt);
+    // Shot/debug: optional pose hook applied after the sim step.
+    const pose = globalThis.__HH_POSE__;
+    if (typeof pose === 'function' && arenaState.phase === 'playing') {
+      const posed = pose(arenaState);
+      if (posed) arenaState = posed;
+    }
     if ((arenaState.creditsGrabbedThisTick ?? 0) > 0) {
       const next = awardCredits(loadUpgradeState(), arenaState.creditsGrabbedThisTick);
       saveUpgradeState(next);
@@ -947,6 +953,13 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
           kickY = Math.sin(dir) * kick;
         }
       }
+    }
+    for (const br of arenaState.wallBreaksThisTick ?? []) {
+      spawnSparks(sparks, {
+        x: br.x, y: br.y, angle: br.angle ?? 0,
+        spread: Math.PI, speed: 300,
+        count: reducedMotion ? 5 : 14, hot: false,
+      });
     }
     if (ended) {
       const dead = arenaState.phase === 'win' ? arenaState.enemy : arenaState.player;

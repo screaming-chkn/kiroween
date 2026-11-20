@@ -351,8 +351,11 @@ function drawCornerTicks(ctx, pts, box) {
   ctx.stroke();
 }
 
-/** Draw a wireframe tank (all edges visible). */
-export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensity = 0) {
+/** Draw a wireframe tank (all edges visible).
+ *  Optional clipSegment(x1,y1,x2,y2) shortens barrels in visual space
+ *  (draw-only; geometry / TANK_SPECS unchanged).
+ */
+export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensity = 0, clipSegment = null) {
   if (kind === 'enemy' && !shouldDrawEnemy()) return;
   ctx.save();
   const g = tankGeometry(kind, x, y, hullHeading, turretAngle);
@@ -548,9 +551,29 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
 
   // d) barrels (recoil shifts only the firing barrel back along turretAngle)
   const ca = Math.cos(turretAngle), sa = Math.sin(turretAngle);
+  const toVisual = (px, py) => ({
+    x: x + (px - x) * TANK_DRAW_SCALE,
+    y: y + (py - y) * TANK_DRAW_SCALE,
+  });
+  const fromVisual = (px, py) => ({
+    x: x + (px - x) / TANK_DRAW_SCALE,
+    y: y + (py - y) / TANK_DRAW_SCALE,
+  });
   const bs = g.barrels.map((b, i) => {
     const r = i === fx0.barrelIndex ? fx0.recoil : 0;
-    return { x1: b.x1 - ca * r, y1: b.y1 - sa * r, x2: b.x2 - ca * r, y2: b.y2 - sa * r };
+    let x1 = b.x1 - ca * r, y1 = b.y1 - sa * r;
+    let x2 = b.x2 - ca * r, y2 = b.y2 - sa * r;
+    if (typeof clipSegment === 'function') {
+      const v1 = toVisual(x1, y1);
+      const v2 = toVisual(x2, y2);
+      const c = clipSegment(v1.x, v1.y, v2.x, v2.y);
+      if (c) {
+        const p1 = fromVisual(c.x1, c.y1);
+        const p2 = fromVisual(c.x2, c.y2);
+        x1 = p1.x; y1 = p1.y; x2 = p2.x; y2 = p2.y;
+      }
+    }
+    return { x1, y1, x2, y2 };
   });
   const barrelPath = () => {
     ctx.beginPath();

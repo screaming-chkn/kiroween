@@ -43,6 +43,7 @@ export function createMech(cfg) {
     x:            cfg.x,
     y:            cfg.y,
     angle:        cfg.angle        ?? 0,
+    hullHeading:  cfg.hullHeading  ?? cfg.angle ?? 0,
     hp:           cfg.hp,
     maxHp:        cfg.maxHp,
     speedPenalty: cfg.speedPenalty ?? 0,

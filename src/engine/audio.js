@@ -109,6 +109,8 @@ export const SFX = Object.freeze({
   HIT_ENEMY:   'hitEnemy',
   HIT_PLAYER:  'hitPlayer',
   HIT_WALL:    'hitWall',
+  WALL_BREAK:  'wallBreak',
+  CREDIT_CHIME:'creditChime',
   DASH:        'dash',
   WINDUP:      'windup',
   EXPLODE:     'explode',
@@ -125,6 +127,8 @@ export const SFX_THROTTLE_MS = Object.freeze({
   hitEnemy:   70,
   hitPlayer:  120,
   hitWall:    80,
+  wallBreak:  90,
+  creditChime:80,
   dash:       150,
   windup:     300,
   explode:    600,
@@ -157,6 +161,8 @@ export const SFX_DURATION_S = Object.freeze({
   hitEnemy:   0.09,
   hitPlayer:  0.20,
   hitWall:    0.14,  // metallic clank/thud (C9b)
+  wallBreak:  0.22,  // chunkier rubble on a wall chip
+  creditChime:0.16,  // ding-ding coin grab
   dash:       0.21,
   windup:     0.43,
   explode:    2.05,  // single laugh + one echo (kill/KO, C8)
@@ -390,6 +396,16 @@ const RECIPES = {
     noise(t, { type: 'bandpass', f0: 3400, f1: 1100, q: 5, peak: 0.14, attack: 0.001, decay: 0.055 });
     tone(t, { type: 'triangle', f0: 1100, f1: 280, peak: 0.09, attack: 0.002, decay: 0.09, lp: 4500 });
     tone(t, { type: 'sine', f0: 160, f1: 55, peak: 0.08, attack: 0.003, decay: 0.07 });
+  },
+  wallBreak(t) {
+    noise(t, { type: 'bandpass', f0: 1800, f1: 400, q: 2.2, peak: 0.20, attack: 0.002, decay: 0.12 });
+    tone(t, { type: 'square', f0: 420, f1: 90, peak: 0.08, attack: 0.002, decay: 0.14, lp: 1800 });
+    tone(t, { type: 'sine', f0: 90, f1: 40, peak: 0.12, attack: 0.004, decay: 0.16 });
+  },
+  creditChime(t) {
+    // ding-ding: two short bright notes
+    tone(t, { type: 'sine', f0: 1240, f1: 1240, peak: 0.12, attack: 0.002, decay: 0.07, lp: 5000 });
+    tone(t + 0.07, { type: 'sine', f0: 1560, f1: 1560, peak: 0.11, attack: 0.002, decay: 0.08, lp: 5000 });
   },
   // Tiny CRT click for garage buttons.
   uiClick(t) {

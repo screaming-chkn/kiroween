@@ -38,15 +38,16 @@ function clampLevel(n) {
  * shotDamage stays 47 (three hits still kill a 140 HP mech). First-game feel
  * only — LV2+ unchanged. Profiles: tests/combat/BALANCE.md.
  *
- * LV2–LV5 move geometrically to the unchanged LV5 cap (1800 / 24): HP x1.42
- * and damage x0.85 per level. The enemy gets tankier and the duel longer, while
- * single hits sting less: hits to kill a 140 HP mech run 3 / 4 / 5 / 5 / 6.
+ * LV2–LV5 still rise in HP to the unchanged LV5 cap (1800 / 24). LV4 was
+ * retuned 2026-11-19 (1100 / 26) so a post-LV3 ~13-credit garage spread has a
+ * real cold shot at LV4 without making an unupgraded run easier than LV3.
+ * Hits to kill a 140 HP mech run 3 / 4 / 5 / 6 / 6. LV1 stays 220.
  */
 export const HAUNT_LEVELS = Object.freeze([
   Object.freeze({ hp: 220,  shotDamage: 47 }),  // LV1: half hits-to-kill (owner 2026-11-19 4:40)
   Object.freeze({ hp: 626,  shotDamage: 40 }),
   Object.freeze({ hp: 890,  shotDamage: 34 }),
-  Object.freeze({ hp: 1266, shotDamage: 28 }),
+  Object.freeze({ hp: 1100, shotDamage: 26 }),  // LV4: post-LV3 credit spread target
   Object.freeze({ hp: 1800, shotDamage: 24 }),  // LV5: cap, unchanged
 ]);
 

@@ -362,3 +362,23 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Kiro used:** steering `.kiro/steering/hud-c8-polish.md` (hand + short Auto confirm if run). Prefer Auto not Sonnet.
 - **Build-agent hand:** `tankWire.js` wheeled thin/dashed/less bloom; `combatRenderer.js` 4-side neon + corner brackets; `HUD_SPACE=8` wired through taunt/meters/touch edges; `RECIPES.explode` single laugh + one echo; preview OfflineAudio match in build-review / hud-c8 archive.
 - **Tests / shots:** see build-review / hud-c8 archive.
+
+## feat/walls GO — cover, breakables, 10 coins, LV4, Kiro retro-spec (2026-11-19 ~6:26 PM PT) — branch feat/walls, NOT merged
+
+- **Kiro used: yes**, headless `kiro-cli` v3, model Auto, `--trust-workspace --no-interactive --trust-tools=fs_read,fs_write`. The Kiro IDE was not used. No purchases. Real counts only.
+- **Honest wording:** the first walls/coins/garage pass was implemented by the build agent, then **spec'd and verified in Kiro after the first pass**. The second pass (solid barrel physics, breakable walls, 10 coins, LV4 tune) was implemented against that spec and re-verified in Kiro.
+- **Account:** GitHub login, **Kiro Pro**. Reset 2026-12-01. Stop-floor was ~100 left; we did not invent extra runs to burn the rest.
+
+- **Run WALLS** (spec 15 + hooks + steering): 297.20 → 298.44 (**1.24**). Authored `.kiro/specs/15-cover-walls/{requirements,design,tasks}.md`, `.kiro/hooks/physics-on-combat-save.json`, `.kiro/hooks/balance-lv34-on-save.json`, `.kiro/steering/wall-physics.md`, `.kiro/steering/upgrade-label-truth.md`. Proof: `kiro-proof/walls/runWALLS-transcript.txt`.
+
+- **Run RETRO** (garage retro-spec + verify 15 against the tree): 298.44 → 305.50 (**7.06**). Authored `.kiro/specs/16-tank-garage/{requirements,design,tasks}.md`, ticked 15-cover-walls tasks from code+tests, wrote `VERIFY.md`. Did not edit `src/` or tests. Proof: `runRETRO-prompt.txt`, `runRETRO-transcript.txt`, `runRETRO-usage.txt`.
+
+- **Run VERIFY2** (second-pass verify + steering): 305.50 → 307.41 (**1.91**). Updated 15-cover-walls tasks/VERIFY.md with the 200-seed numbers; fixed stale `.kiro/steering/balance.md` (LV1 440→220, LV4 1100/26). Proof: `runVERIFY2-prompt.txt`, `runVERIFY2-transcript.txt`, `runVERIFY2-usage.txt`.
+
+- **This GO total:** **10.21 credits**. Plan after VERIFY2: **307.41 of 877** (569.59 left).
+
+- **Hooks (real log lines):** `seance-on-spec-save` on `15-cover-walls/tasks.md` and `16-tank-garage/tasks.md` (exit=0); `physics-on-combat-save` ManualInvoke on `src/combat/obstacle.js` (exit=0). Lines copied to `kiro-proof/walls/hook-lines.txt`. Usage card: `kiro-usage-card.png`.
+
+- **Build-agent hand (not Kiro-authored):** swept `firstWallHit`, `muzzle.js` solid barrel + stored `hullHeading`, breakable walls, 10-coin despawn + chime, LABEL-TRUTH "Breaks walls", LV4 1100/26 and delayed enemy scale, 200-seed harness, shots, tests. `npm test` green; FPS 61; 0 crossings / 0 barrel overlaps / 0 timeouts on 200 seeds.
+
+- **Tests / shots:** see `walls-final/`. Merge held.

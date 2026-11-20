@@ -3,7 +3,7 @@
  *
  * LV3+ garage-credit coins. Pure: persist happens in main.js after a grab.
  *
- * At the start of LV3 (and up), at least CREDIT_COUNT coins are placed around
+ * At the start of LV3 (and up), CREDIT_COUNT coins are placed around
  * the arena, clear of walls and spawn pads. They pop in on a stagger so the
  * opening of the fight keeps flashing coins. Player-only; each grab is +1.
  */
@@ -21,13 +21,17 @@ import { drawCreditIcon } from '../ui/creditIcon.js';
 /** First HAUNT LV that spills coins. */
 export const CREDIT_MIN_LV = 3;
 /** Coins placed at the start of LV3+. */
-export const CREDIT_COUNT = 6;
+export const CREDIT_COUNT = 10;
 /** Grab / draw radius (world units). */
 export const CREDIT_RADIUS = 16;
 /** Delay between successive pops at fight start (ms). */
 export const CREDIT_STAGGER_MS = 350;
 /** Pop-in animation length (ms). */
 export const CREDIT_POP_MS = 220;
+/** Lifetime after pop (ms). Then the coin despawns. */
+export const CREDIT_LIFE_MS = 30000;
+/** Blink / fade window at the end of life (ms). */
+export const CREDIT_FADE_MS = 3000;
 /** Keep coins this far from a spawn centre. */
 export const CREDIT_SPAWN_CLEAR = 140;
 
@@ -48,6 +52,12 @@ const CANDIDATES = Object.freeze([
   { x: 720, y: 120 },
   { x: 360, y: 500 },
   { x: 840, y: 500 },
+  { x: 240, y: 720 },
+  { x: 960, y: 720 },
+  { x: 520, y: 800 },
+  { x: 680, y: 800 },
+  { x: 400, y: 140 },
+  { x: 800, y: 140 },
 ]);
 
 function nearSpawn(x, y) {
@@ -110,8 +120,10 @@ export function stepCreditPickups(pickups, elapsedMs, player) {
   const t = elapsedMs ?? 0;
   let grabbed = 0;
   const coins = pickups.coins.map((c) => {
-    if (c.grabbed) return c;
+    if (c.grabbed || c.expired) return c;
     if (t < (c.appearAtMs ?? 0)) return c;
+    const life = CREDIT_LIFE_MS;
+    if (t >= (c.appearAtMs ?? 0) + life) return { ...c, expired: true };
     if (!player) return c;
     const dx = (player.x ?? 0) - c.x;
     const dy = (player.y ?? 0) - c.y;
@@ -135,16 +147,27 @@ export function drawCreditPickups(ctx, pickups, nowMs = 0) {
   if (!pickups?.coins) return;
   const t = nowMs ?? 0;
   for (const c of pickups.coins) {
-    if (c.grabbed) continue;
+    if (c.grabbed || c.expired) continue;
     const appear = c.appearAtMs ?? 0;
     if (t < appear) continue;
     const age = t - appear;
+    if (age >= CREDIT_LIFE_MS) continue;
     const pop = age >= CREDIT_POP_MS
       ? 1
       : 0.2 + 0.9 * (age / CREDIT_POP_MS) + 0.15 * Math.sin((age / CREDIT_POP_MS) * Math.PI);
     const bob = Math.sin((t / 1000) * 3.4 + (c.x + c.y) * 0.01) * 3;
     const spin = Math.sin((t / 1000) * 1.6 + c.x * 0.02) * 0.15;
+    const remaining = CREDIT_LIFE_MS - age;
+    let alpha = 1;
+    if (remaining < CREDIT_FADE_MS) {
+      const fade = remaining / CREDIT_FADE_MS;
+      const blink = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t / 70));
+      alpha = Math.max(0, fade * blink);
+    }
+    ctx.save();
+    ctx.globalAlpha = (ctx.globalAlpha || 1) * alpha;
     drawCreditIcon(ctx, c.x, c.y + bob, CREDIT_RADIUS * Math.min(1.15, pop) * 0.95, { spin });
+    ctx.restore();
   }
 }
 

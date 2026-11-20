@@ -1319,6 +1319,264 @@
     "done": true
   },
   {
+    "spec": "15-cover-walls",
+    "id": 1,
+    "title": "obstacle.js: mixed-size walls for LV2+, none at LV1, spawns clear, reset each fight (R1). Walls, LV1 and spawn clearance are tested; reset-per-fight has no test.",
+    "done": false
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 2,
+    "title": "Bot slides around walls with the existing steering (R1)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 3,
+    "title": "Swept projectile test: centre → muzzle at spawn, prev → next per step, `deadReason: 'wall'` (R2)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 4,
+    "title": "muzzle.js shared barrel-tip geometry (R2, R3)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 5,
+    "title": "Solid barrel for player and bot: clamp rotation, then stop the move (R3). Code stops the move first when the aim is clear at the old position; see Verification.",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 6,
+    "title": "Draw-time barrel clip at the wall slab, visual backup only (R3)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 7,
+    "title": "chipWall: remove 20% of the original length at the impact, split segments (R4). Real names are `chipWallAt` / `chipWallsAt`. Short walls lose more than 20%; see Verification.",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 8,
+    "title": "Break gate: player at TURRET max notch; bot LV3+ only; LV2 bot shots stop without breaking (R4)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 9,
+    "title": "Debris puff + `wallBreak` SFX with a visual cue; keep `hitWall` for non-breaking hits (R5). Code is in place (sparks, `wallBreak` / `hitWall` events, synth recipe). No test read covers `sfxEventsForTick` for these.",
+    "done": false
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 10,
+    "title": "Coins: 10 at LV3+, staggered pop, reachable, clear of walls and spawns (R6). Count, stagger and clearance are tested; reachability is not.",
+    "done": false
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 11,
+    "title": "Coin life: 30 s after pop, blink/fade last 3 s, player-only grab (R6). Despawn is tested. The blink runs near 2.3 cycles per second, above the 2 per second cap; see Verification.",
+    "done": false
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 12,
+    "title": "Coin grab persists garage credits + chime SFX with a visual cue (R6). Persist is tested. The chime event is wired but no read test covers it, and the visual cue is only the coin vanishing and the HUD balance changing.",
+    "done": false
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 13,
+    "title": "Garage: TURRET max label includes \"Breaks walls\"; LV1 enemy HP stays 220 (R7)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 14,
+    "title": "Tune LV4 odds with 1+2+3 payouts and partial coin grabs; target 30–50% cold win rate (R8). `HAUNT_LEVELS[3]` is 1100 / 26 in code. Reported run: 13-credit spread (turret 4, armor 3, tracks 2, loader 2, dash 2) LV4 cold 42%, default cold 5%. Partial coin grabs were not measured separately.",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 15,
+    "title": "Test: point-blank shot at a wall, 0 crossings (R2)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 16,
+    "title": "Test: 200 seeds on LV2 and LV3, wall-cross count 0 (R2). Met by a reported instrumented run, LV2–4, cold and scripted: projectile wall-crossings 0, timeouts 0. That probe is not a committed test file; the committed guard is the point-blank/swept tests in `walls.test.js`.",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 17,
+    "title": "Test: max-turret shot opens a 20% gap, second shot passes through (R4)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 18,
+    "title": "Test: bot at LV3 breaks a wall; bot at LV2 does not (R4)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 19,
+    "title": "Test: barrel-overlap probe for player and bot over many angles and moves (R3). Committed: hug/aim poses plus a 40 s LV2 fight that checks both tanks every tick against stored `hullHeading` (0 overlaps). Reported 200-seed run, LV2–4: barrel-overlap ticks 0.",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 20,
+    "title": "Test: 10 coins at LV3+, 0 at LV1–2, despawn at 30 s after pop, bot cannot grab (R6). The bot case holds by construction (see Verification).",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 21,
+    "title": "Test: LABEL-TRUTH for every notch, TURRET max includes \"Breaks walls\" (R7)",
+    "done": true
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 22,
+    "title": "Balance: `npm run test:balance`; LV1 unchanged, bands and monotonic win rates hold (R8). Not run.",
+    "done": false
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 23,
+    "title": "`npm test` passes, 60 fps holds with walls and coins, HUD text and tap targets unchanged (R5, R6). `npm test` reported passing (walls, creditPickup, LABEL-TRUTH, hauntLevel); 60 fps and HUD checks not measured.",
+    "done": false
+  },
+  {
+    "spec": "15-cover-walls",
+    "id": 24,
+    "title": "Hooks `physics-on-combat-save` and `balance-lv34-on-save` run green (R2, R8). Both hook files exist and point at `walls.test.js` and `balance.test.js`. Neither was run.",
+    "done": false
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 1,
+    "title": "Five bars (tracks, turret, loader, armor, dash), 0..MAX_NOTCH (4), 1 credit per notch (R1)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 2,
+    "title": "Spend fails with `no-credits` / `bar-full`; fresh and corrupt saves normalise to empty (R1)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 3,
+    "title": "Win N pays N credits; `awardLoss` pays 0 (R2)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 4,
+    "title": "`main.js` pays the win and saves it (R2). Read in code; no test covers the `main.js` wiring.",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 5,
+    "title": "Coin grab persists +1 credit under `hh_tank_upgrades_v1`; wins unchanged (R3)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 6,
+    "title": "`notchLabel` derives from `combatModsFromUpgrades` (R4)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 7,
+    "title": "LABEL-TRUTH test: each slot × notch, all-max, loader at max turret (R4)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 8,
+    "title": "TURRET max label includes \"Breaks walls\" when `breaksWalls` is on (R4)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 9,
+    "title": "LV1 enemy HP stays 220 (`HAUNT_LEVELS[0].hp`, asserted twice) (R5)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 10,
+    "title": "Empty bars equal identity mods; max turret needs at least 8 hits on LV1 (R5)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 11,
+    "title": "Softened turret damage, loader × turret antagonism, fire cooldown ≥ 0.95 at max both (R5)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 12,
+    "title": "Enemy scale: 1.0 / 1.0 empty, HP ×1.40 and damage ×1.30 at all-max (R5)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 13,
+    "title": "Tier unlock resets bars and keeps leftover credits; palette by tier (R6)",
+    "done": true
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 14,
+    "title": "Tier 3 cap behaviour (bars stay full) has no test. The code does it; nothing asserts it. (R6)",
+    "done": false
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 15,
+    "title": "`tankGarage.js` DOM test: render, SPEND, DEPLOY, RESET (R7). No test found.",
+    "done": false
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 16,
+    "title": "Garage text ≥ 14px: CSS in `tankGarage.js` uses 12px and 13px for row labels, flavor, help, meta and reset. Not fixed in this pass. (R7)",
+    "done": false
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 17,
+    "title": "Esc backs out of the garage: no Esc handler found in `tankGarage.js`. (R7)",
+    "done": false
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 18,
+    "title": "Reach the garage from pause (accessibility rule 3 covers settings, not the garage). Not checked.",
+    "done": false
+  },
+  {
+    "spec": "16-tank-garage",
+    "id": 19,
+    "title": "`npm test` green on this tree. Not run in this pass.",
+    "done": false
+  },
+  {
     "spec": "haunted-spec",
     "id": 1,
     "title": "Possession theme: sterile↔haunted palettes + instant `.possessed`",

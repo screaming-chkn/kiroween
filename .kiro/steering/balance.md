@@ -15,12 +15,13 @@ fileMatchPattern: "src/combat/**"
 
 ## HAUNT LV ramp
 `HAUNT_LEVELS` in `src/ui/hauntLevel.js` sets enemy HP and shot damage per level:
-440/47, 626/40, 890/34, 1266/28, 1800/24 (LV 1–5). LV1 is tuned to an owner
+220/47, 626/40, 890/34, 1100/26, 1800/24 (LV 1–5). LV1 is 220 HP (not 440).
+LV4 is 1100/26, retuned so a ~13-credit garage spread has a real cold shot at
+LV4. LV1 is tuned to an owner
 target (2026-11-19): about 30 s, a first-timer wins about 1/3, a player who
 reads the tell about 2/3, measured with the `firstTimer` and `medium` human
-profiles in `tests/combat/balanceCore.mjs`. LV2–LV5 are geometric steps to the
-unchanged LV5. Hits to kill a 140 HP mech: 3 / 4 / 5 / 5 / 6; never jump more
-than one hit per level. `applyHauntPressure(enemy, lv)` copies the row onto the
+profiles in `tests/combat/balanceCore.mjs`. Hits to kill a 140 HP mech:
+3 / 4 / 5 / 6 / 6; never jump more than one hit per level. `applyHauntPressure(enemy, lv)` copies the row onto the
 enemy. The ramp is applied at spawn in `main.js` (and in `runFight` via
 `opts.hauntLv`) so the headless sim matches live difficulty exactly. The old
 multiplier ramp (0.8 / 1.0 / 1.1 / 1.17 / 1.2 of 1500 HP / 20 dmg) survives only

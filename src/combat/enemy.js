@@ -27,7 +27,8 @@ import {
   ARENA_WIDTH,
   ARENA_HEIGHT,
 } from './config.js';
-import { createProjectile } from './projectile.js';
+import { createProjectile, armShotAgainstWalls } from './projectile.js';
+import { muzzleWorld, constrainBarrel, stepHullHeading } from './muzzle.js';
 import { resolveWallsMove, wallsOf } from './obstacle.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -130,6 +131,7 @@ export function createEnemy(cfg = {}) {
     x:            cfg.x            ?? ENEMY_START_X,
     y:            cfg.y            ?? ENEMY_START_Y,
     angle:        0,
+    hullHeading:  cfg.hullHeading  ?? 0,
     hp:           cfg.hp           ?? ENEMY_MAX_HP,
     maxHp:        cfg.maxHp        ?? ENEMY_MAX_HP,
     speedPenalty: cfg.speedPenalty ?? 0,
@@ -179,7 +181,7 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
   }
 
   // ── Angle always faces player ─────────────────────────────────────────────
-  const angle = Math.atan2(dy, dx);
+  let angle = Math.atan2(dy, dx);
 
   // ── CHASE: move toward player ─────────────────────────────────────────────
   let ex = enemy.x;
@@ -246,6 +248,33 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
     }
   }
 
+  // Hull heading follows movement (same rule as the renderer). Constrain the
+  // barrel against that heading so physics matches the wheeled gun offset.
+  const hullHeading = stepHullHeading(
+    enemy.hullHeading ?? enemy.angle,
+    { x: enemy.x, y: enemy.y },
+    { x: ex, y: ey },
+    angle,
+  );
+
+  // Solid barrel: after the move, stop the gun occupying a wall.
+  if (arena) {
+    const walls = wallsOf(arena);
+    if (walls.length) {
+      const posed = constrainBarrel(
+        'enemy',
+        enemy,
+        { x: ex, y: ey, angle },
+        walls,
+        hullHeading,
+        { preferMove: true },
+      );
+      ex = posed.x;
+      ey = posed.y;
+      angle = posed.angle;
+    }
+  }
+
   // ── SHOOT: windup → fire on cooldown (Feel pass 11/5 feel pass) ──────────────
   // When in SHOOT with the fire cooldown ready, the enemy first spends
   // ENEMY_SHOT_WINDUP_MS "winding up": windupRemainingMs counts down and the
@@ -282,7 +311,7 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
         const fireAngle = lockedAim
           ? Math.atan2(lockedAim.y - ey, lockedAim.x - ex)
           : angle;
-        projectile = createProjectile({
+        const spawned = createProjectile({
           id:     `eproj-${projIdSeed}`,
           x:      ex,
           y:      ey,
@@ -290,6 +319,8 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
           damage: (enemy.shotDamage ?? ENEMY_PROJECTILE_DAMAGE),
           owner:  'enemy',
         });
+        const muzzle = muzzleWorld('enemy', ex, ey, fireAngle, hullHeading);
+        projectile = armShotAgainstWalls(spawned, arena, { x: ex, y: ey }, muzzle);
         nextCooldown = ENEMY_FIRE_COOLDOWN_MS;
         lockedAim = null;          // consumed — clear the lock
       }
@@ -315,6 +346,7 @@ export function stepEnemy(enemy, player, dt, arena, projIdSeed = 0) {
     x:                 ex,
     y:                 ey,
     angle,
+    hullHeading,
     aiState,
     strafeDir,
     fireCooldown:      nextCooldown,

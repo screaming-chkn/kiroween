@@ -180,3 +180,14 @@
 2026-11-19T21:59:57.369Z landscape-hud-on-save event=PostFileSave file=src/engine/touch.js exit=0 ms=114
 2026-11-19T22:00:14.050Z landscape-hud-on-save event=PostFileSave file=src/engine/touch.js exit=0 ms=44
 2026-11-19T22:00:16.130Z test-on-save event=PostFileSave file=src/engine/touch.js exit=1 ms=1936
+2026-11-20T02:03:35.512Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-cover-walls/tasks.md exit=0 ms=281
+2026-11-20T02:03:42.678Z readme-check-on-save event=PostFileSave file=.kiro/hooks/physics-on-combat-save.json exit=1 ms=31
+2026-11-20T02:03:44.028Z readme-check-on-save event=PostFileSave file=.kiro/hooks/balance-lv34-on-save.json exit=1 ms=34
+2026-11-20T02:07:18.147Z physics-on-combat-save event=ManualInvoke file=src/combat/obstacle.js exit=0 ms=61
+2026-11-20T02:13:20.188Z seance-on-spec-save event=PostFileSave file=.kiro/specs/16-tank-garage/tasks.md exit=0 ms=166
+2026-11-20T02:13:41.983Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-cover-walls/tasks.md exit=0 ms=153
+2026-11-20T02:25:27.094Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-cover-walls/tasks.md exit=0 ms=155
+2026-11-20T02:25:28.342Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-cover-walls/tasks.md exit=0 ms=150
+2026-11-20T02:25:29.685Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-cover-walls/tasks.md exit=0 ms=147
+2026-11-20T02:25:33.025Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-cover-walls/tasks.md exit=0 ms=164
+2026-11-20T02:25:38.550Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-cover-walls/tasks.md exit=0 ms=149

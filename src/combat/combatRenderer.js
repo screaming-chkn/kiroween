@@ -30,7 +30,7 @@
 
 import { endCardText } from './endcard.js';
 import { drawTank, updateHullHeading, TANK_DRAW_SCALE } from '../ui/tankWire.js';
-import { severWallLabelText } from './obstacle.js';
+import { severWallLabelText, clipSegmentAtWalls, wallsOf } from './obstacle.js';
 import {
   formatHudStat,
   powerStateLabel,
@@ -223,13 +223,18 @@ const hullState = {
   enemy:  { heading: null, pos: null },
 };
 
-function drawWireTank(ctx, kind, mech, fallback) {
+function drawWireTank(ctx, kind, mech, fallback, walls = []) {
   const st = hullState[kind];
-  const heading = updateHullHeading(st.heading, st.pos, { x: mech.x, y: mech.y }, fallback);
+  const heading = typeof mech.hullHeading === 'number'
+    ? mech.hullHeading
+    : updateHullHeading(st.heading, st.pos, { x: mech.x, y: mech.y }, fallback);
   st.heading = heading;
   st.pos = { x: mech.x, y: mech.y };
   const flash = flashActive(mech.flash) ? flashIntensity(mech.flash) : 0;
-  drawTank(ctx, kind, mech.x, mech.y, heading, mech.angle, flash);
+  const clip = walls.length
+    ? (x1, y1, x2, y2) => clipSegmentAtWalls(walls, x1, y1, x2, y2)
+    : null;
+  drawTank(ctx, kind, mech.x, mech.y, heading, mech.angle, flash, clip);
 }
 
 /**
@@ -238,8 +243,8 @@ function drawWireTank(ctx, kind, mech, fallback) {
  * @param {CanvasRenderingContext2D} ctx
  * @param {{ x: number, y: number, angle: number, hp: number, maxHp: number }} mech
  */
-function drawPlayerMech(ctx, mech) {
-  drawWireTank(ctx, 'player', mech, 0);
+function drawPlayerMech(ctx, mech, walls) {
+  drawWireTank(ctx, 'player', mech, 0, walls);
 }
 
 /**
@@ -248,10 +253,10 @@ function drawPlayerMech(ctx, mech) {
  * @param {CanvasRenderingContext2D} ctx
  * @param {{ x: number, y: number, angle: number, hp: number, maxHp: number }} mech
  */
-function drawEnemyMech(ctx, mech) {
+function drawEnemyMech(ctx, mech, walls) {
   // Feel pass 11/5: red shot telegraph (windup halo) drawn first.
   drawWindupTelegraph(ctx, mech.x, mech.y, mech.windupRemainingMs);
-  drawWireTank(ctx, 'enemy', mech, Math.PI);
+  drawWireTank(ctx, 'enemy', mech, Math.PI, walls);
 }
 
 /**
@@ -384,9 +389,10 @@ function drawFloaters(ctx, floaters) {
  * @param {{ player: object, enemy: object, projectiles: Array, floaters?: Array }} state
  */
 export function drawEntities(ctx, state) {
+  const walls = wallsOf(state.arena);
   drawProjectiles(ctx, state.projectiles);
-  drawPlayerMech(ctx, state.player);
-  drawEnemyMech(ctx,  state.enemy);
+  drawPlayerMech(ctx, state.player, walls);
+  drawEnemyMech(ctx,  state.enemy, walls);
   drawFloaters(ctx, state.floaters);
 }
 

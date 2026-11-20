@@ -29,8 +29,10 @@ function measure(slot, state) {
       const pct = Math.round((p.moveSpeedMult - 1) * 100);
       return pct === 0 ? 'Speed +0%' : `Speed +${pct}%`;
     }
-    case 'turret':
-      return `Dmg ${p.shotDamage}`;
+    case 'turret': {
+      const label = `Dmg ${p.shotDamage}`;
+      return p.breaksWalls ? `${label} · Breaks walls` : label;
+    }
     case 'loader': {
       const ms = Math.round(FIRE_COOLDOWN_MS * p.fireCooldownMult);
       return `Reload ${(ms / 1000).toFixed(2)}s`;

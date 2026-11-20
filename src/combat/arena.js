@@ -34,11 +34,12 @@ import {
   SEVER_WALL_MIN_LV,
   dashCooldownForLoad,
 } from './config.js';
-import { wallsForLevel } from './obstacle.js';
+import { wallsForLevel, chipWallsAt, wallsOf } from './obstacle.js';
 import { createCreditPickups, stepCreditPickups } from './creditPickup.js';
 import { createMech, moveMech, aimMech } from './mech.js';
 import { createEnemy, stepEnemy }        from './enemy.js';
-import { createProjectile, stepProjectile, hitTestCircle } from './projectile.js';
+import { createProjectile, stepProjectile, hitTestCircle, armShotAgainstWalls } from './projectile.js';
+import { muzzleWorld, constrainBarrel, stepHullHeading } from './muzzle.js';
 import { applyDamage }                   from './damage.js';
 import { overdrawPenaltyPct }            from '../ui/garage.js';
 import {
@@ -150,6 +151,7 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     // Tank upgrades (feat/tank-upgrades): optional speed / dash-length levers.
     if (mods.moveSpeedMult != null) player.moveSpeedMult = mods.moveSpeedMult;
     if (mods.dashDurationMult != null) player.dashDurationMult = mods.dashDurationMult;
+    if (mods.breaksWalls) player.breaksWalls = true;
   }
 
   const enemy = createEnemy({
@@ -178,6 +180,8 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     phase: 'playing',   // 'playing' | 'win' | 'lose'
     elapsedMs: 0,       // time survived so far (R8 end card)
     wallHitsThisTick: 0, // C9b: projectile → Sever Wall / arena bound deaths
+    wallBreaksThisTick: [],
+    hauntLv: typeof stats.hauntLv === 'number' ? stats.hauntLv : 1,
   };
 }
 
@@ -261,6 +265,28 @@ export function updateArena(state, actions, dt) {
   if (act.aim) {
     player = aimMech(player, act.aim);
   }
+  // Hull heading follows movement (same rule as the renderer). Then clamp
+  // the barrel against that heading so physics matches the wheeled gun offset.
+  {
+    const hullHeading = stepHullHeading(
+      prev.hullHeading ?? prev.angle ?? 0,
+      { x: prev.x, y: prev.y },
+      { x: player.x, y: player.y },
+      player.angle,
+    );
+    player = { ...player, hullHeading };
+    const walls = wallsOf(arena);
+    if (walls.length) {
+      const posed = constrainBarrel('player', prev, player, walls, hullHeading);
+      const blocked = posed.x !== player.x || posed.y !== player.y;
+      player = { ...player, x: posed.x, y: posed.y, angle: posed.angle, hullHeading };
+      // A barrel stop is a wall bump: cancel an active dash, same as the body.
+      if (blocked && dashRemainingMs > 0) {
+        dashRemainingMs = 0;
+        player = { ...player, dashRemainingMs: 0 };
+      }
+    }
+  }
 
   // ── 3. Player fire cooldown tick (R3) ────────────────────────────────────
   player = {
@@ -289,7 +315,9 @@ export function updateArena(state, actions, dt) {
     if (player.projectileSpeedMult) {
       shot.speed = PROJECTILE_SPEED * player.projectileSpeedMult;
     }
-    newProjectiles.push(createProjectile(shot));
+    const spawned = createProjectile(shot);
+    const muzzle = muzzleWorld('player', player.x, player.y, player.angle, player.hullHeading ?? player.angle);
+    newProjectiles.push(armShotAgainstWalls(spawned, arena, { x: player.x, y: player.y }, muzzle));
     const fireMult = player.fireCooldownMult ?? 1;
     player = { ...player, fireCooldown: FIRE_COOLDOWN_MS * fireMult };
   }
@@ -430,12 +458,41 @@ export function updateArena(state, actions, dt) {
 
   // C9b: count projectiles that died on Sever Wall or arena bounds this tick
   // (not tank hits). Culled below; sfxEvents reads wallHitsThisTick.
-  const wallHitsThisTick = survivingProjectiles.filter(
+  const wallHitShots = survivingProjectiles.filter(
     p => p.dead && (p.deadReason === 'wall' || p.deadReason === 'bounds'),
-  ).length;
+  );
+  const wallHitsThisTick = wallHitShots.length;
+
+  // Breakable walls: player at max turret (any cover LV); enemy on LV3+ only.
+  const hauntLv = state.hauntLv ?? 1;
+  const wallBreaksThisTick = [];
+  let nextArena = arena;
+  let nextWalls = Array.isArray(arena.walls) ? [...arena.walls] : (arena.wall ? [arena.wall] : []);
+  for (const p of survivingProjectiles) {
+    if (!p.dead || p.deadReason !== 'wall') continue;
+    const playerBreaks = p.owner === 'player' && playerAfterHits.breaksWalls;
+    const enemyBreaks = p.owner === 'enemy' && hauntLv >= 3;
+    if (!playerBreaks && !enemyBreaks) continue;
+    const chip = chipWallsAt(nextWalls, p.x, p.y, 8);
+    if (!chip.broke) continue;
+    nextWalls = chip.walls;
+    wallBreaksThisTick.push({
+      x: chip.at.x,
+      y: chip.at.y,
+      angle: Math.atan2(p.vy ?? 0, p.vx ?? 0),
+      owner: p.owner,
+    });
+  }
+  if (wallBreaksThisTick.length) {
+    nextArena = {
+      ...arena,
+      walls: nextWalls,
+      wall: nextWalls[0],
+    };
+  }
 
   return {
-    arena,
+    arena: nextArena,
     player:      playerAfterHits,
     enemy:       enemyAfterHits,
     projectiles: liveProjectiles,
@@ -448,5 +505,7 @@ export function updateArena(state, actions, dt) {
     // Accumulate survived time (R8). dt is seconds → convert to ms.
     elapsedMs:   elapsedNext,
     wallHitsThisTick,
+    wallBreaksThisTick,
+    hauntLv,
   };
 }

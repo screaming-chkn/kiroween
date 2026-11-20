@@ -19,7 +19,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} !~ ${b}`);
 
 test('HAUNT_LEVELS table, clamp and cap', () => {
   assert.deepEqual(HAUNT_LEVELS.map((l) => [l.hp, l.shotDamage]),
-    [[220, 47], [626, 40], [890, 34], [1266, 28], [1800, 24]]);
+    [[220, 47], [626, 40], [890, 34], [1100, 26], [1800, 24]]);
   assert.deepEqual(hauntStats(9), HAUNT_LEVELS[4]);
   assert.deepEqual(hauntStats(0), HAUNT_LEVELS[0]);
   assert.equal(MAX_HAUNT_LEVEL, 5);
@@ -27,7 +27,7 @@ test('HAUNT_LEVELS table, clamp and cap', () => {
 
 test('ramp: HP rises every level, hits-to-kill rise at most 1 per level', () => {
   const hits = HAUNT_LEVELS.map((l) => Math.ceil(PLAYER_MAX_HP / l.shotDamage));
-  assert.deepEqual(hits, [3, 4, 5, 5, 6]);
+  assert.deepEqual(hits, [3, 4, 5, 6, 6]);
   for (let i = 1; i < HAUNT_LEVELS.length; i++) {
     assert.ok(HAUNT_LEVELS[i].hp > HAUNT_LEVELS[i - 1].hp);
     assert.ok(hits[i] - hits[i - 1] <= 1);

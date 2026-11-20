@@ -51,7 +51,11 @@ export function sfxEventsForTick(prev, next) {
 
   // C9b: metallic wall clank when a shot dies on Sever Wall or arena bounds.
   // One event per tick (throttle handles rapid repeats); never a tank-hit voice.
-  if ((next.wallHitsThisTick ?? 0) > 0) out.push('hitWall');
+  const breaks = (next.wallBreaksThisTick ?? []).length;
+  if (breaks > 0) out.push('wallBreak');
+  if ((next.wallHitsThisTick ?? 0) > breaks) out.push('hitWall');
+
+  if ((next.creditsGrabbedThisTick ?? 0) > 0) out.push('creditChime');
 
   return out;
 }

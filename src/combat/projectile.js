@@ -13,6 +13,7 @@
  * Exports:
  *   createProjectile(cfg)                  → Projectile
  *   stepProjectile(proj, dt, arena)        → Projectile  (dead=true at wall)
+ *   armShotAgainstWalls(proj, arena, o, m) → Projectile  (spawn centre→muzzle)
  *   hitTestCircle(proj, target, targRad)   → boolean
  */
 
@@ -22,7 +23,7 @@ import {
   PLAYER_PROJECTILE_RADIUS,
   ENEMY_PROJECTILE_RADIUS,
 } from './config.js';
-import { circleHitsWalls, wallsOf } from './obstacle.js';
+import { firstWallHit, wallsOf } from './obstacle.js';
 
 // ── createProjectile ──────────────────────────────────────────────────────────
 
@@ -71,15 +72,37 @@ export function stepProjectile(proj, dt, arena) {
   const nx = proj.x + proj.vx * dt;
   const ny = proj.y + proj.vy * dt;
 
-  // Destroy when the centre leaves the arena rectangle (R1) or hits a wall.
+  // Destroy when the swept path hits a wall or the centre leaves the arena.
+  // Swept test (prev→next) so a fast step cannot tunnel through a thin wall.
   // Tag deadReason so sfxEvents can play a metallic wall-hit (not a tank hit).
+  const walls = wallsOf(arena);
+  const hit = firstWallHit(walls, proj.x, proj.y, nx, ny, PROJECTILE_RADIUS);
+  if (hit) return { ...proj, x: hit.x, y: hit.y, dead: true, deadReason: 'wall' };
   const outOfBounds =
     nx < 0 || nx > arena.width ||
     ny < 0 || ny > arena.height;
-  const hitWall = circleHitsWalls(wallsOf(arena), nx, ny, PROJECTILE_RADIUS);
-  if (hitWall) return { ...proj, x: nx, y: ny, dead: true, deadReason: 'wall' };
   if (outOfBounds) return { ...proj, x: nx, y: ny, dead: true, deadReason: 'bounds' };
   return { ...proj, x: nx, y: ny, dead: false, deadReason: undefined };
+}
+
+/**
+ * If the segment from tank centre to muzzle is blocked, the shot dies on the
+ * wall and never appears past it. Clear paths are unchanged (spawn stays at
+ * the given origin so travel time / balance stay the same).
+ *
+ * @param {Projectile} proj
+ * @param {{ width?: number, walls?: object[], wall?: object }} arena
+ * @param {{ x:number, y:number }} origin   tank centre
+ * @param {{ x:number, y:number }} muzzle   visual muzzle tip
+ * @returns {Projectile}
+ */
+export function armShotAgainstWalls(proj, arena, origin, muzzle) {
+  if (!proj || proj.dead) return proj;
+  const walls = wallsOf(arena);
+  if (!walls.length || !origin || !muzzle) return proj;
+  const hit = firstWallHit(walls, origin.x, origin.y, muzzle.x, muzzle.y, PROJECTILE_RADIUS);
+  if (!hit) return proj;
+  return { ...proj, x: hit.x, y: hit.y, dead: true, deadReason: 'wall' };
 }
 
 // ── hitTestCircle ─────────────────────────────────────────────────────────────

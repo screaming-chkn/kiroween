@@ -76,7 +76,7 @@ test('default combat mods match identity feel', () => {
 
 test('notch labels include numbers', () => {
   assert.match(notchLabel('tracks', 4), /\+16%/);
-  assert.match(notchLabel('turret', 4), /Dmg 20/);
+  assert.match(notchLabel('turret', 4), /Dmg 20.*Breaks walls/);
   assert.match(notchLabel('loader', 0), /0\.30s|0\.3/);
   assert.match(notchLabel('armor', 2), /HP 152/);
   assert.match(notchLabel('dash', 4), /−24%|−24/);
@@ -136,6 +136,11 @@ test('enemy scale is 1 at default; rises with notch fill; LV1 table still 220', 
   const e = enemyScaleFromUpgrades(maxed);
   assert.ok(e.hpMult > 1.35 && e.hpMult < 1.5, `hpMult=${e.hpMult}`);
   assert.ok(e.damageMult > 1.2 && e.damageMult < 1.4, `dmgMult=${e.damageMult}`);
+  const spread = { ...defaultUpgradeState(), turret: 4, armor: 3, tracks: 2, loader: 2, dash: 2 };
+  const mid = enemyScaleFromUpgrades(spread);
+  assert.equal(mid.notchSum, 13);
+  assert.equal(mid.hpMult, 1);
+  assert.equal(mid.damageMult, 1);
 });
 
 
