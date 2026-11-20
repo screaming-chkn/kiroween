@@ -252,7 +252,7 @@ export function mountTankGarage(root, { onDeploy, onSeance } = {}) {
       });
       const meter = row.querySelector('.hh-ug-notches');
       meter.setAttribute('aria-valuenow', String(n));
-      row.querySelector('.hh-ug-row__value').textContent = notchLabel(slot, n);
+      row.querySelector('.hh-ug-row__value').textContent = notchLabel(slot, n, state);
     }
   }
 
@@ -262,13 +262,13 @@ export function mountTankGarage(root, { onDeploy, onSeance } = {}) {
     const h = el('h2', { text: SLOT_META[active].label });
     const flavor = el('p', { class: 'hh-ug-flavor', text: SLOT_META[active].flavor });
     const now = el('p');
-    now.innerHTML = `Now: <strong>${notchLabel(active, state[active])}</strong>`;
+    now.innerHTML = `Now: <strong>${notchLabel(active, state[active], state)}</strong>`;
     const nextN = Math.min(MAX_NOTCH, state[active] + 1);
     const nextLine = el('p');
     if (state[active] >= MAX_NOTCH) {
       nextLine.textContent = 'Bar full.';
     } else {
-      nextLine.innerHTML = `Next: <strong>${notchLabel(active, nextN)}</strong> · costs 1 credit`;
+      nextLine.innerHTML = `Next: <strong>${notchLabel(active, nextN, state)}</strong> · costs 1 credit`;
     }
     const spend = el('button', { class: 'hh-ug-spend', type: 'button' });
     spend.textContent = state[active] >= MAX_NOTCH ? 'FULL' : 'SPEND 1 CREDIT';

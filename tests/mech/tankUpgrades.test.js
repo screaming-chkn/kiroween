@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   defaultUpgradeState, normalizeUpgradeState, spendNotch, awardWin,
   creditsForNextWin, barsFull, notchLabel, combatModsFromUpgrades,
-  hitsToKill, MAX_NOTCH, SLOT_ORDER, paletteForTier,
+  enemyScaleFromUpgrades, hitsToKill, MAX_NOTCH, SLOT_ORDER, paletteForTier,
 } from '../../src/mech/tankUpgrades.js';
 import { PLAYER_PROJECTILE_DAMAGE, PLAYER_MAX_HP, FIRE_COOLDOWN_MS } from '../../src/combat/config.js';
 import { HAUNT_LEVELS } from '../../src/ui/hauntLevel.js';
@@ -75,11 +75,11 @@ test('default combat mods match identity feel', () => {
 });
 
 test('notch labels include numbers', () => {
-  assert.match(notchLabel('tracks', 4), /\+20%/);
-  assert.match(notchLabel('turret', 4), /Dmg 22/);
+  assert.match(notchLabel('tracks', 4), /\+16%/);
+  assert.match(notchLabel('turret', 4), /Dmg 20/);
   assert.match(notchLabel('loader', 0), /0\.30s|0\.3/);
-  assert.match(notchLabel('armor', 2), /HP 160/);
-  assert.match(notchLabel('dash', 4), /−32%|−32/);
+  assert.match(notchLabel('armor', 2), /HP 152/);
+  assert.match(notchLabel('dash', 4), /−24%|−24/);
 });
 
 test('palette swaps at tier 2 without redraw', () => {
@@ -112,6 +112,30 @@ test('barsFull false until every slot maxed', () => {
   const s = { ...defaultUpgradeState(), tracks: MAX_NOTCH, turret: MAX_NOTCH, loader: MAX_NOTCH, armor: MAX_NOTCH, dash: MAX_NOTCH - 1 };
   assert.equal(barsFull(s), false);
   assert.equal(barsFull({ ...s, dash: MAX_NOTCH }), true);
+});
+
+
+test('loader×turret stack cannot both max: fire CD stays near or above 1', () => {
+  const both = combatModsFromUpgrades({
+    ...defaultUpgradeState(), turret: MAX_NOTCH, loader: MAX_NOTCH,
+  });
+  const loaderOnly = combatModsFromUpgrades({
+    ...defaultUpgradeState(), loader: MAX_NOTCH,
+  });
+  assert.ok(both.fireCooldownMult >= 0.95, `stacked fireCD too fast: ${both.fireCooldownMult}`);
+  assert.ok(loaderOnly.fireCooldownMult < both.fireCooldownMult, 'pure loader should still be the fast pick');
+});
+
+test('enemy scale is 1 at default; rises with notch fill; LV1 table still 220', () => {
+  assert.equal(HAUNT_LEVELS[0].hp, 220);
+  const d = enemyScaleFromUpgrades(defaultUpgradeState());
+  assert.equal(d.hpMult, 1);
+  assert.equal(d.damageMult, 1);
+  const maxed = { ...defaultUpgradeState() };
+  for (const k of SLOT_ORDER) maxed[k] = MAX_NOTCH;
+  const e = enemyScaleFromUpgrades(maxed);
+  assert.ok(e.hpMult > 1.35 && e.hpMult < 1.5, `hpMult=${e.hpMult}`);
+  assert.ok(e.damageMult > 1.2 && e.damageMult < 1.4, `dmgMult=${e.damageMult}`);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

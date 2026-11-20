@@ -101,7 +101,19 @@ export function hauntAdvancesOn(outcome, action = null) { // eslint-disable-line
  */
 export function applyHauntPressure(enemy, level) {
   const { hp, shotDamage } = hauntStats(level);
-  return { ...enemy, hp, maxHp: hp, shotDamage };
+  // Optional tank-upgrade scale (stamped on enemy in createArena). Default 1.
+  // Does not change HAUNT_LEVELS; multiplies the table values at spawn only.
+  const hpMult = Number(enemy?.upgradeHpMult);
+  const dmgMult = Number(enemy?.upgradeDamageMult);
+  const hMul = Number.isFinite(hpMult) && hpMult > 0 ? hpMult : 1;
+  const dMul = Number.isFinite(dmgMult) && dmgMult > 0 ? dmgMult : 1;
+  const scaledHp = Math.round(hp * hMul);
+  return {
+    ...enemy,
+    hp: scaledHp,
+    maxHp: scaledHp,
+    shotDamage: Math.round(shotDamage * dMul),
+  };
 }
 
 /** Old multiplier tuning (base 1500 HP / 20 dmg × p). Kept so golden replays can rerun pre-table fights. */

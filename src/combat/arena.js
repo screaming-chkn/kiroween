@@ -151,6 +151,10 @@ export function createArena(loadoutTotals = {}, stats = {}) {
   const enemy = createEnemy({
     speedPenalty: loadoutTotals.enemySpeedPenalty ?? 0,
   });
+  // Tank upgrades: stamp scale so applyHauntPressure can stretch the haunt
+  // table without rewriting HAUNT_LEVELS (LV1 base 220 stays).
+  if (loadoutTotals.enemyHpMult != null) enemy.upgradeHpMult = loadoutTotals.enemyHpMult;
+  if (loadoutTotals.enemyDamageMult != null) enemy.upgradeDamageMult = loadoutTotals.enemyDamageMult;
 
   return {
     arena,

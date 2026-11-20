@@ -169,33 +169,33 @@ export function resetUpgradeState() {
 
 /**
  * Plain label with numbers for one notch level (what the player sees).
+ * Derived from combatModsFromUpgrades so labels stay truthful when bars
+ * interact (loader × turret antagonism).
+ *
  * @param {typeof SLOT_ORDER[number]} slot
  * @param {number} notch
+ * @param {Partial<TankUpgradeState>} [baseState]  other bars (default empty)
  * @returns {string}
  */
-export function notchLabel(slot, notch) {
+export function notchLabel(slot, notch, baseState = defaultUpgradeState()) {
   const n = Math.max(0, Math.min(MAX_NOTCH, Math.floor(Number(notch)) || 0));
+  const s = { ...normalizeUpgradeState(baseState), [slot]: n };
+  const m = combatModsFromUpgrades(s);
   switch (slot) {
     case 'tracks': {
-      const pct = n * 5; // +0..+20%
+      const pct = Math.round((m.moveSpeedMult - 1) * 100);
       return pct === 0 ? 'Speed +0%' : `Speed +${pct}%`;
     }
-    case 'turret': {
-      // Standard → Heavy: more damage, slower aim-settle via reload tax
-      const dmg = PLAYER_PROJECTILE_DAMAGE + n * 2; // 14..22
-      return `Dmg ${dmg}`;
-    }
+    case 'turret':
+      return `Dmg ${m.shotDamage}`;
     case 'loader': {
-      const mult = 1 - n * 0.06; // 1.00 .. 0.76
-      const ms = Math.round(FIRE_COOLDOWN_MS * mult);
+      const ms = Math.round(FIRE_COOLDOWN_MS * m.fireCooldownMult);
       return `Reload ${(ms / 1000).toFixed(2)}s`;
     }
-    case 'armor': {
-      const hp = PLAYER_MAX_HP + n * 10; // 140..180
-      return `HP ${hp}`;
-    }
+    case 'armor':
+      return `HP ${PLAYER_MAX_HP + m.maxHpBonus}`;
     case 'dash': {
-      const pct = n * 8; // cooldown −0..−32%
+      const pct = Math.round((1 - m.dashCooldownMult) * 100);
       return pct === 0 ? 'Dash CD −0%' : `Dash CD −${pct}%`;
     }
     default:
@@ -220,13 +220,17 @@ export function combatModsFromUpgrades(state) {
   const a = s.armor;
   const d = s.dash;
 
-  const moveSpeedMult = 1 + t * 0.05;                 // +0..+20%
-  const shotDamage = PLAYER_PROJECTILE_DAMAGE + u * 2; // 14..22
-  // Turret heaviness tax: +4% reload per turret notch; loader cuts 6% per notch.
-  const fireCooldownMult = (1 + u * 0.04) * (1 - l * 0.06);
-  const maxHpBonus = a * 10;                          // +0..+40
-  const dashCooldownMult = 1 - d * 0.08;              // −0..−32%
-  const dashDurationMult = 1 + d * 0.05;              // +0..+20% dash length
+  const moveSpeedMult = 1 + t * 0.04;                 // +0..+16%
+  // Softened turret curve (was +2 → 22). Cap stack with loader below.
+  const shotDamage = PLAYER_PROJECTILE_DAMAGE + Math.round(u * 1.5); // 14..20
+  // Turret heaviness tax: +5% reload per turret notch.
+  // Loader cut is attenuated by turret fill so heavy+fast cannot both max out
+  // (BotKing soften 2026-11-19): at full turret, loader cut is halved.
+  const loaderCut = l * 0.05 * (1 - 0.55 * (u / MAX_NOTCH));
+  const fireCooldownMult = (1 + u * 0.05) * (1 - loaderCut);
+  const maxHpBonus = a * 6;                           // +0..+24
+  const dashCooldownMult = 1 - d * 0.06;              // −0..−24%
+  const dashDurationMult = 1 + d * 0.04;              // +0..+16% dash length
 
   // Tier cushion (reused C9e silhouette, new palette in UI): small, not trivializing.
   let tierHp = 0;
@@ -245,6 +249,23 @@ export function combatModsFromUpgrades(state) {
     moveSpeedMult: moveSpeedMult * tierSpeed,
     dashDurationMult,
   };
+}
+
+/**
+ * Runtime enemy scale from upgrade fill. HAUNT_LEVELS base (LV1 220) stays;
+ * this multiplies after haunt pressure so a maxed tank does not trivialize.
+ * Default (0 notches) → 1 / 1.
+ * @param {TankUpgradeState} state
+ * @returns {{ hpMult:number, damageMult:number, notchSum:number }}
+ */
+export function enemyScaleFromUpgrades(state) {
+  const s = normalizeUpgradeState(state);
+  let notchSum = 0;
+  for (const k of SLOT_ORDER) notchSum += s[k];
+  // all-max (20) → hp ×1.40, dmg ×1.30 — cold can lose; HTK stays ≥8
+  const hpMult = 1 + notchSum * 0.02;
+  const damageMult = 1 + notchSum * 0.015;
+  return { hpMult, damageMult, notchSum };
 }
 
 /**
@@ -273,6 +294,7 @@ export function paletteForTier(tier) {
  */
 export function deployTotalsFromUpgrades(state) {
   const mods = combatModsFromUpgrades(state);
+  const enemyScale = enemyScaleFromUpgrades(state);
   return {
     weight: 69,
     capacity: 90,
@@ -282,5 +304,7 @@ export function deployTotalsFromUpgrades(state) {
     balance: 4,
     combatMods: mods,
     tankUpgrades: normalizeUpgradeState(state),
+    enemyHpMult: enemyScale.hpMult,
+    enemyDamageMult: enemyScale.damageMult,
   };
 }
