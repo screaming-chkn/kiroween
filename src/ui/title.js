@@ -49,10 +49,10 @@ const CSS = `
 @media (orientation: landscape) and (max-height: 500px){
   .hh-title{gap:6px;padding:max(6px,env(safe-area-inset-top)) 16px max(6px,env(safe-area-inset-bottom));justify-content:safe center}
   .hh-logo{font-size:clamp(18px,6.5vh,40px)}
-  .hh-pitch{font-size:clamp(11px,3.2vh,15px);max-width:42em}
-  .hh-title-go{margin-top:2px;font-size:clamp(10px,3.6vh,16px);padding:6px 18px}
-  .hh-title-garage{font-size:15px;padding:5px 14px;min-height:36px}
-  .hh-title-keys{font-size:clamp(11px,2.8vh,14px)}
+  .hh-pitch{font-size:clamp(12px,3.2vh,15px);max-width:42em}
+  .hh-title-go{margin-top:2px;font-size:clamp(12px,3.6vh,16px);padding:8px 18px;min-height:44px}
+  .hh-title-garage{font-size:15px;padding:8px 14px;min-height:44px}
+  .hh-title-keys{font-size:clamp(12px,2.8vh,14px)}
   .hh-title-lv{top:calc(4px + env(safe-area-inset-top));right:10px;font-size:13px}
 }
 @media (orientation: landscape) and (max-height: 380px){

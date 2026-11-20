@@ -23,7 +23,7 @@
 
 ## Bot B — Eggbot v2 cold pass
 - Status: **done** ~11:40 AM PT on pin `60b60c5`.
-- Report: `build-host/crew/trials/eggbot-v2/cold-passes/2026-11-19-c3-60b60c5.md`
+- Report: Eggbot cold pass (crew trials archive, 2026-11-19-c3-60b60c5)
 - Caveat: scripted/impaired aim; 0/2 wins at 7–13 s — trust harness/live human for numbers.
 - Orientation pick: **support both, landscape first (inferred)**.
 

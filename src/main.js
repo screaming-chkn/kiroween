@@ -150,6 +150,11 @@ function boot() {
   const renderer = createRenderer(canvas);
   resizeToDisplay(renderer);
   window.addEventListener('resize', () => resizeToDisplay(renderer));
+  window.addEventListener('orientationchange', () => {
+    // iOS often fires orientationchange before visualViewport settles.
+    resizeToDisplay(renderer);
+    setTimeout(() => resizeToDisplay(renderer), 120);
+  });
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => resizeToDisplay(renderer));
   }

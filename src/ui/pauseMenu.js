@@ -17,7 +17,7 @@ const CSS = `
 .hh-pause input[type=range]{flex:1;accent-color:#47FF9A;min-height:32px}
 .hh-pause .hh-hint{font-size:12px;color:#5E6B74;text-align:center}
 .hh-pause-btn{position:fixed;z-index:45;top:calc(2px + env(safe-area-inset-top));right:calc(6px + env(safe-area-inset-right));
-  width:36px;height:36px;border:1px solid #1F9E57;background:rgba(10,13,11,.6);color:#47FF9A;font:16px/1 var(--font-hud,monospace);letter-spacing:-.1em;cursor:pointer}
+  width:44px;height:44px;border:1px solid #1F9E57;background:rgba(10,13,11,.6);color:#47FF9A;font:16px/1 var(--font-hud,monospace);letter-spacing:-.1em;cursor:pointer}
 `;
 
 let styled = false;

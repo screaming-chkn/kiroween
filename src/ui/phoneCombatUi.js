@@ -206,7 +206,7 @@ export function drawWindupGlow(ctx, enemy, windupMs, cssPerWu = 1) {
 export function compactHpLayout(kind) {
   return kind === 'player'
     ? { w: 56, h: 5, offsetY: 30, showText: false }
-    : { w: 72, h: 5, offsetY: 30 + TANK_DRAW_SCALE * (TANK_SPECS.enemy.hull.L / 2 + TANK_SPECS.enemy.barrelLen / 2), showText: true, fontPx: 11 };
+    : { w: 72, h: 5, offsetY: 30 + TANK_DRAW_SCALE * (TANK_SPECS.enemy.hull.L / 2 + TANK_SPECS.enemy.barrelLen / 2), showText: true, fontPx: 12 };
 }
 
 function drawBar(ctx, kind, ent, view, fx = null) {

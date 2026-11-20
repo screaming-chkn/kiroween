@@ -1,9 +1,12 @@
 // C9g: tank vs target + rot + phone LV1 (220 HP). URL=... OUT=... node shots-hud-c9g.mjs
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const BASE = process.env.URL || 'http://127.0.0.1:8831/';
-const OUT = process.env.OUT || 'team-archive/hud-c9g';
+const HERE = dirname(fileURLToPath(import.meta.url));
+const OUT = process.env.OUT || join(HERE, 'shots-hud-c9g');
 mkdirSync(OUT, { recursive: true });
 
 const PORT = 9451;

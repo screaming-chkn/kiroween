@@ -300,7 +300,7 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Tests:** `npm test` green (includes landscapeHud).
 
 ## HUD C3 S-revision (2026-11-19 ~11:42 AM PT, build agent) — branch feat/hud-c, NOT merged
-- **Kiro used: no.** Build-agent only (0 credits). Source: Eggbot cold pass `build-host/crew/trials/eggbot-v2/cold-passes/2026-11-19-c3-60b60c5.md`.
+- **Kiro used: no.** Build-agent only (0 credits). Source: Eggbot cold pass (crew trials archive, 2026-11-19-c3-60b60c5).
 - **Shipped S fixes:** title `.hh-title-keys` brighter/larger; `TELL_CAPTION_MS` 3500→5000; Sever Wall spawn label (`severWallLabelText`, 3.5s) drawn in `combatRenderer`. Deferred M/RISKY LV1 damage soften.
 - **Tests:** `npm test` green. No HAUNT_LEVELS / balance retune.
 - **Re-shots:** slim title + LV3 sever label; prior y-check still valid (`shots-hud-c3/REVISION.md`).
@@ -356,9 +356,9 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Credits (Kiro Pro / Auto):** short confirm-only run (border already applied by build-agent). Reset 2026-12-01.
 - **Kiro authored:** confirmed neon double/inset border in `combatRenderer.js`; no code rewrite needed. Steering `.kiro/steering/hud-c7-neon-border.md` + `tank-wire-styles.md` (default wheeled).
 - **Build-agent hand:** wheeled 8x8 POP (wheels/mast/lights/glow), neon blue Fire/Dash/stick, double border, HUD crisp frames, Press Start 2P (OFL) self-host, default `TANK_STYLE=wheeled`.
-- **Tests / shots:** see team-archive/hud-c7/.
+- **Tests / shots:** see build-review / hud-c7 archive.
 
 ## C8 HUD polish — thin tank + full frame + spacing (2026-11-19 ~3:20 PM PT) — branch feat/hud-c, NOT merged
 - **Kiro used:** steering `.kiro/steering/hud-c8-polish.md` (hand + short Auto confirm if run). Prefer Auto not Sonnet.
-- **Build-agent hand:** `tankWire.js` wheeled thin/dashed/less bloom; `combatRenderer.js` 4-side neon + corner brackets; `HUD_SPACE=8` wired through taunt/meters/touch edges; `RECIPES.explode` single laugh + one echo; preview OfflineAudio match in `team-archive/hud-c8/`.
-- **Tests / shots:** see `team-archive/hud-c8/`.
+- **Build-agent hand:** `tankWire.js` wheeled thin/dashed/less bloom; `combatRenderer.js` 4-side neon + corner brackets; `HUD_SPACE=8` wired through taunt/meters/touch edges; `RECIPES.explode` single laugh + one echo; preview OfflineAudio match in build-review / hud-c8 archive.
+- **Tests / shots:** see build-review / hud-c8 archive.

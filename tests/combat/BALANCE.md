@@ -98,7 +98,7 @@
 
 ## Human profiles (LV1 C9f: half HP; medians ~15–16 s; win rates higher)
 
-> **C9f (2026-11-19 4:40 PT):** LV1 enemy HP 440→220 (owner: ~50% fewer hits). Human-profile LV1 row + baseline LV1 median refreshed from 200 seeds × 16 builds harness (`team-archive/hud-c9f/LV1-HARNESS.txt`). LV2–5 rows still from prior 200-seed run; re-run `npm run test:balance:full` when convenient. Assertion bands in `balance.test.js` widened for shorter fights / higher wins.
+> **C9f (2026-11-19 4:40 PT):** LV1 enemy HP 440→220 (owner: ~50% fewer hits). Human-profile LV1 row + baseline LV1 median refreshed from 200 seeds × 16 builds harness (hud-c9f LV1-HARNESS archive). LV2–5 rows still from prior 200-seed run; re-run `npm run test:balance:full` when convenient. Assertion bands in `balance.test.js` widened for shorter fights / higher wins.
 
 
 Harness-only player models (`HUMAN_PROFILES` in `balanceCore.mjs`). Both run the baseline policy (lead aim, sticky lapses, random dashes) plus:

@@ -1,9 +1,12 @@
 // Layout C3 preview shots + y-check. URL=... node shots-hud-c3.mjs
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const URL_ = process.env.URL || 'http://127.0.0.1:8811/';
-const OUT = 'build-host/kiroween/build-review/shots-hud-c3';
+const HERE = dirname(fileURLToPath(import.meta.url)) + '/';
+const OUT = process.env.OUT || join(HERE, 'shots-hud-c3');
 mkdirSync(OUT, { recursive: true });
 writeFileSync(`${OUT}/y-measurements.md`,
   '# C3 HUD y-check\n\nAll values from `globalThis.__HH_HUD_Y__` (canvas px; `scale` = canvas/CSS).\n'
