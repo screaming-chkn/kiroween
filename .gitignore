@@ -2,3 +2,6 @@ node_modules/
 deploy/
 .DS_Store
 *.mp4
+
+# Close-the-Loop Guard generated next-run prompt
+.kiro/NEXT-PROMPT.md

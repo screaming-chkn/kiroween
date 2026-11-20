@@ -385,6 +385,15 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 
 ## Séance Ritual Chain film — live Auto tick (2026-11-19 ~3:33 PM PT) — branch kiro-seance-film
 - **Kiro used:** headless `kiro-cli` v3 Auto, `--trust-tools=fs_read,fs_write` only. Prompt: flip one checkbox in `.kiro/specs/13-hud-meters/tasks.md` (demo tick, then reverted).
-- **Proof:** `seance-on-spec-save` PostFileSave fired → `.kiro/hook-runs.log` line `2026-11-19T23:33:01.375Z ... exit=0 ms=147`. SÉANCE counts 207→208 then reverted to 207. Film + stills: `team-archive/seance-film/` (`seance-ritual-chain.mp4`).
+- **Proof:** `seance-on-spec-save` PostFileSave fired → `.kiro/hook-runs.log` line `2026-11-19T23:33:01.375Z ... exit=0 ms=147`. SÉANCE counts 207→208 then reverted to 207. Film + stills: build-review / seance-film archive (`seance-ritual-chain.mp4`).
 - **Credits:** `/usage` before 295.02/877; after readout still 295.02 (short run / meter lag). No credit purchase.
 - **Honesty:** LIVE agent save → hook. No IDE/MCP. Hook stdout not claimed as same-turn agent feedback.
+
+## Close-the-Loop Guard — slim MVP (2026-11-19 ~3:51–3:53 PM PT) — branch kiro-close-loop-guard, NOT merged
+- **Run id:** GuardProbe.
+- **Command:** `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write` with `deploy/kiro-proof/close-loop-guard/runGuardProbe-prompt.txt` → `runGuardProbe-transcript.txt` (deploy/ is gitignored; copies under build-review archive and `build-review/CLOSE-LOOP-GUARD.md`).
+- **Credits (Pro / Auto):** baseline after Séance film was **295.02 / 877**. This probe was a short Auto run (edit + Stop agent re-loop). Exact after-meter not re-read in-session (`/usage` is a client slash command; headless chat treats it as model text). No credits bought; no plan change; no IDE.
+- **Kiro authored:** `deploy/kiro-proof/close-loop-guard/PROBE.md` (`BEFORE` → `AFTER` only).
+- **Hooks:** `close-loop-probe-save` PostFileSave exit=0; `Stop` fired (`event=Stop`); **Stop agent-action same-turn YES** (second loop read `hook-runs.log`). Initial Stop command logger exit=1 (bad `sh -c` quoting) — fixed by build-agent to `scripts/kiro-close-loop-on-stop.mjs`.
+- **Build-agent hand:** `.kiro/hooks/close-loop-on-stop.json` (agent + command), `close-loop-probe-save.json`, `scripts/kiro-close-loop-on-stop.mjs`, README hook list, `build-review/CLOSE-LOOP-GUARD.md`, proof pack under build-review archive.
+- **Tests:** `npm test` green. No HUD/combat/gameplay changes. No merge.

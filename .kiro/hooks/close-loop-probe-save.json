@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Close-loop probe marker save",
+      "description": "Log when the close-loop probe marker is saved (cheap; no tests).",
+      "trigger": "PostFileSave",
+      "matcher": "deploy/kiro-proof/close-loop-guard/PROBE\\.md$",
+      "action": {
+        "type": "command",
+        "command": "node scripts/kiro-hook-run.mjs close-loop-probe-save -- sh -c 'echo probe-save-ok && test -f deploy/kiro-proof/close-loop-guard/PROBE.md'"
+      },
+      "timeout": 15
+    }
+  ]
+}
