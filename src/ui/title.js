@@ -63,6 +63,11 @@ const CSS = `
   .hh-pitch{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:34em;margin:0;line-height:1.3}
   .hh-title-go{margin-top:4px}
 }
+/* Ultra-short phone landscape (≈390): one-line blurb so it never kisses the CTA. */
+@media (orientation: landscape) and (max-height: 400px){
+  .hh-pitch{-webkit-line-clamp:1;max-width:40em}
+  .hh-title-garage{min-height:40px;padding:6px 14px}
+}
 @media (orientation: landscape) and (max-height: 380px){
   .hh-pitch{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 }
