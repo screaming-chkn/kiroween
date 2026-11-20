@@ -1,0 +1,80 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<title>C9g vs target-iso</title>
+<style>
+  html,body{margin:0;background:#000;color:#47FF9A;font:12px/1.3 ui-monospace,monospace}
+  #wrap{display:flex;flex-direction:column;gap:14px;padding:14px}
+  .row{display:flex;gap:10px;align-items:center}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:4px}
+  canvas,img{background:#000;border:1px solid #1a3a28}
+  img{object-fit:contain}
+</style>
+</head><body>
+<div id="wrap"></div>
+<script type="module">
+import { drawTank, setTankStyle, setTankPalette, setEdgeStyle, TILT } from '../src/ui/tankWire.js?v=c9g2';
+setTankStyle('wheeled');
+setTankPalette('mono-green');
+setEdgeStyle('dashed-tech');
+
+// Target iso: nose upper-left, right flank visible. Match angle & panel size.
+const PW = 584, PH = 392; // half of 1168x784 target
+const ang = -2.45; // ~ -140° — barrel toward upper-left
+const wrap = document.getElementById('wrap');
+
+function makeRow(name, kind, imgSrc, label) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.dataset.name = name;
+  const left = document.createElement('div');
+  left.className = 'cell';
+  const img = document.createElement('img');
+  img.src = imgSrc;
+  img.width = PW; img.height = PH;
+  const ll = document.createElement('div');
+  ll.textContent = label;
+  left.appendChild(img); left.appendChild(ll);
+  const right = document.createElement('div');
+  right.className = 'cell';
+  const c = document.createElement('canvas');
+  c.width = PW; c.height = PH;
+  c.dataset.name = name;
+  const rl = document.createElement('div');
+  rl.textContent = 'c9g ' + kind;
+  right.appendChild(c); right.appendChild(rl);
+  row.appendChild(left); row.appendChild(right);
+  wrap.appendChild(row);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, PW, PH);
+  // Scale so tank fills similar fraction of panel as target
+  ctx.save();
+  ctx.translate(PW / 2, PH / 2 + 18);
+  ctx.scale(3.1, 3.1);
+  ctx.translate(-PW / 2, -(PH / 2 + 18));
+  drawTank(ctx, kind, PW / 2, PH / 2 + 20, ang, ang + 0.08, 0);
+  ctx.restore();
+}
+
+makeRow('vs-target-iso', 'player', '_refs2/target-iso-green.jpg', 'target-iso-green');
+makeRow('vs-target-side', 'player', '_refs2/target-side-green.jpg', 'target-side-green (ang≈0)');
+
+// side row uses near-side angle
+{
+  const row = wrap.querySelector('[data-name="vs-target-side"]');
+  const c = row.querySelector('canvas');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, PW, PH);
+  ctx.save();
+  ctx.translate(PW / 2, PH / 2 + 18);
+  ctx.scale(2.5, 2.5);
+  ctx.translate(-PW / 2, -(PH / 2 + 18));
+  drawTank(ctx, 'player', PW / 2, PH / 2 + 24, 0.05, 0.12, 0);
+  ctx.restore();
+}
+
+document.title = 'C9g vs target ready';
+</script>
+</body></html>

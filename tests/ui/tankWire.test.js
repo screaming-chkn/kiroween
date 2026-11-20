@@ -104,9 +104,12 @@ test('turret front direction matches turretAngle', () => {
   } finally { setTankStyle(prev); }
 });
 
-test('enemy has 2 barrels, player 1', () => {
-  assert.equal(tankGeometry('enemy', 0, 0, 0, 0).barrels.length, 2);
+test('wheeled C9g: player and enemy both single barrel (target family)', () => {
+  // Collision TANK_SPECS.enemy.twin stays true; visual wheeled style is single.
+  assert.equal(tankGeometry('enemy', 0, 0, 0, 0).barrels.length, 1);
   assert.equal(tankGeometry('player', 0, 0, 0, 0).barrels.length, 1);
+  assert.equal(visualSpecs('enemy').twin, false);
+  assert.equal(visualSpecs('player').twin, false);
 });
 
 test('updateHullHeading: move right -> 0', () => {
