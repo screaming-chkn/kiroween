@@ -81,7 +81,7 @@
 
 | LV | Win rate % | Median s | Max build dev pp | Timeouts |
 |---:|---:|---:|---:|---:|
-| 1 | 97.9 | 21.0 | 2.9 | 0 |
+| 1 | 100.0 | 10.9 | 2.9 | 0 |
 | 2 | 98.5 | 29.4 | 2.5 | 0 |
 | 3 | 93.9 | 41.7 | 5.9 | 0 |
 | 4 | 73.1 | 57.6 | 12.6 | 0 |
@@ -96,7 +96,10 @@
 | 4 | 73.1 | 95.9 | 0.0 | 99.3 | +22.8 | -73.1 | -3.4 |
 | 5 | 50.2 | 63.3 | 0.0 | 85.0 | +13.1 | -50.2 | -21.7 |
 
-## Human profiles (LV1 target: ~30 s; first-timer wins ~1/3, medium ~2/3)
+## Human profiles (LV1 C9f: half HP; medians ~15–16 s; win rates higher)
+
+> **C9f (2026-11-19 4:40 PT):** LV1 enemy HP 440→220 (owner: ~50% fewer hits). Human-profile LV1 row + baseline LV1 median refreshed from 200 seeds × 16 builds harness (`team-archive/hud-c9f/LV1-HARNESS.txt`). LV2–5 rows still from prior 200-seed run; re-run `npm run test:balance:full` when convenient. Assertion bands in `balance.test.js` widened for shorter fights / higher wins.
+
 
 Harness-only player models (`HUMAN_PROFILES` in `balanceCore.mjs`). Both run the baseline policy (lead aim, sticky lapses, random dashes) plus:
 
@@ -114,7 +117,7 @@ Harness-only player models (`HUMAN_PROFILES` in `balanceCore.mjs`). Both run the
 
 | LV | firstTimer win % | firstTimer median s | medium win % | medium median s | baseline win % | baseline median s |
 |---:|---:|---:|---:|---:|---:|---:|
-| 1 | 33.4 | 25.8 | 69.2 | 27.7 | 97.9 | 21.0 |
+| 1 | 84.8 | 16.2 | 96.3 | 15.2 | 100.0 | 10.9 |
 | 2 | 23.8 | 34.3 | 64.8 | 39.1 | 98.5 | 29.4 |
 | 3 | 7.4 | 39.5 | 39.3 | 51.8 | 93.9 | 41.7 |
 | 4 | 0.6 | 43.2 | 13.8 | 59.5 | 73.1 | 57.6 |

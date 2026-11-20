@@ -19,7 +19,7 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} !~ ${b}`);
 
 test('HAUNT_LEVELS table, clamp and cap', () => {
   assert.deepEqual(HAUNT_LEVELS.map((l) => [l.hp, l.shotDamage]),
-    [[440, 47], [626, 40], [890, 34], [1266, 28], [1800, 24]]);
+    [[220, 47], [626, 40], [890, 34], [1266, 28], [1800, 24]]);
   assert.deepEqual(hauntStats(9), HAUNT_LEVELS[4]);
   assert.deepEqual(hauntStats(0), HAUNT_LEVELS[0]);
   assert.equal(MAX_HAUNT_LEVEL, 5);
@@ -78,7 +78,7 @@ test('applyPressure takes an explicit multiplier', () => {
 test('applyHauntPressure sets hp, maxHp, shotDamage from the table on a copy', () => {
   const e = { x: 1, y: 2, hp: 1500, maxHp: 1500 };
   const a = applyHauntPressure(e, 1);
-  assert.equal(a.hp, 440); assert.equal(a.maxHp, 440); assert.equal(a.shotDamage, 47);
+  assert.equal(a.hp, 220); assert.equal(a.maxHp, 220); assert.equal(a.shotDamage, 47);
   assert.equal(a.x, 1);
   assert.equal(e.hp, 1500); assert.equal(e.shotDamage, undefined);
   const c = applyHauntPressure(e, 5);

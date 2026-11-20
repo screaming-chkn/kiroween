@@ -33,18 +33,17 @@ function clampLevel(n) {
 /**
  * Enemy stats per HAUNT LV (index 0 = LV1). The one table to edit for difficulty.
  *
- * LV1 is tuned to an owner target (2026-11-19): about a 30 s duel that a
- * first-timer wins about 1/3 of the time and a player who has learned the tell
- * wins about 2/3. The enemy is fragile (440 HP, ~25 of your shots) but its
- * shot hurts (47: three hits kill a 140 HP mech), so dodging the red ring is
- * what wins. Profiles and results: tests/combat/BALANCE.md.
+ * LV1 retuned 2026-11-19 4:40 PT (owner): half the hits-to-kill vs the prior
+ * 440 HP table. Enemy HP 220 (~13 Hatchet shots at 18 dmg / ~16 at base 14);
+ * shotDamage stays 47 (three hits still kill a 140 HP mech). First-game feel
+ * only — LV2+ unchanged. Profiles: tests/combat/BALANCE.md.
  *
  * LV2–LV5 move geometrically to the unchanged LV5 cap (1800 / 24): HP x1.42
  * and damage x0.85 per level. The enemy gets tankier and the duel longer, while
  * single hits sting less: hits to kill a 140 HP mech run 3 / 4 / 5 / 5 / 6.
  */
 export const HAUNT_LEVELS = Object.freeze([
-  Object.freeze({ hp: 440,  shotDamage: 47 }),  // LV1: tuned to the owner target
+  Object.freeze({ hp: 220,  shotDamage: 47 }),  // LV1: half hits-to-kill (owner 2026-11-19 4:40)
   Object.freeze({ hp: 626,  shotDamage: 40 }),
   Object.freeze({ hp: 890,  shotDamage: 34 }),
   Object.freeze({ hp: 1266, shotDamage: 28 }),
