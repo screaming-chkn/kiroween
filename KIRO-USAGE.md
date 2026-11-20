@@ -382,3 +382,9 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Build-agent hand (not Kiro-authored):** swept `firstWallHit`, `muzzle.js` solid barrel + stored `hullHeading`, breakable walls, 10-coin despawn + chime, LABEL-TRUTH "Breaks walls", LV4 1100/26 and delayed enemy scale, 200-seed harness, shots, tests. `npm test` green; FPS 61; 0 crossings / 0 barrel overlaps / 0 timeouts on 200 seeds.
 
 - **Tests / shots:** see `walls-final/`. Merge held.
+
+## Séance Ritual Chain film — live Auto tick (2026-11-19 ~3:33 PM PT) — branch kiro-seance-film
+- **Kiro used:** headless `kiro-cli` v3 Auto, `--trust-tools=fs_read,fs_write` only. Prompt: flip one checkbox in `.kiro/specs/13-hud-meters/tasks.md` (demo tick, then reverted).
+- **Proof:** `seance-on-spec-save` PostFileSave fired → `.kiro/hook-runs.log` line `2026-11-19T23:33:01.375Z ... exit=0 ms=147`. SÉANCE counts 207→208 then reverted to 207. Film + stills: `team-archive/seance-film/` (`seance-ritual-chain.mp4`).
+- **Credits:** `/usage` before 295.02/877; after readout still 295.02 (short run / meter lag). No credit purchase.
+- **Honesty:** LIVE agent save → hook. No IDE/MCP. Hook stdout not claimed as same-turn agent feedback.
