@@ -65,7 +65,7 @@ const CSS = `
 }
 /* Ultra-short phone landscape (≈390): one-line blurb so it never kisses the CTA. */
 @media (orientation: landscape) and (max-height: 400px){
-  .hh-pitch{-webkit-line-clamp:1;max-width:40em}
+  .hh-pitch{-webkit-line-clamp:1;max-width:40em;margin-top:4px}
   .hh-title-garage{min-height:40px;padding:6px 14px}
 }
 @media (orientation: landscape) and (max-height: 380px){
