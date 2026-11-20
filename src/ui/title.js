@@ -107,6 +107,17 @@ export function titleChoice({ type, key, onGarageButton } = {}) {
  */
 export function syncTitleToVisualViewport(el) {
   if (!el || typeof window === 'undefined') return;
+  // Inside the CSS-landscape shell the physical visualViewport size is wrong —
+  // fill the logical shell instead so the title isn't letterboxed.
+  if (typeof el.closest === 'function' && el.closest('#hh-shell.hh-css-landscape')) {
+    el.style.top = '0';
+    el.style.left = '0';
+    el.style.width = '100%';
+    el.style.height = '100%';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    return;
+  }
   const vv = window.visualViewport;
   if (!vv) return;
   el.style.top = `${vv.offsetTop}px`;
@@ -136,7 +147,7 @@ export function mountTitle(root, { onDeploy, onStart, onGarage, touchUi = false,
     ? 'LEFT STICK move · RIGHT PAD aim + fire · DASH dodge · ❚❚ pause'
     : 'WASD move · MOUSE aim · CLICK fire · SHIFT dash · ESC pause · G garage';
   const pathNote = touchUi
-    ? 'Phone: on-screen controls. Landscape required.'
+    ? 'Phone: on-screen controls. Works in portrait too.'
     : 'Desktop: keyboard + mouse. Phone: on-screen controls.';
   const goLabel = `${touchUi ? 'TAP' : 'PRESS'} TO DEPLOY`;
   el.innerHTML = `

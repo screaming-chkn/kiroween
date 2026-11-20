@@ -81,5 +81,28 @@ test('syncTitleToVisualViewport no-ops without visualViewport', () => {
   }
 });
 
+
+test('syncTitleToVisualViewport fills the CSS-landscape shell', () => {
+  const styles = {};
+  const el = {
+    style: styles,
+    closest: (sel) => (sel === '#hh-shell.hh-css-landscape' ? {} : null),
+  };
+  const prev = globalThis.window;
+  globalThis.window = {
+    visualViewport: { offsetTop: 12, offsetLeft: 3, width: 390, height: 844 },
+  };
+  try {
+    syncTitleToVisualViewport(el);
+    assert.equal(styles.top, '0');
+    assert.equal(styles.left, '0');
+    assert.equal(styles.width, '100%');
+    assert.equal(styles.height, '100%');
+  } finally {
+    if (prev === undefined) delete globalThis.window;
+    else globalThis.window = prev;
+  }
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

@@ -96,10 +96,10 @@ const STYLE_ID = 'hh-touch-style';
  * Mount the touch overlay.
  *
  * @param {HTMLElement} root
- * @param {{ getViewport: () => { width: number, height: number } }} opts
+ * @param {{ getViewport: () => { width: number, height: number }, mapPointer?: (x: number, y: number) => { x: number, y: number } }} opts
  * @returns {{ destroy: () => void, sample: () => any, controller: any, setActive: (on: boolean) => void, setDashCooldown: (remainingMs: number, baseMs: number) => void }}
  */
-export function mountTouchControls(root, { getViewport }) {
+export function mountTouchControls(root, { getViewport, mapPointer }) {
   if (!document.getElementById(STYLE_ID)) {
     const style = document.createElement('style');
     style.id = STYLE_ID;
@@ -190,27 +190,32 @@ export function mountTouchControls(root, { getViewport }) {
   }
 
   // ── Pointer handlers ─────────────────────────────────────────────────────
+  function mappedEvent(e) {
+    if (typeof mapPointer !== 'function') return e;
+    const p = mapPointer(e.clientX, e.clientY);
+    return { pointerId: e.pointerId, clientX: p.x, clientY: p.y };
+  }
   function down(e) {
     e.preventDefault();
     if (overlay.setPointerCapture) {
       try { overlay.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
     }
-    controller.onPointerDown(e);
+    controller.onPointerDown(mappedEvent(e));
     layout();
   }
   function move(e) {
     e.preventDefault();
-    controller.onPointerMove(e);
+    controller.onPointerMove(mappedEvent(e));
     layout();
   }
   function up(e) {
     e.preventDefault();
-    controller.onPointerUp(e);
+    controller.onPointerUp(mappedEvent(e));
     layout();
   }
   function cancel(e) {
     e.preventDefault();
-    controller.onPointerCancel(e);
+    controller.onPointerCancel(mappedEvent(e));
     layout();
   }
   // Only cancel touches the browser says are cancelable: calling
@@ -228,6 +233,11 @@ export function mountTouchControls(root, { getViewport }) {
 
   const onResize = () => layout();
   window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onResize);
+    window.visualViewport.addEventListener('scroll', onResize);
+  }
   layout();
 
   return {
@@ -256,6 +266,11 @@ export function mountTouchControls(root, { getViewport }) {
       overlay.removeEventListener('touchstart', stopTouch);
       overlay.removeEventListener('touchmove', stopTouch);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', onResize);
+        window.visualViewport.removeEventListener('scroll', onResize);
+      }
       overlay.remove();
       probe.remove();
     },

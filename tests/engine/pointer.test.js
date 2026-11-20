@@ -6,7 +6,7 @@
  *   node tests/engine/pointer.test.js
  */
 import assert from 'node:assert/strict';
-import { clientToCanvas, clientToCanvasEl } from '../../src/engine/pointer.js';
+import { clientToCanvas, clientToCanvasEl, clientToCanvasLayout } from '../../src/engine/pointer.js';
 import { createInputState } from '../../src/engine/input.js';
 import { buildPlayerActions } from '../../src/combat/actions.js';
 import { createCamera, worldToScreen } from '../../src/engine/camera.js';
@@ -70,6 +70,23 @@ for (const dpr of [1, 1.5, 2]) {
 test('degenerate zero-size rect falls back to scale 1', () => {
   const p = clientToCanvas(10, 20, { left: 0, top: 0, width: 0, height: 0 }, 0, 0);
   assert.deepEqual(p, { x: 10, y: 20 });
+});
+
+
+test('clientToCanvasLayout maps logical CSS px without getBoundingClientRect', () => {
+  const c = {
+    width: 1688, height: 780,
+    clientWidth: 844, clientHeight: 390,
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 390, height: 844 }), // post-transform AABB (wrong)
+  };
+  const p = clientToCanvasLayout(422, 195, c);
+  near(p.x, 422 * 2); near(p.y, 195 * 2);
+});
+
+test('clientToCanvasLayout falls back to backing store when client size is 0', () => {
+  const c = { width: 100, height: 50, clientWidth: 0, clientHeight: 0 };
+  const p = clientToCanvasLayout(10, 5, c);
+  near(p.x, 10); near(p.y, 5);
 });
 
 console.log(`\n${passed + failed} tests — ${passed} passed, ${failed} failed\n`);

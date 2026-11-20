@@ -1,27 +1,22 @@
 /**
- * src/ui/rotateGate.js — portrait phones must rotate to landscape before play.
+ * src/ui/rotateGate.js — force a landscape play surface on portrait phones.
  *
- * iOS Safari cannot lock orientation, so a full-screen overlay blocks input
- * until the device is actually landscape. Android (and other browsers that
- * expose screen.orientation.lock) may flip after a user gesture; lock errors
- * are swallowed. Desktop (no touch UI) never sees the gate.
+ * iOS Safari and the X in-app browser cannot lock orientation. Instead of a
+ * blocking "rotate" overlay, touch + portrait applies a CSS rotate(90deg) shell
+ * so the game lays out as landscape, and pointer coords are remapped into that
+ * logical space. Native landscape and desktop are unchanged.
  */
 
 const CSS = `
-.hh-rotate-gate{position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  width:100%;height:100%;height:100dvh;height:100svh;box-sizing:border-box;
-  background:radial-gradient(ellipse at 50% 45%,#10201a 0%,#0A0D0B 62%,#050706 100%);color:var(--color-bone,#E8E2D0);
-  font-family:var(--font-display,'VT323',monospace);text-align:center;
-  padding:max(16px,env(safe-area-inset-top)) 24px max(16px,env(safe-area-inset-bottom));
-  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer}
-.hh-rotate-gate[hidden]{display:none!important}
-.hh-rotate-gate::before{content:"";position:absolute;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
-.hh-rotate-gate::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px 40px rgba(0,0,0,.85)}
-.hh-rotate-gate h2{position:relative;z-index:1;margin:0;font-weight:400;letter-spacing:.08em;line-height:1.1;
-  font-size:clamp(22px,7vw,40px);color:#47FF9A;text-shadow:0 0 6px #20B05C,0 0 22px rgba(57,255,136,.55)}
-.hh-rotate-gate p{position:relative;z-index:1;margin:0;max-width:22em;line-height:1.4;
-  font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:clamp(15px,3.4vw,18px);color:#C8D0C8;letter-spacing:.04em}
+#hh-shell{position:fixed;inset:0;width:100%;height:100%;height:100dvh;height:100svh;overflow:hidden;touch-action:manipulation}
+#hh-shell.hh-css-landscape{right:auto;bottom:auto;transform:rotate(90deg);transform-origin:top left}
+#hh-shell #game-canvas{display:block;width:100%;height:100%}
+.hh-rotate-hint{position:absolute;z-index:50;left:50%;bottom:10px;transform:translateX(-50%);
+  margin:0;padding:6px 10px;border-radius:4px;pointer-events:none;
+  font-family:var(--font-hud,'Share Tech Mono',monospace);font-size:12px;letter-spacing:.04em;
+  color:#C8D0C8;background:rgba(10,13,11,.72);border:1px solid rgba(57,255,136,.35);
+  opacity:0;transition:opacity .25s ease}
+.hh-rotate-hint[data-show="1"]{opacity:1}
 `;
 
 let styled = false;
@@ -29,6 +24,7 @@ function injectCss() {
   if (styled) return;
   styled = true;
   const st = document.createElement('style');
+  st.id = 'hh-css-landscape-style';
   st.textContent = CSS;
   document.head.appendChild(st);
 }
@@ -63,15 +59,25 @@ export function isPortraitViewport({
 }
 
 /**
- * Show the rotate overlay only on a touch-UI device that is in portrait.
- * Desktop (fine pointer, no narrow touch) never sees it.
+ * Apply the CSS-landscape shell only on a touch-UI device that is in portrait.
+ * Desktop never forces it. Kept as shouldShowRotateGate for older call sites.
  *
  * @param {{ touchUi?: boolean, width?: number, height?: number, orientationType?: string, windowOrientation?: number }} info
  * @returns {boolean}
  */
-export function shouldShowRotateGate({ touchUi = false, ...viewport } = {}) {
-  return !!touchUi && isPortraitViewport(viewport);
+export function shouldForceCssLandscape({ touchUi = false, ...viewport } = {}) {
+  if (!touchUi) return false;
+  // Size wins when the aspect is clear. Preferring orientation.type here caused
+  // a double-rotate on native landscape when the API lagged (or in automation).
+  const { width, height } = viewport;
+  if (typeof width === 'number' && typeof height === 'number' && width > 0 && height > 0 && width !== height) {
+    return height > width;
+  }
+  return isPortraitViewport(viewport);
 }
+
+/** @deprecated use shouldForceCssLandscape — name kept so older tests/docs still resolve */
+export const shouldShowRotateGate = shouldForceCssLandscape;
 
 /**
  * Ask the browser to lock landscape after a user gesture. Swallows rejections
@@ -97,74 +103,179 @@ export async function tryLockLandscape(orientation) {
   return false;
 }
 
-function syncToVisualViewport(el) {
-  if (!el || typeof window === 'undefined') return;
-  const vv = window.visualViewport;
-  if (!vv) return;
-  el.style.top = `${vv.offsetTop}px`;
-  el.style.left = `${vv.offsetLeft}px`;
-  el.style.width = `${vv.width}px`;
-  el.style.height = `${vv.height}px`;
-  el.style.right = 'auto';
-  el.style.bottom = 'auto';
+/**
+ * Physical client (CSS px) → logical landscape coords inside a
+ * rotate(90deg) shell with transform-origin top left and
+ * left = offsetLeft + physW, top = offsetTop.
+ *
+ * Inverse of local (lx,ly) → screen (offsetLeft+physW - ly, offsetTop + lx).
+ *
+ * @param {number} clientX
+ * @param {number} clientY
+ * @param {{ physW: number, offsetLeft?: number, offsetTop?: number }} box
+ * @returns {{ x: number, y: number }}
+ */
+export function remapClientForCssLandscape(clientX, clientY, { physW, offsetLeft = 0, offsetTop = 0 }) {
+  const w = Number(physW);
+  const ol = Number(offsetLeft) || 0;
+  const ot = Number(offsetTop) || 0;
+  if (!(w > 0)) return { x: clientX, y: clientY };
+  return {
+    x: clientY - ot,
+    y: (ol + w) - clientX,
+  };
 }
 
 /**
- * Mount the rotate gate. Hidden on desktop and in landscape. A tap on the
- * overlay tries orientation.lock (Android) but only hides when the viewport
- * is actually landscape.
+ * Logical size of the CSS-landscape shell for a physical viewport.
+ * width = physical height, height = physical width.
  *
- * @param {HTMLElement} root
- * @param {{ isTouchUi?: boolean|Function, onChange?: (visible: boolean) => void, lock?: Function }} [opts]
- * @returns {{ destroy: Function, sync: Function, el: HTMLElement }}
+ * @param {number} physW
+ * @param {number} physH
+ * @returns {{ width: number, height: number }}
  */
-export function mountRotateGate(root, { isTouchUi = false, onChange, lock = tryLockLandscape } = {}) {
-  injectCss();
-  const el = document.createElement('div');
-  el.className = 'hh-rotate-gate';
-  el.hidden = true;
-  el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', 'Rotate your phone to landscape');
-  el.innerHTML = `
-    <h2>ROTATE YOUR PHONE</h2>
-    <p>Landscape required to play.</p>`;
-  root.appendChild(el);
+export function cssLandscapeSize(physW, physH) {
+  return { width: physH, height: physW };
+}
 
-  let lastVisible = null;
+/**
+ * Read the physical visible viewport (prefers visualViewport).
+ * @returns {{ width: number, height: number, offsetLeft: number, offsetTop: number }}
+ */
+export function readPhysicalViewport() {
+  if (typeof window === 'undefined') {
+    return { width: 0, height: 0, offsetLeft: 0, offsetTop: 0 };
+  }
+  const vv = window.visualViewport;
+  if (vv && vv.width > 0 && vv.height > 0) {
+    return {
+      width: vv.width,
+      height: vv.height,
+      offsetLeft: vv.offsetLeft || 0,
+      offsetTop: vv.offsetTop || 0,
+    };
+  }
+  return {
+    width: window.innerWidth || 0,
+    height: window.innerHeight || 0,
+    offsetLeft: 0,
+    offsetTop: 0,
+  };
+}
+
+/**
+ * Ensure a #hh-shell wraps the canvas (and becomes the mount root for UI).
+ * Moves #game-canvas into the shell when needed. Idempotent.
+ *
+ * @param {HTMLElement} [body]
+ * @returns {HTMLElement}
+ */
+export function ensureGameShell(body = typeof document !== 'undefined' ? document.body : null) {
+  injectCss();
+  if (!body) throw new Error('ensureGameShell: no document body');
+  let shell = body.querySelector('#hh-shell');
+  if (!shell) {
+    shell = document.createElement('div');
+    shell.id = 'hh-shell';
+    const canvas = body.querySelector('#game-canvas');
+    if (canvas) {
+      body.insertBefore(shell, canvas);
+      shell.appendChild(canvas);
+    } else {
+      body.appendChild(shell);
+    }
+  }
+  return shell;
+}
+
+/**
+ * Mount the CSS-landscape controller on an existing #hh-shell.
+ * Does not block input. Optional tiny hint when forced.
+ *
+ * @param {HTMLElement} shell
+ * @param {{ isTouchUi?: boolean|Function, onChange?: (active: boolean) => void, showHint?: boolean }} [opts]
+ * @returns {{
+ *   destroy: Function,
+ *   sync: Function,
+ *   active: () => boolean,
+ *   logicalViewport: () => { width: number, height: number },
+ *   physicalViewport: () => { width: number, height: number, offsetLeft: number, offsetTop: number },
+ *   remapClient: (clientX: number, clientY: number) => { x: number, y: number },
+ *   el: HTMLElement,
+ * }}
+ */
+export function mountCssLandscape(shell, { isTouchUi = false, onChange, showHint = false } = {}) {
+  injectCss();
+  let hint = null;
+  if (showHint) {
+    hint = document.createElement('p');
+    hint.className = 'hh-rotate-hint';
+    hint.textContent = 'Rotate for native landscape';
+    hint.setAttribute('aria-hidden', 'true');
+    shell.appendChild(hint);
+  }
+
+  let lastActive = null;
+  let hintTimer = 0;
 
   function readViewport() {
     const touchUi = typeof isTouchUi === 'function' ? !!isTouchUi() : !!isTouchUi;
-    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
-    const width = (vv && vv.width) || (typeof window !== 'undefined' ? window.innerWidth : 0);
-    const height = (vv && vv.height) || (typeof window !== 'undefined' ? window.innerHeight : 0);
+    const phys = readPhysicalViewport();
     const orientationType = (typeof screen !== 'undefined' && screen.orientation)
       ? screen.orientation.type
       : undefined;
     const windowOrientation = typeof window !== 'undefined' ? window.orientation : undefined;
-    return { touchUi, width, height, orientationType, windowOrientation };
+    return {
+      touchUi,
+      width: phys.width,
+      height: phys.height,
+      offsetLeft: phys.offsetLeft,
+      offsetTop: phys.offsetTop,
+      orientationType,
+      windowOrientation,
+    };
   }
 
-  function sync() {
-    const visible = shouldShowRotateGate(readViewport());
-    el.hidden = !visible;
-    el.setAttribute('aria-hidden', visible ? 'false' : 'true');
-    if (visible) syncToVisualViewport(el);
-    if (visible !== lastVisible) {
-      lastVisible = visible;
-      if (typeof onChange === 'function') onChange(visible);
+  function applyShell(active, phys) {
+    if (active) {
+      const { width: logW, height: logH } = cssLandscapeSize(phys.width, phys.height);
+      shell.classList.add('hh-css-landscape');
+      shell.style.width = `${logW}px`;
+      shell.style.height = `${logH}px`;
+      shell.style.top = `${phys.offsetTop}px`;
+      // rotate(90deg) origin top-left: place left edge at physW so the shell fills.
+      shell.style.left = `${phys.offsetLeft + phys.width}px`;
+      shell.style.right = 'auto';
+      shell.style.bottom = 'auto';
+    } else {
+      shell.classList.remove('hh-css-landscape');
+      shell.style.width = '';
+      shell.style.height = '';
+      shell.style.top = '';
+      shell.style.left = '';
+      shell.style.right = '';
+      shell.style.bottom = '';
     }
   }
 
-  function onGesture(e) {
-    if (el.hidden) return;
-    if (e && typeof e.preventDefault === 'function') e.preventDefault();
-    Promise.resolve(lock()).catch(() => {});
-    sync();
+  function sync() {
+    const vp = readViewport();
+    const active = shouldForceCssLandscape(vp);
+    applyShell(active, vp);
+    if (hint) {
+      if (active && lastActive !== true) {
+        hint.dataset.show = '1';
+        if (hintTimer) clearTimeout(hintTimer);
+        hintTimer = setTimeout(() => { hint.dataset.show = '0'; }, 2400);
+      } else if (!active) {
+        hint.dataset.show = '0';
+      }
+    }
+    if (active !== lastActive) {
+      lastActive = active;
+      if (typeof onChange === 'function') onChange(active);
+    }
   }
-
-  el.addEventListener('pointerup', onGesture);
-  el.addEventListener('click', onGesture);
 
   const onVv = () => sync();
   if (typeof window !== 'undefined') {
@@ -182,6 +293,7 @@ export function mountRotateGate(root, { isTouchUi = false, onChange, lock = tryL
   sync();
 
   function destroy() {
+    if (hintTimer) clearTimeout(hintTimer);
     window.removeEventListener('resize', onVv);
     window.removeEventListener('orientationchange', onVv);
     if (typeof window !== 'undefined' && window.visualViewport) {
@@ -191,8 +303,38 @@ export function mountRotateGate(root, { isTouchUi = false, onChange, lock = tryL
     if (typeof screen !== 'undefined' && screen.orientation && typeof screen.orientation.removeEventListener === 'function') {
       screen.orientation.removeEventListener('change', onVv);
     }
-    el.remove();
+    applyShell(false, { width: 0, height: 0, offsetLeft: 0, offsetTop: 0 });
+    if (hint) hint.remove();
   }
 
-  return { destroy, sync, el };
+  return {
+    destroy,
+    sync,
+    active: () => !!lastActive,
+    logicalViewport() {
+      const phys = readPhysicalViewport();
+      if (!lastActive) return { width: phys.width, height: phys.height };
+      return cssLandscapeSize(phys.width, phys.height);
+    },
+    physicalViewport: readPhysicalViewport,
+    remapClient(clientX, clientY) {
+      if (!lastActive) return { x: clientX, y: clientY };
+      const phys = readPhysicalViewport();
+      return remapClientForCssLandscape(clientX, clientY, {
+        physW: phys.width,
+        offsetLeft: phys.offsetLeft,
+        offsetTop: phys.offsetTop,
+      });
+    },
+    el: shell,
+  };
+}
+
+/**
+ * Back-compat name: older main.js imported mountRotateGate. Now mounts the
+ * non-blocking CSS-landscape shell (same sync / destroy shape).
+ */
+export function mountRotateGate(root, opts = {}) {
+  const shell = root && root.id === 'hh-shell' ? root : ensureGameShell();
+  return mountCssLandscape(shell, opts);
 }

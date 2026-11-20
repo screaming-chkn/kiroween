@@ -37,7 +37,7 @@ import { cueMusic }           from './engine/music.js';
 import { loadGameFonts }      from './engine/fonts.js';
 import { loadSettings, saveSettings, busLevels } from './engine/settings.js';
 import { mountTitle }          from './ui/title.js';
-import { mountRotateGate, tryLockLandscape } from './ui/rotateGate.js';
+import { ensureGameShell, mountCssLandscape, tryLockLandscape } from './ui/rotateGate.js';
 import { mountPauseMenu, mountPauseButton } from './ui/pauseMenu.js';
 import {
   gateTick, addHitStop, HITSTOP_HIT_MS, HITSTOP_HURT_MS, traumaForImpact,
@@ -66,7 +66,7 @@ import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
 import { screenToWorld, worldToScreen } from './engine/camera.js';
-import { clientToCanvasEl } from './engine/pointer.js';
+import { clientToCanvasEl, clientToCanvasLayout } from './engine/pointer.js';
 import { ENEMY_SHOT_WINDUP_MS } from './combat/config.js';
 import {
   endCardScale, scaleRects,
@@ -112,9 +112,6 @@ let specStampRequested = false;
 let seanceTasks = null;
 /** C9b gutter haunt style: 'silver' | 'purple' | 'off'. */
 let gutterHauntStyle = 'silver';
-/** True while the phone rotate gate is visible; freezes the arena sim (no pause menu). */
-let rotateBlocksSim = false;
-
 /** Fetch the seance JSON once. Real counts only; any failure leaves null. */
 function loadSpecStamp() {
   if (specStampRequested || typeof fetch !== 'function') return;
@@ -139,14 +136,20 @@ function applySettings(next) {
 
 // ── Canvas / loading ─────────────────────────────────────────────────────────
 
-const canvas  = /** @type {HTMLCanvasElement} */ (document.getElementById('game-canvas'));
 const loading = document.getElementById('loading');
+
+// Shell wraps canvas + UI so portrait phones can CSS-rotate into landscape.
+const shell = ensureGameShell(document.body);
+const canvas  = /** @type {HTMLCanvasElement} */ (shell.querySelector('#game-canvas') || document.getElementById('game-canvas'));
 
 // ── Garage root div (fixed-position overlay, same stacking layer as canvas) ──
 
 const appRoot = document.createElement('div');
 appRoot.id    = 'app-root';
-document.body.appendChild(appRoot);
+shell.appendChild(appRoot);
+
+/** @type {ReturnType<typeof mountCssLandscape>|null} */
+let cssLandscape = null;
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 
@@ -161,12 +164,9 @@ function boot() {
   // séance flips to the possessed palette via setPossessed(true).
   injectPossessionCSS();
 
-  // Portrait phones: full-screen rotate prompt. Desktop never sees it.
-  // iOS cannot lock orientation; Android may lock after a later gesture.
-  mountRotateGate(document.body, {
-    isTouchUi,
-    onChange(visible) { rotateBlocksSim = visible; },
-  });
+  // Portrait phones: CSS-rotate the shell into landscape (no blocking overlay).
+  // iOS / X in-app cannot lock orientation; Android may still lock after a gesture.
+  cssLandscape = mountCssLandscape(shell, { isTouchUi, showHint: false });
 
   const renderer = createRenderer(canvas);
   resizeToDisplay(renderer);
@@ -233,6 +233,15 @@ function isTouchUi() {
     matchMediaCoarse: coarse,
     width: window.innerWidth,
   });
+}
+
+/** Client CSS px → canvas px, remapped when the CSS-landscape shell is active. */
+function pointerToCanvas(clientX, clientY) {
+  if (cssLandscape && cssLandscape.active()) {
+    const local = cssLandscape.remapClient(clientX, clientY);
+    return clientToCanvasLayout(local.x, local.y, canvas);
+  }
+  return clientToCanvasEl(clientX, clientY, canvas);
 }
 
 function showTitle(renderer, reducedMotion) {
@@ -850,7 +859,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (!cardInteractive(lastMouseDownAt)) return;
 
     // Translate client coords → canvas pixel coords (shared pointer mapping).
-    const { x: px, y: py } = clientToCanvasEl(e.clientX, e.clientY, canvas);
+    const { x: px, y: py } = pointerToCanvas(e.clientX, e.clientY);
 
     const hit = buttonAtPoint(px, py);
     if (!hit) return;
@@ -895,21 +904,26 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   let touch = null;
   let pauseBtn = null;
   if (touchUi) {
-    touch = mountTouchControls(document.body, {
+    touch = mountTouchControls(shell, {
       getViewport: () => {
+        if (cssLandscape && cssLandscape.active()) return cssLandscape.logicalViewport();
         const vv = window.visualViewport;
         return {
           width: (vv && vv.width) || window.innerWidth,
           height: (vv && vv.height) || window.innerHeight,
         };
       },
+      mapPointer: (x, y) => (cssLandscape ? cssLandscape.remapClient(x, y) : { x, y }),
     });
-    pauseBtn = mountPauseButton(document.body, () => setPaused(true));
+    pauseBtn = mountPauseButton(shell, () => setPaused(true));
   }
 
   /** Client CSS px → canvas px (shared pointer mapping) → world. */
   function touchScreenToWorld(p) {
-    const c = clientToCanvasEl(p.x, p.y, canvas);
+    // Touch sample coords are already in logical shell space when CSS-landscape is on.
+    const c = (cssLandscape && cssLandscape.active())
+      ? clientToCanvasLayout(p.x, p.y, canvas)
+      : clientToCanvasEl(p.x, p.y, canvas);
     const { wx, wy } = screenToWorld(
       c.x, c.y, camera,
       renderer.canvas.width, renderer.canvas.height, shakeX, shakeY,
@@ -1115,9 +1129,6 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         }
         return;
       }
-
-      // Portrait rotate gate: freeze the sim without opening the pause menu.
-      if (rotateBlocksSim) return;
 
       // Pause freezes everything (sim, hit-stop timer, camera, sparks).
       const gate = gateTick({ paused, hitStopMs }, dt * 1000);
