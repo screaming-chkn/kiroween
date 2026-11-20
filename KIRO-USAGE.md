@@ -347,7 +347,7 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Kiro:** HOT1 spec 14 + steering; HOT2 hook + touchLayout.pbt (7 props); HOT2b touch.js comment (hook fire).
 - **Hand:** C5b S1/S2 (taunt plate, meters); README fifth hook; seance rebuild; fps-landscape.mjs + HOT-PERF (60.1 FPS, no soft fix); LV1/bugs/claims docs.
 - **Tests:** npm test **986** green. Hook log **182**. SÉANCE **228/205**.
-- **owner lock tip (S1+S2):** a3128e3; shots shots-hud-c5b/. Merge held.
+- **Owner lock tip (S1+S2):** a3128e3; shots shots-hud-c5b/. Merge held.
 - **Claims file:** build-review/WONT-TO-CAN-CLAIM.md (and team build-review copy).
 
 ## C7 HUD polish — wheeled default + neon + font (2026-11-19 ~3:10 PM PT) — branch feat/hud-c, NOT merged

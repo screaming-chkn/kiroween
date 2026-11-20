@@ -38,7 +38,7 @@ export function setTankPalette(v) { TANK_PALETTE = v; }
 
 /**
  * Visual tank silhouette styles (draw-only). Collision / TANK_SPECS footprint
- * stays fixed; styles change what drawTank paints. Default 'wheeled' (owner C7 pick — 8x8).
+ * stays fixed; styles change what drawTank paints. Default 'wheeled' (design target C7 pick — 8x8).
  * Names: mech | wedge | wheeled | heavy | stealth
  */
 export const TANK_STYLE_NAMES = ['mech', 'wedge', 'wheeled', 'heavy', 'stealth'];

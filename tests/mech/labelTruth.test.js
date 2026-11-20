@@ -108,7 +108,9 @@ test('corrupt / missing save normalizes to empty zero-credit start', () => {
 console.log(`\n${passed} passed, ${failed} failed`);
 
 // Write LABEL-TRUTH.md for the pack
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
 const tip = execSync('git rev-parse --short HEAD').toString().trim();
 let md = `# LABEL-TRUTH — tank upgrade bars\n\n`;
@@ -124,7 +126,9 @@ for (const r of truthRows.filter((x) => x.context !== 'isolated')) {
   md += `| ${r.context} | ${r.slot} | ${r.n} | ${r.label} | ${r.measured} | ${r.ok ? 'YES' : 'NO'} |\n`;
 }
 md += `\n**Result:** ${failed ? 'FAIL' : 'PASS'} (${passed} tests)\n`;
-writeFileSync('team-archive/tank-upgrades/LABEL-TRUTH.md', md);
-writeFileSync('team-archive/tank-upgrades/LABEL-TRUTH.json', JSON.stringify({ tip, rows: truthRows, failed }, null, 2));
+const outDir = join(tmpdir(), 'haunt-hound-label-truth');
+mkdirSync(outDir, { recursive: true });
+writeFileSync(join(outDir, 'LABEL-TRUTH.md'), md);
+writeFileSync(join(outDir, 'LABEL-TRUTH.json'), JSON.stringify({ tip, rows: truthRows, failed }, null, 2));
 
 if (failed) process.exit(1);

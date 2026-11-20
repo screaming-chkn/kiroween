@@ -6,7 +6,7 @@
  * Toggle: ?gutter=silver|purple|off  (default silver).
  */
 
-export const GUTTER_HAUNT_ALPHA = 0.06; // top of owner's 4–6% faint band (picker-visible)
+export const GUTTER_HAUNT_ALPHA = 0.06; // top of owner 4–6% faint band (picker-visible)
 export const GUTTER_HAUNT_STYLES = Object.freeze(['silver', 'purple', 'off']);
 export const GUTTER_TILE = 128;
 

@@ -2,7 +2,7 @@
 
 Something is possessing the other tank. Duel it, dodge its tell, exorcise it. Climb HAUNT LV 1–5.
 
-HAUNT//HOUND is a 1v1 tank duel that runs in the browser, shown through a haunted CRT cockpit. You bolt a tank together in the garage: legs, a core and two arm slots, with weight and power limits. Then you fight one possessed enemy tank in an arena. It is a static site (HTML, JavaScript ES modules, Canvas 2D) with no backend, no dependencies and no bundler. It plays on desktop and on a phone held in portrait. Built with Kiro for Kiroween 2026.
+HAUNT//HOUND is a 1v1 tank duel that runs in the browser, shown through a haunted CRT cockpit. You bolt a tank together in the garage: legs, a core and two arm slots, with weight and power limits. Then you fight one possessed enemy tank in an arena. It is a static site (HTML, JavaScript ES modules, Canvas 2D) with no backend, no dependencies and no bundler. It plays on desktop and on a phone held in landscape. Built with Kiro for Kiroween 2026.
 
 ## Try it
 
@@ -30,7 +30,7 @@ In a duel, the bot shows a red windup telegraph before each shot. The tell lasts
 
 Legs set speed and weight. Heavier builds get a slower dash. The effects sit behind one flag, `FEATURES.loadoutEffects` in `src/combat/config.js`. With the flag off, the game plays exactly as it did before M4.5, and a golden-fight test checks this.
 
-| Action | Desktop | Phone (portrait) |
+| Action | Desktop | Phone (landscape) |
 |---|---|---|
 | Move | WASD or arrow keys | Drag the stick on the left half of the screen |
 | Aim | Mouse | Drag the FIRE button |
@@ -113,12 +113,19 @@ Command hooks go through `scripts/kiro-hook-run.mjs`, which logs every firing to
 
 **The séance view.** `npm run build:seance` builds `public/seance-tasks.json` from every `tasks.md`. The game shows it from the garage SÉANCE button, so it literally shows its own Kiro task list.
 
-**Accounts and credits.** Two Kiro accounts were used, and every run is logged with its account:
+**Accounts and credits (frozen at pin tip `2a2d5e9`).** Two Kiro accounts were used; every run is logged in `KIRO-USAGE.md`. A clean all-time metered sum across every later HUD/walls/Séance/Guard/Factory run is ambiguous in the log (meter lag + parallel branches), so we publish only verified figures — never invented totals:
 
-- A second, free-tier Kiro account (Google login) ran the first two M4 runs on a Mac mini: 4.81 credits.
-- The original Kiro Pro account (GitHub login) ran every later run on the build box: 1.56 credits for M4, 6.32 for M5 (steering rewrite and spec reconcile, the `build:site` script with its tests and the README check hook, and this README's first draft) and 8.51 for M4.5 (loadout-effects spec, steering, implementation draft, property-based tests).
+| Item | Runs / notes | Credits | Stop-hook | Pin tip |
+|---|---|---:|---|---|
+| Google (free, M4 runs 1–2) | Mac mini Google login | 4.81 | — | 2a2d5e9 |
+| Pro through M8 (logged total) | M4–M8 + 0.62 untied | 36.91 (Google+Pro then **41.72**) | — | 2a2d5e9 |
+| Walls GO (WALLS+RETRO+VERIFY2) | Spec/verify after first walls pass | **10.21** | — | 2a2d5e9 |
+| Pro meter after walls VERIFY2 | Last clean Pro readout in KIRO-USAGE | **307.41 / 877** (~569.59 left) | — | 2a2d5e9 |
+| Soften all-max LV3 | Hand-finished build-agent (65f1726); no Kiro run | **0** new | — | 2a2d5e9 |
+| Hooks on tip | 9 JSON hooks in `.kiro/hooks/` | — | **`close-loop-on-stop` present** | 2a2d5e9 |
+| Later Séance / Guard / Factory | Short Auto probes; see KIRO-USAGE | see KIRO-USAGE.md | Stop fired on Guard probe | 2a2d5e9 |
 
-Another 0.62 Pro credits were metered between runs and aren't tied to any one run. Later Pro runs on the CLI's v3 engine (where the workspace hooks fire): 0.13 for the hook probe, 6.99 for M6 (haunt words and taunts), 7.58 for M7 (title deploy, phone layout, stat bars, modulepreload) and 5.20 for M8 (the haunting effects in the arena and garage). **Total: 41.72 credits metered** (Google 4.81, Pro 36.91). Per-run detail is in `KIRO-USAGE.md`.
+Full per-run detail: [KIRO-USAGE.md](KIRO-USAGE.md). No credits were bought.
 
 The first runs used `kiro-cli chat --no-interactive --model auto --trust-tools=fs_read,fs_write` with one focused prompt each; from the probe on, the same command adds `--agent-engine v3 --trust-workspace`. No credits were bought.
 
