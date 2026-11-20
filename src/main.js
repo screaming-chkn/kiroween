@@ -30,6 +30,7 @@ import {
 import { mountGarage, quickDeployPlan } from './ui/garage.js';
 import { syncTankFx }          from './ui/tankFx.js';
 import { setTankStyle, TANK_STYLE_NAMES } from './ui/tankWire.js';
+import { initFreshTankFromUrl, FRESH_IDS, setFreshTank } from './ui/tankFresh/index.js';
 import { mountSeance }         from './ui/seance.js';
 import { injectPossessionCSS } from './ui/possession.js';
 import { installAudioGestures, playSfx, SFX, setBusVolume, BUSES } from './engine/audio.js';
@@ -176,13 +177,21 @@ function boot() {
   try { session = globalThis.sessionStorage ?? null; } catch (_) { /* blocked */ }
   applyLevelParam(location.search, { set: setHauntLevel, storage: session });
 
-  // Tank silhouette (draw-only). Default wheeled; override with ?tank= or __HH_TANK_STYLE__.
+  // Tank silhouette (draw-only). mock/tank-fresh4: ?tank=a|b|c|d (default a). Legacy style names still work.
   try {
     const params = new URLSearchParams(location.search.startsWith('?') ? location.search.slice(1) : location.search);
     const raw = params.get('tank') || globalThis.__HH_TANK_STYLE__ || null;
-    if (raw && TANK_STYLE_NAMES.includes(raw)) setTankStyle(raw);
-  } catch (_) { /* ignore */ }
-  globalThis.__HH_SET_TANK_STYLE__ = (v) => { if (TANK_STYLE_NAMES.includes(v)) setTankStyle(v); };
+    if (raw && FRESH_IDS.includes(String(raw).toLowerCase())) {
+      initFreshTankFromUrl(String(raw).toLowerCase());
+    } else if (raw && TANK_STYLE_NAMES.includes(raw)) {
+      setFreshTank(null);
+      setTankStyle(raw);
+    } else {
+      initFreshTankFromUrl('a');
+    }
+  } catch (_) { initFreshTankFromUrl('a'); }
+  globalThis.__HH_SET_TANK_STYLE__ = (v) => { if (TANK_STYLE_NAMES.includes(v)) { setFreshTank(null); setTankStyle(v); } };
+  globalThis.__HH_SET_FRESH_TANK__ = (v) => setFreshTank(v);
 
   // C9b gutter haunt: ?gutter=silver|purple|off (default silver, ~5% opacity).
   gutterHauntStyle = readGutterHaunt(location.search);

@@ -7,6 +7,7 @@
  */
 
 import { fxClock, shotFx, hoverBob } from './tankFx.js';
+import { drawFreshTank, FRESH_TANK } from './tankFresh/index.js';
 import { shouldDrawEnemy } from './killMoment.js';
 
 export const TILT = { x: 0.35, y: 0.7 };
@@ -354,6 +355,8 @@ function drawCornerTicks(ctx, pts, box) {
 /** Draw a wireframe tank (all edges visible). */
 export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensity = 0) {
   if (kind === 'enemy' && !shouldDrawEnemy()) return;
+  // mock/tank-fresh4: optional fresh design via ?tank=a|b|c|d
+  if (FRESH_TANK && drawFreshTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensity)) return;
   ctx.save();
   const g = tankGeometry(kind, x, y, hullHeading, turretAngle);
   const vis = visualSpecs(kind);

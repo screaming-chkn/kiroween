@@ -1,0 +1,113 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<title>tank-fresh4 plates</title>
+<style>
+ html,body{margin:0;background:#000;color:#9f9;font:12px monospace}
+ #wrap{display:flex;flex-wrap:wrap;gap:8px;padding:8px}
+ canvas{background:#000;border:1px solid #234}
+</style>
+</head><body>
+<div id="wrap"></div>
+<script type="module">
+import { setFreshTank } from '../src/ui/tankFresh/index.js?v=7';
+import { drawTank, setTankPalette, setEdgeStyle } from '../src/ui/tankWire.js?v=7';
+import KPA from '../src/ui/tankFresh/keypointsA.js?v=7';
+import KPB from '../src/ui/tankFresh/keypointsB.js?v=7';
+import KPC from '../src/ui/tankFresh/keypointsC.js?v=7';
+import KPD from '../src/ui/tankFresh/keypointsD.js?v=7';
+setTankPalette('mono-green');
+setEdgeStyle('dashed-tech');
+
+const wrap = document.getElementById('wrap');
+const REF = -2.45;
+const KPS = { a: KPA, b: KPB, c: KPC, d: KPD };
+
+function plate(id, w, h, heading, kind='player') {
+  setFreshTank(id);
+  // Choose scale so normalized silhouette (~1.0 span) fills ~92% of min(w,h)
+  // isoKpWorld: span ≈ scale in x; after TANK_DRAW_SCALE 1.5 → scale*1.5
+  // Per-id scale multipliers from IoU search (fill hero plate)
+  const mult = { a: 1.55, b: 1.15, c: 1.60, d: 1.60 }[id] || 1.4;
+  const target = Math.min(w, h) * 0.98 * mult;
+  globalThis.__HH_FRESH_PLATE_SCALE__ = target / 1.5;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.dataset.id = id; c.dataset.kind = 'plate';
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillRect(0,0,w,h);
+  drawTank(ctx, kind, w/2, h/2, heading, heading + 0.05, 0);
+  // also paint exact silhouette in yellow under for debug? no — score the draw itself
+  const lab = document.createElement('div');
+  lab.textContent = `fresh-${id} plate`;
+  const cell = document.createElement('div');
+  cell.appendChild(c); cell.appendChild(lab);
+  wrap.appendChild(cell);
+  globalThis.__HH_FRESH_PLATE_SCALE__ = null;
+  return c;
+}
+
+function rotSheet(id) {
+  setFreshTank(id);
+  globalThis.__HH_FRESH_PLATE_SCALE__ = null;
+  const c = document.createElement('canvas');
+  c.width = 720; c.height = 200;
+  c.dataset.id = id; c.dataset.kind = 'rot';
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillRect(0,0,720,200);
+  [0, Math.PI/4, Math.PI/2, Math.PI, REF].forEach((a,i) => {
+    const cx = 70 + i*140, cy = 110;
+    drawTank(ctx, 'player', cx, cy, a, a+0.05, 0);
+  });
+  const lab = document.createElement('div'); lab.textContent = `rot-${id}`;
+  const cell = document.createElement('div'); cell.appendChild(c); cell.appendChild(lab);
+  wrap.appendChild(cell);
+}
+
+function closeup(id) {
+  setFreshTank(id);
+  globalThis.__HH_FRESH_PLATE_SCALE__ = null;
+  const c = document.createElement('canvas');
+  c.width = 400; c.height = 300;
+  c.dataset.id = id; c.dataset.kind = 'closeup';
+  const ctx = c.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,400,300);
+  ctx.save();
+  ctx.translate(200,160); ctx.scale(3.8,3.8); ctx.translate(-200,-160);
+  drawTank(ctx,'player',200,160,REF,REF+0.05,0);
+  ctx.restore();
+  const lab=document.createElement('div'); lab.textContent=`closeup-${id}`;
+  const cell=document.createElement('div'); cell.appendChild(c); cell.appendChild(lab);
+  wrap.appendChild(cell);
+}
+
+const sizes = { a:[738,407], b:[755,543], c:[783,348], d:[833,303] };
+for (const id of ['a','b','c','d']) {
+  const [w,h] = sizes[id];
+  plate(id, w, h, REF);
+  rotSheet(id);
+  closeup(id);
+}
+
+// contact sheet in-game size
+{
+  globalThis.__HH_FRESH_PLATE_SCALE__ = null;
+  const c = document.createElement('canvas');
+  c.width = 480; c.height = 120;
+  c.dataset.kind = 'contact'; c.dataset.id = 'all';
+  const ctx = c.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,480,120);
+  ['a','b','c','d'].forEach((id,i) => {
+    setFreshTank(id);
+    const cx = 60 + i*120, cy = 55;
+    drawTank(ctx,'player', cx, cy, REF, REF+0.05, 0);
+    ctx.fillStyle='#47FF9A'; ctx.font='12px monospace'; ctx.fillText(id, cx-4, 105);
+  });
+  const lab=document.createElement('div'); lab.textContent='contact-ingame';
+  const cell=document.createElement('div'); cell.appendChild(c); cell.appendChild(lab);
+  wrap.appendChild(cell);
+}
+
+document.title = 'fresh4-ready';
+</script>
+</body></html>
