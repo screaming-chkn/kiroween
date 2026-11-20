@@ -5,6 +5,7 @@ import {
   meterFillColor, METER_ORANGE, METER_RED, METER_RED_PCT, METER_FRAME, METER_FONT,
   METER_LINE_GAP, METER_FIELD_GAP, arenaTopLineSy, meterTopInset, cornerVGeometry,
   sideOutGeometry, meterSideReserve, arenaSideEdges,
+  METER_LABEL_GAP, TAUNT_HP_GAP,
 } from '../../src/combat/screenHpMeters.js';
 import { playerHudLabel, enemyHudLabel } from '../../src/combat/mechNames.js';
 
@@ -134,4 +135,30 @@ test('arenaSideEdges returns finite left/right', () => {
   const e = arenaSideEdges(cam, 1280, 800, 1200, {});
   assert.ok(Number.isFinite(e.left) && Number.isFinite(e.right));
   assert.ok(e.left < e.right);
+});
+
+test('C9e: meter↔label gap ≥8 CSS and taunt reserve ≥16 past HP block', () => {
+  assert.equal(METER_LABEL_GAP, 10);
+  assert.equal(TAUNT_HP_GAP, 16);
+  for (const [vpW, vpH, scale, left, right] of [
+    [844, 390, 2, 180, 664],
+    [1860, 860, 2, 400, 1460],
+    [780, 390, 1, 140, 640],
+    [932, 430, 1, 160, 772],
+  ]) {
+    const g = sideOutGeometry(vpW, vpH, {
+      scale, topInset: 40, arenaLeft: left, arenaRight: right, compact: true,
+    });
+    assert.equal(g.player.labelAlign, 'right');
+    assert.equal(g.enemy.labelAlign, 'left');
+    const pGap = (g.player.barX - g.player.labelX) / scale;
+    const eGap = (g.enemy.labelX - (g.enemy.barX + g.thick)) / scale;
+    assert.ok(pGap >= METER_LABEL_GAP - 1e-6, `player meter-label ${pGap}`);
+    assert.ok(eGap >= METER_LABEL_GAP - 1e-6, `enemy meter-label ${eGap}`);
+    const reserve = meterSideReserve(vpW, vpH, {
+      layout: 'side-out', scale, topInset: 40, arenaLeft: left, arenaRight: right, compact: true,
+    });
+    const inner = Math.max(g.player.x + g.player.w, vpW - g.enemy.x);
+    assert.ok((reserve - inner) / scale >= TAUNT_HP_GAP - 1e-6, `taunt clear ${(reserve - inner) / scale}`);
+  }
 });

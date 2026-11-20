@@ -256,19 +256,32 @@ export function drawPossessedTaunt(ctx, line, pos) {
   const measure = (t) => (hasMeasure
     ? (ctx.measureText(t)?.width ?? t.length * drawPx * 0.6)
     : t.length * drawPx * 0.6);
-  const fullW = measure(line.text);
+  let drawText = line.text;
+  let fullW = measure(drawText);
   const viewW = ctx.canvas?.width ?? Infinity;
-  const side = Number.isFinite(pos.sidePad) ? pos.sidePad : 56 * scale;
+  const side = Number.isFinite(pos.sidePad) ? pos.sidePad : 72 * scale;
+  // C9e: sidePad already includes TAUNT_HP_GAP (≥16 CSS) past each HP block.
   const margin = Math.max(8 * scale, side);
   const usable = Number.isFinite(viewW) ? viewW - 2 * margin : Infinity;
-  // Too wide: shrink once (floor = 12 CSS px), then wrap if it still will not fit.
+  // Too wide: shrink (floor = 10 CSS px), then ellipsize — never touch HP numbers.
   if (fullW > usable && usable > 0) {
-    drawPx = Math.max(12 * scale, Math.floor(px * usable / fullW));
+    drawPx = Math.max(10 * scale, Math.floor(px * usable / fullW));
     ctx.font = `${drawPx}px ${TAUNT_FONT}`;
+    fullW = measure(drawText);
   }
-  const lines = (usable > 0 && hasMeasure && measure(line.text) > usable)
-    ? wrapLines(line.text, usable, measure, 3)
-    : [{ start: 0, text: line.text }];
+  if (usable > 0 && hasMeasure && measure(drawText) > usable) {
+    const ell = '…';
+    let lo = 0, hi = drawText.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      const cand = drawText.slice(0, mid).trimEnd() + ell;
+      if (measure(cand) <= usable) lo = mid; else hi = mid - 1;
+    }
+    drawText = (lo > 0 ? drawText.slice(0, lo).trimEnd() : drawText.slice(0, 1)) + ell;
+    fullW = measure(drawText);
+  }
+  // Keep a single centered line (no wrap into the HP lane).
+  const lines = [{ start: 0, text: drawText }];
   const lineH = Math.round(drawPx * 1.25);
   // pos.y = BOTTOM baseline of the taunt block (gap above field). Multi-line grows UP.
   const yLast = Math.max(drawPx + 8 * scale, pos.y);
@@ -283,8 +296,21 @@ export function drawPossessedTaunt(ctx, line, pos) {
     const shown = line.typed.slice(ln.start, ln.start + ln.text.length);
     return acc + (shown ? 1 : 0);
   }, 0);
+  // If we ellipsized drawText, cap typed to the visible prefix (minus ellipsis).
+  const typedSrc = (drawText.endsWith('…') && line.typed.length >= drawText.length - 1)
+    ? drawText
+    : line.typed;
   lines.forEach((ln) => {
-    const shown = line.typed.slice(ln.start, ln.start + ln.text.length);
+    const raw = typedSrc.slice(ln.start, ln.start + ln.text.length);
+    // When drawText is ellipsized and typed is still catching up, show typed prefix only.
+    let shown = raw;
+    if (drawText.endsWith('…') && line.typed.length < line.text.length) {
+      const cap = Math.max(0, drawText.length - 1);
+      shown = line.typed.slice(0, Math.min(line.typed.length, cap));
+      if (shown.length >= cap) shown = drawText; // completed into ellipsis form
+    } else if (drawText.endsWith('…') && line.typed === line.text) {
+      shown = drawText;
+    }
     if (!shown) return;
     const w = lines.length === 1 ? fullW : measure(ln.text);
     let x = pos.x - w / 2;

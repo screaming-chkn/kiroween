@@ -51,7 +51,7 @@ import { drawWorld,
 }                              from './combat/combatRenderer.js';
 import {
   drawScreenHpMeters, SCREEN_HP_LAYOUT, arenaTopLineSy, arenaTopLineTopSy, arenaBottomLineSy, meterTopInset,
-  meterSideReserve, arenaSideEdges, sideOutGeometry, METER_FIELD_GAP,
+  meterSideReserve, arenaSideEdges, sideOutGeometry, METER_FIELD_GAP, METER_LABEL_GAP, TAUNT_HP_GAP,
 } from './combat/screenHpMeters.js';
 import { drawTopBarHud, topBarHeight, TOP_BAR } from './combat/topBarHud.js';
 import { drawGhostPerk } from './combat/ghostPerk.js';
@@ -571,7 +571,17 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         fireToRightEdgeCss: cssW - (fireX + fireR),
         fireToBottomEdgeCss: cssH - (fireY + fireR),
         dashToRightEdgeCss: cssW - (dashX + dashR),
-        meterLabelGapCss: 8,
+        // C9e: hard gaps — FAIL field-check if meter↔HP < 8 or taunt↔HP < 16
+        meterLabelGapCss: g.gap / hudScale,
+        meterLabelGapMinCss: METER_LABEL_GAP,
+        tauntHpGapCss: TAUNT_HP_GAP,
+        tauntSidePadCss: meterSideReserve(vpW, vpH, meterOpts) / hudScale,
+        playerLabelAnchorX: g.player.labelX,
+        enemyLabelAnchorX: g.enemy.labelX,
+        playerBarX: g.player.barX,
+        enemyBarX: g.enemy.barX,
+        playerMeterToLabelCss: (g.player.barX - g.player.labelX) / hudScale,
+        enemyMeterToLabelCss: (g.enemy.labelX - (g.enemy.barX + g.thick)) / hudScale,
       };
       globalThis.__HH_HUD_FIELD__ = globalThis.__HH_HUD_Y__;
       // Screen-space player centre for close-up crops (CSS px via scale).

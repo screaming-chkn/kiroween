@@ -65,7 +65,7 @@ export const TANK_STYLE_DRAW = {
       barrelLen: 40, twin: false, base: 'treads', cutHull: 0.48, cutTurret: 0.22,
     },
   },
-  // C9d MBT — full-length skirt over tread, wedge glacis, rear-set narrow turret, long gun
+  // C9e MBT — one-piece hull+track, wedge glacis, rear-set narrow turret, long gun
   wheeled: {
     player: {
       hull: { L: 48, W: 22, H: 9 }, turret: { L: 13, W: 11, H: 6 },
@@ -210,7 +210,7 @@ export const TANK_SPECS = {
 export function tankGeometry(kind, x, y, hullHeading, turretAngle) {
   const col = TANK_SPECS[kind];
   const s = visualSpecs(kind);
-  // C9d: wheeled hull sits down over tread band (draw-only). Hitboxes untouched.
+  // C9e: wheeled hull sits into track band (draw-only). Hitboxes untouched.
   const wheeled = TANK_STYLE === 'wheeled' && s.base === 'wheels';
   const hullZ0 = wheeled ? -2.2 : 0;
   // Turret narrower + set toward the BACK of the hull (side-ref cue)
@@ -403,155 +403,98 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
     }
     ctx.stroke();
   } else if (s.base === 'wheels') {
-    // C9d (side-ref language → pseudo-iso):
-    // full-length SOLID skirt on near side; hull sits DOWN over it;
-    // DASHED inner tread band + road wheels under the skirt. Thin strokes.
-    const fx = Math.cos(hullHeading), fy = Math.sin(hullHeading);
-    const lx = Math.sin(hullHeading), ly = -Math.cos(hullHeading);
-    const hl = s.hull.L / 2, hw = s.hull.W / 2;
-    const wr = Math.max(1.7, s.hull.H * 0.22);
-    const nearSide = ly >= 0 ? 1 : -1;
-    const farSide = -nearSide;
-    const nWheels = 6;
+    // C9e ground contact shadow only here (no bob). Housing drawn with hull after bob.
     const hullZ0 = -2.2;
-    // Skirt is a thin full-length panel flush with the hull side, hanging down over wheels
-    const skirtLat = hw + 0.35;
-    const skirtZTop = hullZ0 + s.hull.H * 0.28; // meets mid-lower hull side
-    const skirtZBot = hullZ0 - 3.6;             // hangs over tread
-    const skirtThick = 1.8;
-
     ctx.globalAlpha = 0.1;
     ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.ellipse(x, y + 4.0, s.hull.L * 0.6, s.hull.W * 0.48, hullHeading, 0, Math.PI * 2);
+    ctx.ellipse(x, y + 3.8, s.hull.L * 0.56, s.hull.W * 0.42, hullHeading, 0, Math.PI * 2);
     ctx.fill();
-
-    const drawSide = (side, alphaScale) => {
-      const ox = lx * skirtLat * side;
-      const oy = ly * skirtLat * side;
-
-      // --- road wheels under skirt (draw first) ---
-      const yNest = 2.6;
-      const wheelLat = hw * 0.78;
-      const wox = lx * wheelLat * side, woy = ly * wheelLat * side;
-      ctx.globalAlpha = alphaScale * 0.95;
-      ctx.strokeStyle = s.turretStroke;
-      for (let i = 0; i < nWheels; i++) {
-        const tt = -hl * 0.7 + (hl * 1.4) * ((i + 0.5) / nWheels);
-        const cx = x + fx * tt + wox;
-        const cy = y + fy * tt + woy + yNest;
-        ctx.lineWidth = 0.7;
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, wr * 0.72, wr * 0.44, hullHeading, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.lineWidth = 0.4;
-        ctx.setLineDash([0.9, 1.5]);
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, wr * 0.22, wr * 0.13, hullHeading, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.setLineDash([]);
-
-      // --- DASHED inner tread band (under skirt, side-ref cue) ---
-      {
-        const bandZ0 = skirtZBot - 0.2;
-        const bandH = 2.2;
-        const bx = x + lx * (hw * 0.7) * side;
-        const by = y + ly * (hw * 0.7) * side;
-        const band = boxCorners(bx, by, bandZ0, s.hull.L * 0.96, 2.0, bandH, hullHeading);
-        ctx.globalAlpha = alphaScale * 0.75;
-        ctx.lineWidth = 0.55;
-        ctx.setLineDash([1.4, 1.8]);
-        ctx.beginPath();
-        for (const [i, j] of [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4]]) {
-          ctx.moveTo(band[i].x, band[i].y);
-          ctx.lineTo(band[j].x, band[j].y);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      // lower track rail (solid, thin) — ground contact hint
-      {
-        const tcx = x + wox, tcy = y + woy + yNest;
-        const rx = hl * 0.88, ry = wr * 0.9;
-        ctx.globalAlpha = alphaScale * 0.8;
-        ctx.lineWidth = 0.7;
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        ctx.ellipse(tcx, tcy, rx, ry, hullHeading, Math.PI * 0.12, Math.PI * 0.88, false);
-        ctx.stroke();
-        // dashed return / inner path
-        ctx.setLineDash([1.2, 1.6]);
-        ctx.lineWidth = 0.45;
-        ctx.globalAlpha = alphaScale * 0.55;
-        ctx.beginPath();
-        ctx.ellipse(tcx, tcy, rx * 0.92, ry * 0.55, hullHeading, Math.PI * 0.15, Math.PI * 0.85, false);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      // --- FULL-LENGTH SOLID skirt (over wheels) — the key “one machine” line ---
-      {
-        const sx = x + ox, sy = y + oy;
-        // Build skirt as a long thin box from skirtZBot .. skirtZTop
-        const skirtH = skirtZTop - skirtZBot;
-        const skirt = boxCorners(sx, sy, skirtZBot, s.hull.L * 0.99, skirtThick, skirtH, hullHeading);
-        ctx.globalAlpha = alphaScale;
-        ctx.strokeStyle = s.turretStroke;
-        ctx.lineWidth = 0.85;
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        // outer silhouette of skirt only (solid)
-        for (const [i, j] of BOX_EDGES) {
-          ctx.moveTo(skirt[i].x, skirt[i].y);
-          ctx.lineTo(skirt[j].x, skirt[j].y);
-        }
-        ctx.stroke();
-        // one dashed mid panel seam on skirt face
-        ctx.lineWidth = 0.45;
-        ctx.setLineDash([1.2, 1.8]);
-        ctx.beginPath();
-        ctx.moveTo(skirt[4].x, skirt[4].y);
-        ctx.lineTo(skirt[6].x, skirt[6].y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Attach skirt top to hull side — kills floating gap
-        ctx.globalAlpha = alphaScale * 0.9;
-        ctx.lineWidth = 0.65;
-        ctx.beginPath();
-        for (const along of [-hl * 0.9, -hl * 0.45, 0, hl * 0.45, hl * 0.9]) {
-          const hx = x + fx * along + lx * hw * side;
-          const hy = y + fy * along + ly * hw * side;
-          const top = project(hx, hy, hullZ0 + s.hull.H * 0.2);
-          const bot = project(hx + lx * 0.5 * side, hy + ly * 0.5 * side, skirtZTop);
-          ctx.moveTo(top.x, top.y);
-          ctx.lineTo(bot.x, bot.y);
-        }
-        // continuous top skirt edge already drawn; also stitch front/rear of skirt to glacis/stern
-        const front = project(x + fx * hl + lx * hw * side, y + fy * hl + ly * hw * side, hullZ0);
-        const rear = project(x - fx * hl + lx * hw * side, y - fy * hl + ly * hw * side, hullZ0);
-        const sFront = project(x + fx * hl + ox, y + fy * hl + oy, skirtZTop);
-        const sRear = project(x - fx * hl + ox, y - fy * hl + oy, skirtZTop);
-        ctx.moveTo(front.x, front.y);
-        ctx.lineTo(sFront.x, sFront.y);
-        ctx.moveTo(rear.x, rear.y);
-        ctx.lineTo(sRear.x, sRear.y);
-        ctx.stroke();
-      }
-    };
-
-    drawSide(farSide, 0.25);
-    drawSide(nearSide, 1);
     ctx.globalAlpha = 1;
-    ctx.setLineDash([]);
-
   }
 
   // everything below bobs (hull, turret, barrels, hit flash)
   ctx.translate(0, bob);
+
+  // C9e wheeled: track housing bob WITH hull — one continuous side silhouette.
+  if (s.base === 'wheels') {
+    const fx = Math.cos(hullHeading), fy = Math.sin(hullHeading);
+    const lx = Math.sin(hullHeading), ly = -Math.cos(hullHeading);
+    const hl = s.hull.L / 2, hw = s.hull.W / 2;
+    const wr = Math.max(1.55, s.hull.H * 0.20);
+    const nearSide = ly >= 0 ? 1 : -1;
+    const nWheels = 6;
+    const hullZ0 = -2.2;
+    // Flush with hull side wall (barely past)
+    const skirtLat = hw + 0.05;
+    // ONE horizontal break on the lower hull side; deep lower band so it reads as
+    // a section (not a hairline rail). Wheels live inside that band.
+    const breakZ = hullZ0 + s.hull.H * 0.32;
+    const botZ = hullZ0 - 6.8;
+
+    const wallPts = (side, z, alongScale = 1) => {
+      const ox = lx * skirtLat * side, oy = ly * skirtLat * side;
+      const a = hl * alongScale;
+      return {
+        front: project(x + fx * a + ox, y + fy * a + oy, z),
+        rear: project(x - fx * a + ox, y - fy * a + oy, z),
+      };
+    };
+
+    // Near-side continuous lower band
+    {
+      const side = nearSide;
+      const top = wallPts(side, breakZ);
+      const bot = wallPts(side, botZ);
+
+      // Wheels inside lower band
+      const wheelLat = skirtLat * 0.38;
+      const wox = lx * wheelLat * side, woy = ly * wheelLat * side;
+      const wheelZ = breakZ * 0.35 + botZ * 0.65;
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = s.turretStroke;
+      ctx.setLineDash([]);
+      ctx.lineWidth = 0.65;
+      for (let i = 0; i < nWheels; i++) {
+        const tt = -hl * 0.70 + (hl * 1.40) * ((i + 0.5) / nWheels);
+        const c = project(x + fx * tt + wox, y + fy * tt + woy, wheelZ);
+        ctx.beginPath();
+        ctx.ellipse(c.x, c.y + 0.2, wr * 0.72, wr * 0.42, hullHeading, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // ONE outer silhouette: break + bottom + front/rear drops (shared with hull wall)
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = s.turretStroke;
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(top.front.x, top.front.y);
+      ctx.lineTo(top.rear.x, top.rear.y);
+      ctx.moveTo(bot.front.x, bot.front.y);
+      ctx.lineTo(bot.rear.x, bot.rear.y);
+      ctx.moveTo(top.front.x, top.front.y);
+      ctx.lineTo(bot.front.x, bot.front.y);
+      ctx.moveTo(top.rear.x, top.rear.y);
+      ctx.lineTo(bot.rear.x, bot.rear.y);
+      ctx.stroke();
+
+      // Single dashed inner path only
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = 0.4;
+      ctx.setLineDash([1.2, 1.8]);
+      const mid = wallPts(side, (breakZ + botZ) * 0.55, 0.88);
+      ctx.beginPath();
+      ctx.moveTo(mid.front.x, mid.front.y);
+      ctx.lineTo(mid.rear.x, mid.rear.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Far side: no ghost slab — skip housing (hull prism already shows far edges)
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([]);
+  }
+
 
   // b) faint hull top fill
   ctx.globalAlpha = s.fillAlpha;
@@ -562,11 +505,7 @@ export function drawTank(ctx, kind, x, y, hullHeading, turretAngle, flashIntensi
   for (const [pts, col] of [[g.hullPrism, s.stroke], [g.turretPrism, s.turretStroke]]) {
     const isWheeled = TANK_STYLE === 'wheeled';
     if (isWheeled) {
-      // C9d: thinner lines, less bloom (side-ref cue)
-      ctx.globalAlpha = 0.14;
-      ctx.strokeStyle = s.glow;
-      ctx.lineWidth = 0.9;
-      strokeEdges(ctx, pts);
+      // C9e: no glow underlay — smoother crisp edges
       ctx.globalAlpha = 1;
       ctx.lineWidth = 0.7;
     } else {

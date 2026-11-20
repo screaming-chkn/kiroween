@@ -23,6 +23,10 @@ export const METER_LINE_GAP = 8; // C8 = HUD_SPACE
 /** Minimum CSS px between a meter group and the arena green border outer edge. */
 /** CSS px between meter group and arena border (C8 = HUD_SPACE). */
 export const METER_FIELD_GAP = 8;
+/** CSS px between meter bar and HP/name text (C9e). */
+export const METER_LABEL_GAP = 10;
+/** CSS px clear space between taunt and each HP block (C9e). */
+export const TAUNT_HP_GAP = 16;
 export const ARENA_BORDER_WU = 2;
 
 const C = {
@@ -152,37 +156,39 @@ export function sideOutGeometry(vpW, vpH, opts = {}) {
     ? Math.max(14, Math.min(18, Math.round((vpW / s) * 0.016)))
     : Math.max(10, Math.min(14, Math.round((vpW / s) * 0.012)))) * s;
   const h = (opts.compact ? 48 : Math.max(72, Math.min(130, Math.round((vpH / s) * 0.15)))) * s;
-  // C9: slightly smaller type; reserve full "P1 · RUSTBIT" width so labels stay far L/R.
+  // C9e: Press Start ~1em/glyph — reserve full "P1 · RUSTBIT" / "440/440".
   const fontPx = (opts.compact ? 12 : 12) * s;       // mech name
   const hpFontPx = (opts.compact ? 14 : 12) * s;     // cur/max
-  const gapX = 8 * s; // HUD_SPACE
+  const gapX = METER_LABEL_GAP * s; // ≥8 CSS px between bar and HP text
   // Labels sit BESIDE the bar (outward), so group height ≈ bar height.
-  const labelW = Math.max(12 * fontPx, 5.5 * hpFontPx); // "P1 · RUSTBIT" / "140/140"
+  const labelW = Math.max(13 * fontPx, 8 * hpFontPx); // "P1 · RUSTBIT" / "440/440"
   const groupW = thick + gapX + labelW;
   const gh = h;
   const arenaLeft = Number.isFinite(opts.arenaLeft) ? opts.arenaLeft : vpW * 0.2;
   const arenaRight = Number.isFinite(opts.arenaRight) ? opts.arenaRight : vpW * 0.8;
+  const edgePad = 2 * s;
 
-  // Player: bar nearest the field; labels to the left (outward).
-  let pRight = arenaLeft - gap;
-  let pX = pRight - groupW;
-  if (pX < 2 * s) {
-    pX = 2 * s;
-    pRight = Math.min(arenaLeft - gap, pX + groupW);
-  }
+  // Player: bar nearest the field; labels RIGHT-ALIGNED to bar−gap (grow outward).
+  // Guarantees meter↔HP text ≥ METER_LABEL_GAP even when the gutter is tight.
+  const pRight = arenaLeft - gap;
   const pBarX = pRight - thick;
-  const player = { x: pX, y: top, w: pRight - pX, h: gh, barX: pBarX, labelX: pX, labelAlign: 'left' };
+  const pLabelAnchor = pBarX - gapX; // right edge of label column
+  let pX = Math.min(pLabelAnchor - labelW, pBarX - gapX - labelW);
+  if (pX < edgePad) pX = edgePad;
+  const player = {
+    x: pX, y: top, w: pRight - pX, h: gh,
+    barX: pBarX, labelX: pLabelAnchor, labelAlign: 'right',
+  };
 
-  // Enemy: bar nearest the field; labels to the right (outward).
-  let eLeft = arenaRight + gap;
-  let eRight = eLeft + groupW;
-  if (eRight > vpW - 2 * s) {
-    eRight = vpW - 2 * s;
-    eLeft = Math.max(arenaRight + gap, eRight - groupW);
-  }
+  // Enemy: bar nearest the field; labels LEFT-ALIGNED to bar+thick+gap (grow outward).
+  const eLeft = arenaRight + gap;
+  const eBarX = eLeft;
+  const eLabelAnchor = eBarX + thick + gapX; // left edge of label column
+  let eRight = Math.max(eLabelAnchor + labelW, eLabelAnchor + labelW);
+  if (eRight > vpW - edgePad) eRight = vpW - edgePad;
   const enemy = {
     x: eLeft, y: top, w: eRight - eLeft, h: gh,
-    barX: eLeft, labelX: eRight, labelAlign: 'right',
+    barX: eBarX, labelX: eLabelAnchor, labelAlign: 'left',
   };
 
   return {
@@ -199,7 +205,9 @@ export function meterSideReserve(vpW, vpH, opts = {}) {
     ? sideOutGeometry(vpW, vpH, opts)
     : cornerVGeometry(vpW, vpH, opts);
   const s = g.scale;
-  return Math.max(g.player.x + g.player.w, vpW - g.enemy.x) + 8 * s;
+  // C9e: taunt must clear each HP block by ≥ TAUNT_HP_GAP (16 CSS px).
+  const clear = TAUNT_HP_GAP * s;
+  return Math.max(g.player.x + g.player.w, vpW - g.enemy.x) + clear;
 }
 
 export function drawScreenHpMeters(ctx, state, vpW, vpH, opts = {}) {
@@ -223,10 +231,29 @@ function drawSideOutGroup(ctx, g, box, pct, name, hpText, nameColor) {
   fillBar(ctx, box.barX, box.y, g.thick, g.h, pct);
   const lx = box.labelX;
   const align = box.labelAlign || 'left';
-  const hpPx = g.hpFontPx || g.fontPx;
+  let namePx = g.fontPx;
+  let hpPx = g.hpFontPx || g.fontPx;
+  // Fit labels into the outward gutter without crossing the bar (gap already in labelX).
+  const gutter = align === 'right'
+    ? Math.max(0, lx - (box.x ?? 0))
+    : Math.max(0, (box.x + box.w) - lx);
+  if (gutter > 0) {
+    // Press Start 2P ≈ square glyphs; don't trust unloaded-font measureText alone.
+    const fit = (text, px) => {
+      ctx.font = `${px}px ${METER_FONT}`;
+      const measured = (typeof ctx.measureText === 'function')
+        ? (ctx.measureText(text)?.width ?? 0)
+        : 0;
+      const w = Math.max(measured, text.length * px * 0.98);
+      if (w <= gutter) return px;
+      return Math.max(8 * (g.scale || 1), Math.floor(px * gutter / w));
+    };
+    namePx = fit(name, namePx);
+    hpPx = fit(hpText, hpPx);
+  }
   // textBaseline top — glyphs sit at/below bar top, never above the neon line.
-  drawColoredLabel(ctx, name, lx, box.y, align, g.fontPx, nameColor);
-  drawColoredLabel(ctx, hpText, lx, box.y + g.fontPx * 1.25, align, hpPx, C.bone);
+  drawColoredLabel(ctx, name, lx, box.y, align, namePx, nameColor);
+  drawColoredLabel(ctx, hpText, lx, box.y + namePx * 1.25, align, hpPx, C.bone);
 }
 
 function drawCornerV(ctx, state, vpW, vpH, opts) {

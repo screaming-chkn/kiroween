@@ -217,10 +217,10 @@ function drawColors(kind, flash = 0) {
   return c.styles;
 }
 
-test('default draw: player #47FF9A (glow #20B05C), enemy #FF3B5C, no old colours/orange/gold', () => {
+test('default draw: player #47FF9A, enemy #FF3B5C, no old colours/orange/gold', () => {
+  // C9e wheeled: no glow underlay on hull/turret strokes (smoother). Line colours only.
   const p = drawColors('player');
   assert.ok(p.has('#47FF9A'));
-  assert.ok(p.has('#20B05C'));
   assert.ok(!p.has('#5CE1FF'));
   const e = drawColors('enemy');
   assert.ok(e.has('#FF3B5C'));
