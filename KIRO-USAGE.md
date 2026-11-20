@@ -397,3 +397,17 @@ Note: this repo was re-created with a cleaned history on 2026-11-18. Commit hash
 - **Hooks:** `close-loop-probe-save` PostFileSave exit=0; `Stop` fired (`event=Stop`); **Stop agent-action same-turn YES** (second loop read `hook-runs.log`). Initial Stop command logger exit=1 (bad `sh -c` quoting) — fixed by build-agent to `scripts/kiro-close-loop-on-stop.mjs`.
 - **Build-agent hand:** `.kiro/hooks/close-loop-on-stop.json` (agent + command), `close-loop-probe-save.json`, `scripts/kiro-close-loop-on-stop.mjs`, README hook list, `build-review/CLOSE-LOOP-GUARD.md`, proof pack under build-review archive.
 - **Tests:** `npm test` green. No HUD/combat/gameplay changes. No merge.
+
+## Steering Haunt Factory — optional taunt pack (2026-11-19 ~4:03 PM PT) — branch kiro-steering-haunt-factory, NOT merged
+- **Combo:** Steering → Spec → CLI → Hook (Devpost #3).
+- **Base:** `main` / tag `hud-lock-c8` tip `455cf29`. Did not touch `hud-c9`.
+- **Command (both runs):** `kiro-cli chat --agent-engine v3 --trust-workspace --no-interactive --model auto --trust-tools=fs_read,fs_write`
+  - HF1 prompt/transcript: `deploy/kiro-proof/haunt-factory/runHF-prompt.txt`, `runHF-transcript.txt` (started ~23:54Z). Implemented FACTORY_TAUNTS + gate + tests + main.js wire.
+  - HF2 prompt/transcript: `runHF2-prompt.txt`, `runHF2-transcript.txt`. Ticked task 4; JSDoc; HF-COMPLETE.md. Hooks:
+    - `2026-11-20T00:03:00.071Z seance-on-spec-save … tasks.md exit=0`
+    - `2026-11-20T00:03:10.796Z test-on-save … possessedTaunts.js exit=0`
+- **Credits (Pro / GitHub login):** `/usage` before HF2: **296.89 / 877**; shortly after HF2: **297.20 / 877** (~**0.31** metered for HF2; HF1 earlier same afternoon already in the 296.89 baseline). No credits bought, no plan change, no IDE.
+- **Enable:** `?tauntPack=factory` (or `haunt-factory`). Default bank unchanged without flag.
+- **Drop:** delete FACTORY_* + gate + pack arg + steering + spec 15, or drop the branch.
+- **Shots / review:** `build-review/HAUNT-FACTORY.md`, `build-review/shots-haunt-factory/`, mirror build-review / haunt-factory archive.
+- **Tests:** npm test green; possessedTaunts 34 passed; seance rebuilt to 233/211.

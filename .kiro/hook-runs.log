@@ -184,6 +184,8 @@
 2026-11-19T23:51:45.884Z close-loop-probe-save event=PostFileSave file=deploy/kiro-proof/close-loop-guard/PROBE.md exit=0 ms=5
 2026-11-19T23:51:47.659Z close-loop-stop-log event=Stop file=- exit=1 ms=8
 2026-11-19T23:52:29.372Z close-loop-on-stop event=Stop file=- exit=0 ms=34
+2026-11-20T00:03:00.071Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-haunt-factory/tasks.md exit=0 ms=137
+2026-11-20T00:03:10.796Z test-on-save event=PostFileSave file=src/ui/possessedTaunts.js exit=0 ms=8314
 2026-11-20T02:03:35.512Z seance-on-spec-save event=PostFileSave file=.kiro/specs/15-cover-walls/tasks.md exit=0 ms=281
 2026-11-20T02:03:42.678Z readme-check-on-save event=PostFileSave file=.kiro/hooks/physics-on-combat-save.json exit=1 ms=31
 2026-11-20T02:03:44.028Z readme-check-on-save event=PostFileSave file=.kiro/hooks/balance-lv34-on-save.json exit=1 ms=34

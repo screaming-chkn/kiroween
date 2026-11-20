@@ -85,7 +85,7 @@ import { formatArenaSpecStamp } from './ui/specStamp.js';
 import { SEANCE_DATA_URL }     from './ui/seance.js';
 import { drawEndCardView }     from './ui/endCardView.js';
 import {
-  createTauntMachine, isDemoTaunts, drawPossessedTaunt, specTauntLine,
+  createTauntMachine, isDemoTaunts, isFactoryTauntPack, drawPossessedTaunt, specTauntLine,
   tauntUnderLineY, tauntAboveLineY, TAUNT_ABOVE_GAP,
 }                              from './ui/possessedTaunts.js';
 import {
@@ -337,7 +337,10 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   resetKillMoment();
   resetHpFx();
   loadSpecStamp();
-  const tauntMachine = createTauntMachine({ demo: isDemoTaunts(location.search) });
+  const tauntMachine = createTauntMachine({
+    demo: isDemoTaunts(location.search),
+    pack: isFactoryTauntPack(location.search) ? 'factory' : null,
+  });
   tauntMachine.reset();
   tauntMachine.onSpawn(performance.now());
   let prevWindup = arenaState.enemy.windupRemainingMs ?? 0;

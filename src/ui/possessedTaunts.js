@@ -37,6 +37,31 @@ export const TAUNTS = Object.freeze({
   ]),
 });
 
+/** Optional Haunt Factory pack (.kiro/steering/haunt-factory-taunts.md); optional URL ?tauntPack=factory. */
+export const FACTORY_TAUNTS = Object.freeze({
+  spawn: Object.freeze([
+    'Assembly line says hello.',
+    'Fresh off the haunt belt.',
+    'Factory floor missed you.',
+  ]),
+  windup: Object.freeze([
+    'Conveyor locked. Ring next.',
+    'Stamp press aims for you.',
+  ]),
+  hit: Object.freeze([
+    'Quality check: you failed.',
+  ]),
+  lowHp: Object.freeze([
+    'Warranty void at that HP.',
+  ]),
+  enemyDeath: Object.freeze([
+    'Line stopped. Haunt clocks out.',
+  ]),
+  playerDeath: Object.freeze([
+    'Boxed, tagged, shelfed. Next.',
+  ]),
+});
+
 export const WINDUP_COOLDOWN_MS = 8000;
 export const TYPE_MS_PER_CHAR = 32;
 export const HOLD_MS = 2000;
@@ -72,9 +97,17 @@ export function isDemoTaunts(search) {
   return p.get('demo') === '1' || p.get('taunts') === 'demo' || p.get('seed') === 'demo';
 }
 
+/** True when the URL search string opts into the Haunt Factory taunt pack. */
+export function isFactoryTauntPack(search) {
+  const s = typeof search === 'string' ? search : '';
+  const p = new URLSearchParams(s.startsWith('?') ? s.slice(1) : s);
+  const v = p.get('tauntPack');
+  return v === 'factory' || v === 'haunt-factory';
+}
+
 /** @param {'spawn'|'windup'|'hit'|'lowHp'|'enemyDeath'|'playerDeath'} kind */
-export function pickTaunt(kind, rng = Math.random) {
-  const list = TAUNTS[kind];
+export function pickTaunt(kind, rng = Math.random, bank = TAUNTS) {
+  const list = bank[kind];
   if (!list || list.length === 0) return '';
   const r = Number(rng());
   const i = Math.min(list.length - 1, Math.max(0, Math.floor((Number.isFinite(r) ? r : 0) * list.length)));
@@ -102,9 +135,10 @@ export function specTauntLine(tasks, rng = Math.random) {
 }
 
 /**
- * @param {{demo?:boolean, rng?:()=>number}} [o]
+ * @param {{demo?:boolean, rng?:()=>number, pack?:string|null}} [o]
  */
-export function createTauntMachine({ demo = false, rng = Math.random } = {}) {
+export function createTauntMachine({ demo = false, rng = Math.random, pack = null } = {}) {
+  const bank = pack === 'factory' && !demo ? FACTORY_TAUNTS : TAUNTS;
   let line = null;          // { text, startMs }
   let lastWindup = -Infinity;   // cooldown shared by windup and hit taunts
   let lowHpFired = false;
@@ -127,29 +161,29 @@ export function createTauntMachine({ demo = false, rng = Math.random } = {}) {
     now = Math.max(now, nowMs);
     if (showing()) return;
     lastWindup = nowMs;
-    start(pickTaunt(kind, rng), nowMs, tauntSpeaker(kind));
+    start(pickTaunt(kind, rng, bank), nowMs, tauntSpeaker(kind));
   }
 
   function onEnemyDeath(nowMs) {
-    start(demo ? DEMO_DEATH : pickTaunt('enemyDeath', rng), nowMs, tauntSpeaker('enemyDeath'));
+    start(demo ? DEMO_DEATH : pickTaunt('enemyDeath', rng, bank), nowMs, tauntSpeaker('enemyDeath'));
   }
 
   return {
     reset() { line = null; lastWindup = -Infinity; lowHpFired = false; now = 0; },
-    onSpawn(nowMs) { start(demo ? DEMO_SPAWN : pickTaunt('spawn', rng), nowMs, tauntSpeaker('spawn')); },
+    onSpawn(nowMs) { start(demo ? DEMO_SPAWN : pickTaunt('spawn', rng, bank), nowMs, tauntSpeaker('spawn')); },
     onWindup(nowMs) { rateLimited('windup', nowMs); },
     onHit(nowMs) { rateLimited('hit', nowMs); },
     onLowHp(nowMs) {
       if (lowHpFired) return;
       lowHpFired = true;
-      start(pickTaunt('lowHp', rng), nowMs, tauntSpeaker('lowHp'));
+      start(pickTaunt('lowHp', rng, bank), nowMs, tauntSpeaker('lowHp'));
     },
     onEnemyDeath,
     onDeath: onEnemyDeath,
     onPlayerDeath(nowMs, specLine) {
       const text = typeof specLine === 'string' && specLine.length > 0
         ? specLine
-        : pickTaunt('playerDeath', rng);
+        : pickTaunt('playerDeath', rng, bank);
       start(text, nowMs, tauntSpeaker('playerDeath'));
     },
     tick(nowMs) { now = nowMs; },

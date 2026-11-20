@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import {
-  TAUNTS, WINDUP_COOLDOWN_MS, tauntBaselineY, ENEMY_LABEL_TOP_WU, specTauntLine as specLineForFix, DEMO_SPAWN, DEMO_DEATH, isDemoTaunts, pickTaunt,
+  TAUNTS, FACTORY_TAUNTS, isFactoryTauntPack, WINDUP_COOLDOWN_MS, tauntBaselineY, ENEMY_LABEL_TOP_WU, specTauntLine as specLineForFix, DEMO_SPAWN, DEMO_DEATH, isDemoTaunts, pickTaunt,
   createTauntMachine, drawPossessedTaunt, specTauntLine,
   tauntUnderLineY, tauntAboveLineY, TAUNT_ABOVE_GAP, tauntSpeaker, tauntColor, TAUNT_COLOR_HOUND, TAUNT_COLOR_PLAYER,
 } from '../../src/ui/possessedTaunts.js';
@@ -76,6 +76,46 @@ test('pickTaunt is rng-indexed and in range', () => {
   assert.equal(pickTaunt('enemyDeath', () => 1), ENEMY_DEATH[1]);
   assert.equal(pickTaunt('playerDeath', () => 0.9), PLAYER_DEATH[1]);
   assert.equal(pickTaunt('nope', () => 0), '');
+});
+
+test('isFactoryTauntPack flags', () => {
+  assert.equal(isFactoryTauntPack('?tauntPack=factory'), true);
+  assert.equal(isFactoryTauntPack('x=1&tauntPack=haunt-factory'), true);
+  assert.equal(isFactoryTauntPack('?tauntPack=other'), false);
+  assert.equal(isFactoryTauntPack('?demo=1'), false);
+  assert.equal(isFactoryTauntPack(''), false);
+  assert.equal(isFactoryTauntPack(undefined), false);
+});
+
+test('FACTORY_TAUNTS match steering and are <= 39 chars', () => {
+  assert.deepEqual([...FACTORY_TAUNTS.spawn], ['Assembly line says hello.', 'Fresh off the haunt belt.', 'Factory floor missed you.']);
+  assert.deepEqual([...FACTORY_TAUNTS.windup], ['Conveyor locked. Ring next.', 'Stamp press aims for you.']);
+  assert.deepEqual([...FACTORY_TAUNTS.hit], ['Quality check: you failed.']);
+  assert.deepEqual([...FACTORY_TAUNTS.lowHp], ['Warranty void at that HP.']);
+  assert.deepEqual([...FACTORY_TAUNTS.enemyDeath], ['Line stopped. Haunt clocks out.']);
+  assert.deepEqual([...FACTORY_TAUNTS.playerDeath], ['Boxed, tagged, shelfed. Next.']);
+  for (const l of Object.values(FACTORY_TAUNTS).flat()) assert.ok(l.length <= 39, `${l} (${l.length})`);
+});
+
+test('pickTaunt uses the given bank; default bank unchanged', () => {
+  assert.equal(pickTaunt('spawn', () => 0, FACTORY_TAUNTS), 'Assembly line says hello.');
+  assert.equal(pickTaunt('spawn', () => 0.999, FACTORY_TAUNTS), 'Factory floor missed you.');
+  assert.equal(pickTaunt('hit', () => 0.9, FACTORY_TAUNTS), 'Quality check: you failed.');
+  assert.equal(pickTaunt('spawn', () => 0), SPAWN[0]);
+});
+
+test('createTauntMachine pack factory uses factory bank; no pack uses default', () => {
+  const f = createTauntMachine({ pack: 'factory', rng: () => 0 });
+  f.onSpawn(0); f.tick(0);
+  assert.equal(f.current().text, FACTORY_TAUNTS.spawn[0]);
+  f.onEnemyDeath(10000); f.tick(10000);
+  assert.equal(f.current().text, FACTORY_TAUNTS.enemyDeath[0]);
+  const d = createTauntMachine({ rng: () => 0 });
+  d.onSpawn(0); d.tick(0);
+  assert.equal(d.current().text, SPAWN[0]);
+  const demo = createTauntMachine({ demo: true, pack: 'factory' });
+  demo.onSpawn(0); demo.tick(0);
+  assert.equal(demo.current().text, DEMO_SPAWN);
 });
 
 test('demo lines are spawn[0] and enemyDeath[0]', () => {
