@@ -134,8 +134,8 @@ test('enemy scale is 1 at default; rises with notch fill; LV1 table still 220', 
   const maxed = { ...defaultUpgradeState() };
   for (const k of SLOT_ORDER) maxed[k] = MAX_NOTCH;
   const e = enemyScaleFromUpgrades(maxed);
-  assert.ok(e.hpMult > 1.35 && e.hpMult < 1.5, `hpMult=${e.hpMult}`);
-  assert.ok(e.damageMult > 1.2 && e.damageMult < 1.4, `dmgMult=${e.damageMult}`);
+  assert.ok(Math.abs(e.hpMult - 1.30) < 1e-9, `hpMult=${e.hpMult}`);
+  assert.ok(Math.abs(e.damageMult - 1.18) < 1e-9, `dmgMult=${e.damageMult}`);
   const spread = { ...defaultUpgradeState(), turret: 4, armor: 3, tracks: 2, loader: 2, dash: 2 };
   const mid = enemyScaleFromUpgrades(spread);
   assert.equal(mid.notchSum, 13);

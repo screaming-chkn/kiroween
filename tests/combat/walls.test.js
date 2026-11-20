@@ -14,6 +14,7 @@ import {
   WALL_SHORT, WALL_MEDIUM, WALL_LONG, WALL_BLOCK,
   segmentHitsWalls, firstWallHit, wallV, clipSegmentAtWalls,
   chipWallAt, wallLength, WALL_CHIP_FRAC, wallsOf,
+  applyWallChipHit, ENEMY_CHIP_HITS, PLAYER_CHIP_HITS,
 } from '../../src/combat/obstacle.js';
 import {
   PLAYER_START_X, PLAYER_START_Y, ENEMY_START_X, ENEMY_START_Y,
@@ -344,7 +345,7 @@ test('player without max turret does not break; enemy breaks on LV3 only', () =>
   assert.equal(len2b, len2a);
   assert.equal(hit2, true, 'enemy shot should still die on the LV2 wall');
 
-  // Enemy on LV3: breaks the mid wall.
+  // Enemy on LV3: first hit scars, does not open a gap.
   let a3 = createArena({}, { hauntLv: 3 });
   const len3a = a3.arena.walls.reduce((n, w) => n + wallLength(w), 0);
   a3 = { ...a3, projectiles: [createProjectile({ id: 'e3', x: 560, y: 450, angle: 0, damage: 1, owner: 'enemy' })] };
@@ -353,9 +354,56 @@ test('player without max turret does not break; enemy breaks on LV3 only', () =>
     a3 = updateArena(a3, { fire: false }, DT);
     if ((a3.wallBreaksThisTick ?? []).length) { broke3 = true; break; }
   }
-  assert.equal(broke3, true, 'enemy should break on LV3');
+  assert.equal(broke3, false, 'enemy first hit must not open a gap');
+  const len3scar = a3.arena.walls.reduce((n, w) => n + wallLength(w), 0);
+  assert.equal(len3scar, len3a, 'first enemy hit leaves wall length unchanged');
+  assert.ok((a3.wallScars ?? []).length >= 1, 'first enemy hit should leave a scar');
+
+  // Second hit on the same chunk opens the gap.
+  a3 = { ...a3, projectiles: [createProjectile({ id: 'e3b', x: 560, y: 450, angle: 0, damage: 1, owner: 'enemy' })] };
+  for (let i = 0; i < 40; i++) {
+    a3 = updateArena(a3, { fire: false }, DT);
+    if ((a3.wallBreaksThisTick ?? []).length) { broke3 = true; break; }
+  }
+  assert.equal(broke3, true, 'enemy second hit should break on LV3');
   const len3b = a3.arena.walls.reduce((n, w) => n + wallLength(w), 0);
-  assert.ok(len3b < len3a, `LV3 enemy did not shorten walls (${len3a} → ${len3b})`);
+  assert.ok(len3b < len3a, `LV3 enemy did not shorten walls after 2 hits (${len3a} → ${len3b})`);
+});
+
+test('enemy needs 2 hits to open a gap; player max opens in 1', () => {
+  assert.equal(ENEMY_CHIP_HITS, 2);
+  assert.equal(PLAYER_CHIP_HITS, 1);
+  const wall = wallV(600, 450, 200);
+  const len0 = wallLength(wall);
+
+  const first = applyWallChipHit([wall], [], 600, 450, ENEMY_CHIP_HITS);
+  assert.equal(first.broke, false, 'enemy first hit must not chip');
+  assert.equal(first.walls.length, 1);
+  assert.equal(wallLength(first.walls[0]), len0);
+  assert.equal(first.scars.length, 1);
+  assert.equal(first.scars[0].hits, 1);
+  // A shot through the impact still dies on the intact wall.
+  assert.equal(segmentHitsWalls(first.walls, 560, 450, 640, 450, 6), true);
+
+  const second = applyWallChipHit(first.walls, first.scars, 600, 452, ENEMY_CHIP_HITS);
+  assert.equal(second.broke, true, 'enemy second hit must chip');
+  const remain = second.walls.reduce((n, w) => n + wallLength(w), 0);
+  const expect = len0 * (1 - WALL_CHIP_FRAC);
+  assert.ok(Math.abs(remain - expect) < 1.5, `remain=${remain} expect=${expect}`);
+  assert.equal(segmentHitsWalls(second.walls, 560, 450, 640, 450, 6), false, 'gap should let a shot through');
+
+  // A far-away second hit is a new scar, not a completed chip.
+  const far = applyWallChipHit(first.walls, first.scars, 600, 450 - 80, ENEMY_CHIP_HITS);
+  assert.equal(far.broke, false, 'distant hit must start a new scar');
+  assert.equal(far.scars.length, 2);
+  assert.equal(wallLength(far.walls[0]), len0);
+
+  // Player max turret still opens in one hit.
+  const player = applyWallChipHit([wall], [], 600, 450, PLAYER_CHIP_HITS);
+  assert.equal(player.broke, true);
+  const pRemain = player.walls.reduce((n, w) => n + wallLength(w), 0);
+  assert.ok(Math.abs(pRemain - expect) < 1.5, `player remain=${pRemain}`);
+  assert.equal(segmentHitsWalls(player.walls, 560, 450, 640, 450, 6), false);
 });
 
 test('barrel pose never overlaps a wall (hug + aim through)', () => {

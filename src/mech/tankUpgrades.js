@@ -279,11 +279,13 @@ export function enemyScaleFromUpgrades(state) {
   for (const k of SLOT_ORDER) notchSum += s[k];
   // First 13 notches (a realistic post-LV3 spread: 1+2+3 payouts + ~7 of 10
   // coins) do not inflate the enemy. Past that, scale ramps to all-max (20):
-  // hp ×1.40, dmg ×1.30 — a fully maxed tank still cannot trivialize LV5.
+  // hp ×1.30, dmg ×1.18. The damage cap keeps LV3 all-max enemy shots at
+  // 40 (rounded), so a 164-HP maxed tank is a 5-hit kill (8–15% cold
+  // target). A fully maxed tank still cannot trivialize LV5.
   const free = 13;
   const ramp = Math.max(0, notchSum - free) / (20 - free);
-  const hpMult = 1 + 0.40 * ramp;
-  const damageMult = 1 + 0.30 * ramp;
+  const hpMult = 1 + 0.30 * ramp;
+  const damageMult = 1 + 0.18 * ramp;
   return { hpMult, damageMult, notchSum };
 }
 

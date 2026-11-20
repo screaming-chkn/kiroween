@@ -34,7 +34,7 @@ import {
   SEVER_WALL_MIN_LV,
   dashCooldownForLoad,
 } from './config.js';
-import { wallsForLevel, chipWallsAt, wallsOf } from './obstacle.js';
+import { wallsForLevel, applyWallChipHit, ENEMY_CHIP_HITS, PLAYER_CHIP_HITS, wallsOf } from './obstacle.js';
 import { createCreditPickups, stepCreditPickups } from './creditPickup.js';
 import { createMech, moveMech, aimMech } from './mech.js';
 import { createEnemy, stepEnemy }        from './enemy.js';
@@ -181,6 +181,8 @@ export function createArena(loadoutTotals = {}, stats = {}) {
     elapsedMs: 0,       // time survived so far (R8 end card)
     wallHitsThisTick: 0, // C9b: projectile → Sever Wall / arena bound deaths
     wallBreaksThisTick: [],
+    // Pending enemy chips: a scar needs ENEMY_CHIP_HITS on the same ~20% chunk.
+    wallScars: [],
     hauntLv: typeof stats.hauntLv === 'number' ? stats.hauntLv : 1,
   };
 }
@@ -463,19 +465,25 @@ export function updateArena(state, actions, dt) {
   );
   const wallHitsThisTick = wallHitShots.length;
 
-  // Breakable walls: player at max turret (any cover LV); enemy on LV3+ only.
+  // Breakable walls: player at max turret (1 hit, any cover LV);
+  // enemy on LV3+ only, and the same ~20% chunk needs ENEMY_CHIP_HITS (2).
   const hauntLv = state.hauntLv ?? 1;
   const wallBreaksThisTick = [];
   let nextArena = arena;
   let nextWalls = Array.isArray(arena.walls) ? [...arena.walls] : (arena.wall ? [arena.wall] : []);
+  let nextScars = Array.isArray(state.wallScars) ? state.wallScars.map((s) => ({ ...s })) : [];
+  let wallsMutated = false;
   for (const p of survivingProjectiles) {
     if (!p.dead || p.deadReason !== 'wall') continue;
     const playerBreaks = p.owner === 'player' && playerAfterHits.breaksWalls;
     const enemyBreaks = p.owner === 'enemy' && hauntLv >= 3;
     if (!playerBreaks && !enemyBreaks) continue;
-    const chip = chipWallsAt(nextWalls, p.x, p.y, 8);
-    if (!chip.broke) continue;
+    const hitsNeeded = playerBreaks ? PLAYER_CHIP_HITS : ENEMY_CHIP_HITS;
+    const chip = applyWallChipHit(nextWalls, nextScars, p.x, p.y, hitsNeeded, 8);
     nextWalls = chip.walls;
+    nextScars = chip.scars;
+    if (!chip.broke) continue;
+    wallsMutated = true;
     wallBreaksThisTick.push({
       x: chip.at.x,
       y: chip.at.y,
@@ -483,7 +491,7 @@ export function updateArena(state, actions, dt) {
       owner: p.owner,
     });
   }
-  if (wallBreaksThisTick.length) {
+  if (wallsMutated) {
     nextArena = {
       ...arena,
       walls: nextWalls,
@@ -506,6 +514,7 @@ export function updateArena(state, actions, dt) {
     elapsedMs:   elapsedNext,
     wallHitsThisTick,
     wallBreaksThisTick,
+    wallScars: nextScars,
     hauntLv,
   };
 }

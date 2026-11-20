@@ -12,7 +12,7 @@
  *   segmentHitsWalls(walls, x1, y1, x2, y2, r) -> boolean
  *   firstWallHit(walls, x1, y1, x2, y2, r)     -> {x,y}|null
  *   clipSegmentAtWalls(walls, x1, y1, x2, y2)  -> {x1,y1,x2,y2,clipped}
- *   chipWallAt / chipWallsAt                   -> remainder wall[]
+ *   chipWallAt / chipWallsAt / applyWallChipHit -> remainder wall[]
  *   resolveWallMove(wall, from, to, r, opt)    -> { x, y, bumped }
  *   resolveWallsMove(walls, from, to, r, opt)  -> { x, y, bumped }
  */
@@ -471,6 +471,88 @@ export function chipWallsAt(walls, hx, hy, r = 8, frac = WALL_CHIP_FRAC) {
   if (idx < 0) return { walls: list, broke: false, at: null };
   const next = [...list.slice(0, idx), ...chipWallAt(list[idx], hx, hy, frac), ...list.slice(idx + 1)];
   return { walls: next, broke: true, at: { x: hx, y: hy } };
+}
+
+/** Hits an enemy shot needs on the same ~20% chunk before that segment is removed. */
+export const ENEMY_CHIP_HITS = 2;
+/** Player at TURRET max still opens a gap in one hit. */
+export const PLAYER_CHIP_HITS = 1;
+
+/**
+ * Radius (world units) within which a later hit counts as the same chunk.
+ * Half of the chip length for that wall, so two impacts on the same ~20%
+ * segment stack, while a hit farther down the wall starts a new scar.
+ */
+export function scarMatchRadius(wall) {
+  if (!wall) return WALL_CHIP_MIN / 2;
+  const orig = wall.origLen ?? wallLength(wall);
+  return Math.max(WALL_CHIP_MIN, orig * WALL_CHIP_FRAC) / 2;
+}
+
+function findHitWallIndex(list, hx, hy, r) {
+  let idx = -1;
+  let best = Infinity;
+  for (let i = 0; i < list.length; i++) {
+    if (!circleHitsWall(list[i], hx, hy, r + 2)) continue;
+    const d = distToSegment(list[i], hx, hy);
+    if (d < best) { best = d; idx = i; }
+  }
+  return idx;
+}
+
+function scarsStillOnWalls(scars, walls, r) {
+  return (scars ?? []).filter((s) => walls.some((w) => circleHitsWall(w, s.x, s.y, r + 2)));
+}
+
+/**
+ * Apply one breaking-capable hit. Player max (`hitsNeeded` 1) chips immediately.
+ * Enemy (`hitsNeeded` ENEMY_CHIP_HITS) leaves a scar on the first hit and
+ * removes the ~20% segment only when the same chunk is hit again.
+ *
+ * @returns {{ walls: object[], scars: object[], broke: boolean, at: {x:number,y:number}|null }}
+ */
+export function applyWallChipHit(walls, scars, hx, hy, hitsNeeded = PLAYER_CHIP_HITS, r = 8, frac = WALL_CHIP_FRAC) {
+  const list = normalizeWalls(walls).map(withOrig);
+  const existing = Array.isArray(scars) ? scars.map((s) => ({ ...s })) : [];
+  const idx = findHitWallIndex(list, hx, hy, r);
+  if (idx < 0) return { walls: list, scars: existing, broke: false, at: null };
+
+  const needed = Number.isFinite(hitsNeeded) ? hitsNeeded : PLAYER_CHIP_HITS;
+  if (needed <= 1) {
+    const next = [...list.slice(0, idx), ...chipWallAt(list[idx], hx, hy, frac), ...list.slice(idx + 1)];
+    return { walls: next, scars: scarsStillOnWalls(existing, next, r), broke: true, at: { x: hx, y: hy } };
+  }
+
+  const matchR = scarMatchRadius(list[idx]);
+  let match = -1;
+  let bestScar = Infinity;
+  for (let i = 0; i < existing.length; i++) {
+    const s = existing[i];
+    const d = Math.hypot(s.x - hx, s.y - hy);
+    if (d <= matchR && d < bestScar) { bestScar = d; match = i; }
+  }
+
+  if (match < 0) {
+    return {
+      walls: list,
+      scars: [...existing, { x: hx, y: hy, hits: 1 }],
+      broke: false,
+      at: { x: hx, y: hy },
+    };
+  }
+
+  const hits = (existing[match].hits ?? 1) + 1;
+  if (hits < needed) {
+    const nextScars = existing.slice();
+    nextScars[match] = { ...existing[match], hits };
+    return { walls: list, scars: nextScars, broke: false, at: { x: existing[match].x, y: existing[match].y } };
+  }
+
+  const sx = existing[match].x;
+  const sy = existing[match].y;
+  const next = [...list.slice(0, idx), ...chipWallAt(list[idx], sx, sy, frac), ...list.slice(idx + 1)];
+  const leftover = existing.filter((_, i) => i !== match);
+  return { walls: next, scars: scarsStillOnWalls(leftover, next, r), broke: true, at: { x: sx, y: sy } };
 }
 
 /** How long the spawn label *would* stay up (ms). Kept for tests / callers; C9b draws no label. */
