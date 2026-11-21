@@ -32,15 +32,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = resolve(__dirname, '..');
 export const DEFAULT_OUT = join(REPO_ROOT, 'deploy', 'site');
 
-export const HEADERS_TXT = `/index.html
-  Cache-Control: no-cache
-/BUILD.txt
-  Cache-Control: no-cache
-/src/*
-  Cache-Control: no-cache
-/*
-  X-Robots-Tag: noindex, nofollow
-`;
+export const HEADERS_TXT = '/*\n  X-Robots-Tag: noindex, nofollow\n';
 export const ROBOTS_TXT = 'User-agent: *\nDisallow: /\n';
 export const NOINDEX_META = '<meta name="robots" content="noindex, nofollow">';
 

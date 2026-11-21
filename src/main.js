@@ -37,7 +37,6 @@ import { cueMusic }           from './engine/music.js';
 import { loadGameFonts }      from './engine/fonts.js';
 import { loadSettings, saveSettings, busLevels } from './engine/settings.js';
 import { mountTitle }          from './ui/title.js';
-import { ensureGameShell, mountCssLandscape, tryLockLandscape } from './ui/rotateGate.js';
 import { mountPauseMenu, mountPauseButton } from './ui/pauseMenu.js';
 import {
   gateTick, addHitStop, HITSTOP_HIT_MS, HITSTOP_HURT_MS, traumaForImpact,
@@ -66,7 +65,7 @@ import { speedPenalty }        from './mech/weight.js';
 import { playerKickAmount }    from './combat/hitFeedback.js';
 import { canRestart, RESTART_GRACE_MS } from './combat/restart.js';
 import { screenToWorld, worldToScreen } from './engine/camera.js';
-import { clientToCanvasEl, clientToCanvasLayout } from './engine/pointer.js';
+import { clientToCanvasEl } from './engine/pointer.js';
 import { ENEMY_SHOT_WINDUP_MS } from './combat/config.js';
 import {
   endCardScale, scaleRects,
@@ -112,6 +111,7 @@ let specStampRequested = false;
 let seanceTasks = null;
 /** C9b gutter haunt style: 'silver' | 'purple' | 'off'. */
 let gutterHauntStyle = 'silver';
+
 /** Fetch the seance JSON once. Real counts only; any failure leaves null. */
 function loadSpecStamp() {
   if (specStampRequested || typeof fetch !== 'function') return;
@@ -136,37 +136,22 @@ function applySettings(next) {
 
 // ── Canvas / loading ─────────────────────────────────────────────────────────
 
+const canvas  = /** @type {HTMLCanvasElement} */ (document.getElementById('game-canvas'));
 const loading = document.getElementById('loading');
-
-// Shell wraps canvas + UI so portrait phones can CSS-rotate into landscape.
-const shell = ensureGameShell(document.body);
-const canvas  = /** @type {HTMLCanvasElement} */ (shell.querySelector('#game-canvas') || document.getElementById('game-canvas'));
 
 // ── Garage root div (fixed-position overlay, same stacking layer as canvas) ──
 
 const appRoot = document.createElement('div');
 appRoot.id    = 'app-root';
-shell.appendChild(appRoot);
-
-/** @type {ReturnType<typeof mountCssLandscape>|null} */
-let cssLandscape = null;
+document.body.appendChild(appRoot);
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
-
-function requestLandscapeLock() {
-  if (!isTouchUi()) return;
-  Promise.resolve(tryLockLandscape()).catch(() => {});
-}
 
 function boot() {
   // Declare the sterile/possessed palette custom properties up front so themed
   // components (e.g. the garage) read live var(--hh-*) values; opening the
   // séance flips to the possessed palette via setPossessed(true).
   injectPossessionCSS();
-
-  // Portrait phones: CSS-rotate the shell into landscape (no blocking overlay).
-  // iOS / X in-app cannot lock orientation; Android may still lock after a gesture.
-  cssLandscape = mountCssLandscape(shell, { isTouchUi, showHint: false });
 
   const renderer = createRenderer(canvas);
   resizeToDisplay(renderer);
@@ -235,21 +220,11 @@ function isTouchUi() {
   });
 }
 
-/** Client CSS px → canvas px, remapped when the CSS-landscape shell is active. */
-function pointerToCanvas(clientX, clientY) {
-  if (cssLandscape && cssLandscape.active()) {
-    const local = cssLandscape.remapClient(clientX, clientY);
-    return clientToCanvasLayout(local.x, local.y, canvas);
-  }
-  return clientToCanvasEl(clientX, clientY, canvas);
-}
-
 function showTitle(renderer, reducedMotion) {
   mountTitle(appRoot, {
     touchUi: isTouchUi(),
     hauntLv: readHauntLevel(),
     onDeploy() {
-      requestLandscapeLock();
       // Same gesture already unlocked Web Audio (installAudioGestures).
       cueMusic('title-go');
       playSfx(SFX.UI_CLICK);
@@ -261,7 +236,6 @@ function showTitle(renderer, reducedMotion) {
       }
     },
     onGarage() {
-      requestLandscapeLock();
       cueMusic('title-go');
       playSfx(SFX.UI_CLICK);
       showGarage(renderer, reducedMotion);
@@ -286,7 +260,6 @@ function showGarage(renderer, reducedMotion) {
 
   const garage = mountGarage(appRoot, {
     onDeploy(loadout, loadoutTotals) {
-      requestLandscapeLock();
       garage.destroy();
       // Canvas text must not first-draw in the fallback face (usually
       // already loaded by now; capped wait inside loadGameFonts).
@@ -847,7 +820,6 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     // Keyboard events carry no stale-click risk → pass null.
     if (!cardInteractive(null)) return;
     e.preventDefault();
-    requestLandscapeLock();
     pendingAction = action.id;
     if (action.id === 'retry') focusIndex = 0;
     else if (action.id === 'garage') focusIndex = 1;
@@ -859,12 +831,11 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
     if (!cardInteractive(lastMouseDownAt)) return;
 
     // Translate client coords → canvas pixel coords (shared pointer mapping).
-    const { x: px, y: py } = pointerToCanvas(e.clientX, e.clientY);
+    const { x: px, y: py } = clientToCanvasEl(e.clientX, e.clientY, canvas);
 
     const hit = buttonAtPoint(px, py);
     if (!hit) return;
     focusIndex    = hit.id === 'retry' ? 0 : 1;
-    requestLandscapeLock();
     pendingAction = hit.id;
   }
 
@@ -884,7 +855,7 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
         onPreview: () => playSfx(SFX.PLAYER_SHOT),
         touchUi,
         onResume: () => setPaused(false),
-        onQuit: () => { requestLandscapeLock(); setPaused(false); pendingAction = 'garage'; },
+        onQuit: () => { setPaused(false); pendingAction = 'garage'; },
       });
     } else {
       if (pauseMenu) { pauseMenu.destroy(); pauseMenu = null; }
@@ -904,26 +875,21 @@ function startArena(renderer, loadout, loadoutTotals, reducedMotion) {
   let touch = null;
   let pauseBtn = null;
   if (touchUi) {
-    touch = mountTouchControls(shell, {
+    touch = mountTouchControls(document.body, {
       getViewport: () => {
-        if (cssLandscape && cssLandscape.active()) return cssLandscape.logicalViewport();
         const vv = window.visualViewport;
         return {
           width: (vv && vv.width) || window.innerWidth,
           height: (vv && vv.height) || window.innerHeight,
         };
       },
-      mapPointer: (x, y) => (cssLandscape ? cssLandscape.remapClient(x, y) : { x, y }),
     });
-    pauseBtn = mountPauseButton(shell, () => setPaused(true));
+    pauseBtn = mountPauseButton(document.body, () => setPaused(true));
   }
 
   /** Client CSS px → canvas px (shared pointer mapping) → world. */
   function touchScreenToWorld(p) {
-    // Touch sample coords are already in logical shell space when CSS-landscape is on.
-    const c = (cssLandscape && cssLandscape.active())
-      ? clientToCanvasLayout(p.x, p.y, canvas)
-      : clientToCanvasEl(p.x, p.y, canvas);
+    const c = clientToCanvasEl(p.x, p.y, canvas);
     const { wx, wy } = screenToWorld(
       c.x, c.y, camera,
       renderer.canvas.width, renderer.canvas.height, shakeX, shakeY,

@@ -23,26 +23,11 @@ export function clientToCanvas(clientX, clientY, rect, canvasW, canvasH) {
 }
 
 /**
- * Convenience over a live canvas element (untransformed / native landscape).
+ * Convenience over a live canvas element.
  * @param {number} clientX
  * @param {number} clientY
  * @param {{ getBoundingClientRect(): DOMRect, width: number, height: number }} canvas
  */
 export function clientToCanvasEl(clientX, clientY, canvas) {
   return clientToCanvas(clientX, clientY, canvas.getBoundingClientRect(), canvas.width, canvas.height);
-}
-
-/**
- * Map logical CSS px (origin top-left of the canvas layout box) into canvas
- * backing-store px. Use this when the canvas sits inside a CSS-transformed
- * shell: getBoundingClientRect() returns the post-transform AABB and is wrong.
- *
- * @param {number} localX  CSS px in the canvas layout box (0 = left edge).
- * @param {number} localY  CSS px in the canvas layout box (0 = top edge).
- * @param {{ clientWidth?: number, clientHeight?: number, width: number, height: number }} canvas
- */
-export function clientToCanvasLayout(localX, localY, canvas) {
-  const cssW = canvas.clientWidth || canvas.width || 0;
-  const cssH = canvas.clientHeight || canvas.height || 0;
-  return clientToCanvas(localX, localY, { left: 0, top: 0, width: cssW, height: cssH }, canvas.width, canvas.height);
 }

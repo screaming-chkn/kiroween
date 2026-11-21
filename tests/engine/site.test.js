@@ -15,7 +15,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  buildSite, shouldCopy, listLocalImports, assertSafeOutDir, moduleGraph, addModulePreloads, REPO_ROOT, HEADERS_TXT,
+  buildSite, shouldCopy, listLocalImports, assertSafeOutDir, moduleGraph, addModulePreloads, REPO_ROOT,
 } from '../../scripts/build-site.mjs';
 
 let passed = 0;
@@ -63,7 +63,7 @@ test('BUILD.txt names the source commit', () => {
 });
 
 test('_headers and robots.txt are exact', () => {
-  assert.equal(readFileSync(join(out, '_headers'), 'utf8'), HEADERS_TXT);
+  assert.equal(readFileSync(join(out, '_headers'), 'utf8'), '/*\n  X-Robots-Tag: noindex, nofollow\n');
   assert.equal(readFileSync(join(out, 'robots.txt'), 'utf8'), 'User-agent: *\nDisallow: /\n');
 });
 
